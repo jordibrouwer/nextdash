@@ -2007,6 +2007,27 @@ class DashboardDocker {
         return wrap;
     }
 
+    /** The Files button on a stack's heading: opens the stack side panel. */
+    buildStackFiles(project, stack) {
+        const wrap = document.createElement('span');
+        wrap.className = 'docker-stack-actions';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'docker-action-btn';
+        btn.setAttribute('data-docker-stack-files', project);
+        btn.textContent = this.t('dashboard.dockerStackFiles', 'Files');
+        btn.title = this.t('dashboard.dockerStackFilesHint', 'Show this stack\'s compose file and .env');
+        btn.addEventListener('click', () => {
+            this.selected = null;
+            this.restoreDockerHash();
+            this.render();
+            this.drawer?.openStack(project, { members: stack });
+            this.drawerOpen = Boolean(this.drawer?.isOpen());
+        });
+        wrap.appendChild(btn);
+        return wrap;
+    }
+
     /**
      * Grouped by compose project (project-less last) or by status (updates,
      * running, paused, stopped -- the order that needs attention first).
@@ -2085,6 +2106,8 @@ class DashboardDocker {
             count.textContent = ` · ${groups.get(key).length}`;
             cell.appendChild(count);
             if (byProject && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
+            // Files is a read, so it sits outside the control gate: it shows with control off.
+            if (byProject && key) cell.appendChild(this.buildStackFiles(key, groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));

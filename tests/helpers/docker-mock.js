@@ -25,9 +25,9 @@ function mockDisk() {
   };
 }
 
-async function mockDocker(page, { control = true, socket = true, containers = null, usage = false, history = null } = {}) {
+async function mockDocker(page, { control = true, socket = true, containers = null, usage = false, history = null, compose = null } = {}) {
   const state = {
-    control, socket, usage, history, calls: [],
+    control, socket, usage, history, compose, calls: [],
     containers: containers || [
       { id: 'a'.repeat(64), shortId: 'a'.repeat(12), name: 'sonarr', image: 'lscr.io/linuxserver/sonarr:latest', tag: 'latest',
         state: 'running', status: 'Up 6 days (healthy)', health: 'healthy', created: 1790000000,
@@ -51,6 +51,86 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/status') return json({ socket: state.socket, control: state.control, reason: state.socket ? '' : 'no-docker-socket',
       self: 'd'.repeat(12), selfName: state.socket ? 'nextdash' : '', writeToken: Boolean(state.writeToken) });
+    // A stack's files: state.compose is the answer, per project; the value route answers 'hunter2'.
+    // Phase 2 (docs/compose-management-implementation.md 1.2-1.5): raw, PUT, backups, restore, run.
+    //   state.composeRaw[id]      raw text; defaults to the file's content
+    //   state.composeBackups[id]  [{stamp,size}], newest first
+    //   state.composeSaveReply    {status, body} to force the next save's answer once
+    //   state.composeRun[action]  {fail:true, tail:[...]} to make a run fail
+    // A save containing the word INVALID answers 422 compose-yaml at that line and column.
+    if (path.startsWith('/compose/')) {
+      const m = path.match(/^\/compose\/([^/]+)\/(files(?:\/value|\/raw)?|backups(?:\/([^/]+)\/restore)?|up|down|pull)$/);
+      const answer = m && state.compose && state.compose[m[1]];
+      if (!answer) return json({ error: 'not found' }, 404);
+      const fileId = url.searchParams.get('file');
+      const fileOf = () => (answer.files || []).find((f) => f.id === fileId);
+      const rawOf = () => (state.composeRaw && state.composeRaw[fileId] !== undefined ? state.composeRaw[fileId] : (fileOf()?.content ?? ''));
+      const what = m[2];
+      if (what === 'files/value') {
+        state.valueHeaders = req.headers();
+        return json({ file: fileId, key: url.searchParams.get('key'), value: 'hunter2' });
+      }
+      if (what === 'files/raw') {
+        if (!fileOf()) return json({ reason: 'not-found' }, 404);
+        return json({ file: fileId, content: rawOf(), sha256: fileOf().sha256 });
+      }
+      if (what === 'files' && req.method() === 'PUT') {
+        const body = JSON.parse(req.postData() || '{}');
+        state.composeSaves = [...(state.composeSaves || []), { file: fileId, ...body }];
+        if (!state.control) return json({ reason: 'docker-control-off' }, 403);
+        if (state.composeSaveReply) {
+          const r = state.composeSaveReply;
+          state.composeSaveReply = null;
+          return json(r.body, r.status);
+        }
+        const f = fileOf();
+        if (body.sha256 !== f.sha256) return json({ reason: 'compose-stale', sha256: f.sha256 }, 409);
+        const lines = String(body.content).split('\n');
+        const bad = lines.findIndex((l) => l.includes('INVALID'));
+        if (bad >= 0) return json({ reason: 'compose-yaml', line: bad + 1, column: 3, message: 'mapping values are not allowed here' }, 422);
+        const sha = `sha${(state.composeSaves || []).length}0000000000`;
+        state.composeBackups = { ...(state.composeBackups || {}), [fileId]: [{ stamp: '20261116T101500Z', size: f.size }, ...((state.composeBackups || {})[fileId] || [])] };
+        f.content = body.content;
+        f.sha256 = sha;
+        state.composeRaw = { ...(state.composeRaw || {}), [fileId]: body.content };
+        return json({ ok: true, sha256: sha, backup: '20261116T101500Z', warnings: [] });
+      }
+      if (what === 'files') {
+        state.composeFilesCalls = (state.composeFilesCalls || 0) + 1;
+        return json(answer);
+      }
+      if (what.startsWith('backups')) {
+        if (m[3]) {
+          state.composeRestores = [...(state.composeRestores || []), { file: fileId, stamp: m[3], body: JSON.parse(req.postData() || '{}') }];
+          return json({ ok: true, sha256: 'restored0000000', backup: '20261116T111500Z', restored: m[3] });
+        }
+        return json({ file: fileId, backups: (state.composeBackups || {})[fileId] || [] });
+      }
+      // up, down, pull: the NDJSON the run route streams (dockerProgressEvent), last line the result.
+      if (['up', 'down', 'pull'].includes(what) && req.method() === 'POST') {
+        state.composeRuns = [...(state.composeRuns || []), `${what}?${url.searchParams.get('stream') === '1' ? 'stream=1' : ''}`];
+        if (!state.control) return json({ reason: 'docker-control-off' }, 403);
+        if (answer.self) return json({ reason: 'docker-self' }, 403);
+        if (answer.state === 'compose-no-labels') return json({ reason: 'compose-no-labels' }, 409);
+        const fail = state.composeRun && state.composeRun[what] && state.composeRun[what].fail;
+        const at = Date.now();
+        const step = (s, st) => ({ type: 'step', step: s, state: st, at });
+        const lines = [step('image', 'start'), step('image', 'done')];
+        if (what === 'up') lines.push(step('validate', 'start'), step('validate', 'done'));
+        lines.push(step('run', 'start'), { type: 'log', text: `${what} ${m[1]}: first line`, at }, { type: 'log', text: `${what} ${m[1]}: second line`, at });
+        // The helper is removed inside the run step, so cleanup comes before run's own done/fail.
+        if (fail) {
+          const tail = state.composeRun[what].tail || ['service db: exited with code 1'];
+          lines.push(step('cleanup', 'start'), step('cleanup', 'done'), step('run', 'fail'),
+            { type: 'result', status: 502, body: { reason: 'compose-failed', exitCode: 1, tail }, at });
+        } else {
+          lines.push(step('cleanup', 'start'), step('cleanup', 'done'), step('run', 'done'),
+            { type: 'result', status: 200, body: { ok: true, action: what, exitCode: 0 }, at });
+        }
+        return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n' });
+      }
+      return json({ reason: 'unknown' }, 404);
+    }
     if (path === '/github-token') {
       if (req.method() === 'PUT') state.githubToken = true;
       if (req.method() === 'DELETE') state.githubToken = false;

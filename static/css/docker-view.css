@@ -1974,3 +1974,232 @@
 .config-docker-host-form .config-actions {
     margin-top: var(--space-3, 0.75rem);
 }
+
+/* ── Stack panel: a compose project's files, read-only ──────────────── */
+
+.docker-compose-back {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.docker-compose-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.docker-compose-file {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.docker-compose-filebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-compose-path {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-compose-meta,
+.docker-compose-legend {
+    margin: 0;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+.docker-compose-code {
+    padding: var(--space-2, 0.5rem) 0;
+    white-space: normal;
+}
+
+.docker-compose-line {
+    display: grid;
+    grid-template-columns: 2.4em minmax(0, 1fr) auto;
+    align-items: baseline;
+    padding-right: var(--space-2, 0.5rem);
+}
+
+.docker-compose-line.has-mask {
+    background: color-mix(in srgb, var(--accent-warning) 9%, transparent);
+}
+
+.docker-compose-n {
+    padding-right: 0.5em;
+    text-align: right;
+    color: var(--text-tertiary);
+    user-select: none;
+}
+
+.docker-compose-t {
+    white-space: pre;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.docker-compose-mask { color: var(--accent-warning); letter-spacing: 0.08em; }
+.docker-compose-mask.is-revealed { color: var(--accent-success); letter-spacing: normal; }
+
+.docker-compose-reveal {
+    padding: 0 0.4rem;
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-compose-yamlerr {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--accent-warning);
+}
+
+.docker-compose-note {
+    --note-tone: var(--accent-primary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-left: 3px solid var(--note-tone);
+    border-radius: 0 var(--radius-4, 6px) var(--radius-4, 6px) 0;
+    background: color-mix(in srgb, var(--note-tone) 11%, transparent);
+}
+
+.docker-compose-note[data-tone="warn"] { --note-tone: var(--accent-warning); }
+.docker-compose-note[data-tone="bad"] { --note-tone: var(--accent-error); }
+
+.docker-compose-note h4 { margin: 0; font-size: var(--font-size-text); font-weight: 600; }
+.docker-compose-note p { margin: 0; font-size: var(--font-size-small); color: var(--text-secondary); overflow-wrap: anywhere; }
+.docker-compose-note p b { color: var(--text-primary); font-weight: 600; }
+
+.docker-compose-fixlabel {
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+
+.docker-compose-fix {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+}
+
+.docker-compose-fix code {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-project-chip { font: inherit; font-size: 0.92em; }
+
+/* Compose: editor, backups and the run note */
+.docker-compose-runnote {
+    margin: 0;
+    padding: 0.35rem 0.6rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.docker-compose-filebar .config-btn { margin-left: auto; }
+
+.docker-compose-editor {
+    width: 100%;
+    min-height: 16rem;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+    color: var(--text-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.78rem);
+    line-height: 1.5;
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+}
+
+.docker-compose-dirty {
+    margin-left: auto;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--accent-warning);
+}
+
+.docker-compose-editbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-compose-status {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.docker-compose-conflict,
+.docker-compose-readonly {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--accent-warning);
+    border-radius: var(--radius-4, 6px);
+    font-size: var(--font-size-small);
+}
+
+.docker-compose-conflict[hidden],
+.docker-compose-readonly[hidden],
+.docker-compose-yamlerr[hidden],
+.docker-compose-warnings[hidden] { display: none; }
+
+.docker-compose-conflict p { margin: 0; flex: 1 1 100%; }
+
+.docker-compose-warnings {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--accent-warning);
+}
+
+.docker-compose-backups {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.docker-compose-backups li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.docker-compose-backups li .config-btn { margin-left: auto; }

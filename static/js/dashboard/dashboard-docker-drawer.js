@@ -347,6 +347,43 @@ class DockerDrawer {
         if (fresh) this.open(fresh);
     }
 
+    /** The project chip opens the stack's files; the way in when the list is not grouped. */
+    _projectChip(esc, project) {
+        return `<button type="button" class="config-bm-details-chip is-link docker-project-chip" data-slp-action="open-stack"
+            title="${esc(this.t('dockerComposeOpen', 'Show this stack\'s compose file'))}">${esc(project)} ↗</button>`;
+    }
+
+    /**
+     * The stack side panel: the project's compose file and .env. One panel at a
+     * time, so it takes the drawer's place; its back link returns to the
+     * container it came from, when there was one.
+     */
+    openStack(project, { members = null, backName = null } = {}) {
+        if (!project) return;
+        this._stopResourcePolling();
+        this._destroyCharts();
+        this._name = null;
+        this._detail = null;
+        this._els = null;
+        const list = members || (this.view.containers || []).filter((c) => c.composeProject === project);
+        this._compose = new window.DockerComposeFiles(this.view);
+        this.base.open(`stack:${project}`, {
+            title: project,
+            build: (panel, ctx) => {
+                panel.setAttribute('data-docker-stack-panel', project);
+                panel.classList.add('docker-drawer', 'config-bm-drawer');
+                ctx.heading.hidden = true;
+                panel.insertAdjacentHTML('beforeend', this._compose.layout(project, list, backName));
+                this._compose.mount(panel, project, {
+                    onBack: () => {
+                        if (backName) this.open(backName);
+                        else this.view.closeDrawer();
+                    },
+                });
+            },
+        });
+    }
+
     _tabs() {
         return [
             { name: 'overview', label: this.t('dockerSectionOverview', 'Overview') },
@@ -392,7 +429,7 @@ class DockerDrawer {
         const chips = [
             image ? L.chip(esc, image) : '',
             summary.update?.status === 'available' ? L.chip(esc, this.t('dockerUpdateAvailable', 'update available'), 'is-tag') : '',
-            summary.composeProject ? L.chip(esc, summary.composeProject) : '',
+            summary.composeProject ? this._projectChip(esc, summary.composeProject) : '',
         ].join('');
         const summaryBlock = L.viz(`<div class="config-bm-details-chips">${chips}</div>`);
         const body = (key) => `<div class="docker-section-body" data-docker-body="${key}"></div>`;
@@ -471,6 +508,10 @@ class DockerDrawer {
         if (action !== 'mute') window.nextdashTrack?.('docker:drawer-action', { action });
         if (action === 'mute') {
             void this._toggleMute();
+            return;
+        }
+        if (action === 'open-stack') {
+            if (summary.composeProject) this.openStack(summary.composeProject, { backName: summary.name });
             return;
         }
         if (action === 'webui') {

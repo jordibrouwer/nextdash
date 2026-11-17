@@ -22,6 +22,10 @@
         static STEPS = {
             update: ['check', 'pull', 'compare', 'stop', 'rename', 'create', 'connect', 'start', 'remove'],
             rollback: ['check', 'tag', 'stop', 'rename', 'create', 'connect', 'start', 'remove'],
+            // A compose stack's run (dashboard-docker-compose.js): the helper's steps.
+            up: ['image', 'validate', 'run'],
+            down: ['image', 'run'],
+            pull: ['image', 'run'],
         };
 
         static LOG_LINES = 200;
@@ -56,6 +60,12 @@
                 start: ['dockerStepStart', 'Start'],
                 remove: ['dockerStepRemove', 'Remove the old container'],
                 restore: ['dockerStepRestore', 'Put the previous container back'],
+                image: ['dockerStepImage', 'Get the compose helper image'],
+                validate: ['dockerStepValidate', 'Check the compose file'],
+                run: this.action === 'down' ? ['dockerStepRunDown', 'Take the stack down']
+                    : this.action === 'pull' ? ['dockerStepRunPull', 'Pull the images']
+                        : ['dockerStepRunUp', 'Start the stack'],
+                cleanup: ['dockerStepCleanup', 'Remove the helper'],
             };
             const [key, fallback] = labels[step] || [step, step];
             return this.t(key, fallback);
@@ -216,6 +226,9 @@
                 restart: ['dockerActionRestart', 'Restart'],
                 pause: ['dockerActionPause', 'Pause'],
                 unpause: ['dockerActionUnpause', 'Resume'],
+                up: ['dockerActionUp', 'Up'],
+                down: ['dockerActionDown', 'Down'],
+                pull: ['dockerActionPull', 'Pull'],
                 update: ['dockerActionUpdate', 'Update'],
                 remove: ['dockerActionRemove', 'Remove'],
                 rollback: ['dockerActionRollback', 'Roll back'],
@@ -466,11 +479,18 @@
                 'prune-running': ['dockerPruneRunning', 'A clean-up on the Disk tab is still running; try again when it is done.'],
                 'network-shared': ['dockerNetworkShared', '{containers} run inside this container\'s network and would be cut off. Update them together from your Docker host.'],
                 'auto-remove': ['dockerAutoRemove', 'This container is removed when it stops (--rm), so it cannot be swapped for a new one here.'],
+                'local-only': ['dockerComposeLocalOnly', 'Compose runs only on the local Docker host for now.'],
+                'compose-invalid': ['dockerComposeInvalid', 'docker compose rejected the file, so nothing was started.'],
+                'compose-failed': ['dockerComposeFailed', 'docker compose stopped with an error (exit code {code}).'],
+                'compose-no-labels': ['dockerComposeNoLabelsRun', 'Docker recorded no compose file for this stack, so compose cannot run it.'],
+                'compose-too-large': ['dockerComposeTooLargeSave', 'The file is over 1 MiB, which is more than nextDash saves.'],
+                'compose-backup-failed': ['dockerComposeBackupFailed', 'The backup could not be written, so the file was not changed.'],
+                'compose-stale': ['dockerComposeStale', 'The file changed on disk since it was opened.'],
                 'pinned-by-id': ['dockerPinnedById', 'This container was made from an image id, not a name, so there is nothing to update it to.'],
             };
             const entry = messages[reason];
             const text = entry
-                ? this.t(entry[0], entry[1], { containers: (body?.containers || []).join(', ') })
+                ? this.t(entry[0], entry[1], { containers: (body?.containers || []).join(', '), code: body?.exitCode ?? '?' })
                 : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.'));
             if (!quiet) this.notify(text, 'error');
             await this.view.refreshContainers();
@@ -720,6 +740,7 @@
     }
 
     window.DockerActions = DockerActions;
+    window.DockerUpdateRun = DockerUpdateRun;
 })();
 
 /**
