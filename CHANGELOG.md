@@ -173,6 +173,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### Dashboard
 
+- **fix — The bell rings at most once per five minutes.** Several sources arriving close together, a second tab or a reload could each play the tone; now one tone sounds per five minutes, and the time of the last one is shared between tabs in this browser (`notification-bell.js`).
+- **new — The bell calls for attention more often while something is unread.** The badges pulse every 20 seconds (was 60, and only until the panel had been opened) and the bell shakes every 90 seconds (was every hour), both until the rows are read or answered. The shake is wider and the bell swells while it swings, and the badge pulse is larger (`notification-bell.js`, `notification-bell.css`).
 - **fix — Dropping text that is not a link no longer leaves the dashboard.** Words or a `mailto:` link dragged in from another window were taken at dragover but not at the drop, so Firefox loaded them in the dashboard's tab. The drop is now cancelled whenever it was taken (`dashboard-link-drop.js`).
 - **fix — The bell drops Immich failures once they are cleared.** With status tiles on two pages for one server, the bell kept the largest failed count, so a tile on a page left behind held it after the jobs were cleared. It now follows the newest answer per server (`immich-bell-source.js`, `dashboard-media-tile.js`).
 
