@@ -12407,10 +12407,12 @@
       "step5Explain": "What needs you waits there: alerts, updates, questions and two tips a day. The same key closes it.",
       "step6": "Hide or show the key legend",
       "step6Explain": "The legend under the grid lists the keys that work right now.",
-      "step7": "Watch the feed of the bookmark under the cursor",
-      "step7Explain": "Pick which feeds of the site to follow and how often to check. Its news then shows on the bookmark.",
-      "step8": "Read the news of the feeds you watch",
-      "step8Explain": "Every watched site in one paper, with read and unread per item. With no feed watched yet it says so, and points to help."
+      "step7": "Open What's new",
+      "step7Explain": "The release notes: what changed in this version and the ones you have not read yet. Esc closes it.",
+      "step8": "Watch the feed of the bookmark under the cursor",
+      "step8Explain": "Pick which feeds of the site to follow and how often to check. Its news then shows on the bookmark.",
+      "step9": "Read the news of the feeds you watch",
+      "step9Explain": "Every watched site in one paper, with read and unread per item. With no feed watched yet it says so, and points to help."
     },
     "library": {
       "title": "The Bookmarks view",

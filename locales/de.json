@@ -12407,10 +12407,12 @@
       "step5Explain": "Was dich braucht, wartet dort: Warnungen, Updates, Fragen und zwei Tipps pro Tag. Dieselbe Taste schließt sie.",
       "step6": "Die Tastenlegende ausblenden oder zeigen",
       "step6Explain": "Die Legende unter dem Raster listet die Tasten, die gerade funktionieren.",
-      "step7": "Den Feed des Lesezeichens unter dem Cursor beobachten",
-      "step7Explain": "Wähle, welchen Feeds der Seite du folgst und wie oft geprüft wird. Ihre News erscheinen dann am Lesezeichen.",
-      "step8": "Die News der beobachteten Feeds lesen",
-      "step8Explain": "Jede beobachtete Seite in einer Zeitung, mit gelesen und ungelesen pro Eintrag. Wird noch kein Feed beobachtet, sagt sie es und verweist auf die Hilfe."
+      "step7": "Öffne Was ist neu",
+      "step7Explain": "Die Release Notes: was sich in dieser Version und in den noch ungelesenen geändert hat. Esc schließt sie.",
+      "step8": "Den Feed des Lesezeichens unter dem Cursor beobachten",
+      "step8Explain": "Wähle, welchen Feeds der Seite du folgst und wie oft geprüft wird. Ihre News erscheinen dann am Lesezeichen.",
+      "step9": "Die News der beobachteten Feeds lesen",
+      "step9Explain": "Jede beobachtete Seite in einer Zeitung, mit gelesen und ungelesen pro Eintrag. Wird noch kein Feed beobachtet, sagt sie es und verweist auf die Hilfe."
     },
     "library": {
       "title": "Die Lesezeichen-Ansicht",

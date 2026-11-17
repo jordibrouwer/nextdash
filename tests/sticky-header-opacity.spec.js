@@ -126,8 +126,15 @@ for (const view of ['inbox', 'health', 'config']) {
         expect(moved.scrolled, 'scrolling was not noticed').toBe('true');
         expect(moved.background, 'the band is drawn the same while the page moves under it')
             .not.toBe(top.background);
-        expect(moved.border, 'no line separates the band from what passes under it')
-            .toBeGreaterThan(0);
+        // The Bookmarks view (health) and Config draw no rule under their header, at rest or
+        // scrolled (category-surface.css, config-view.css): it cut the page between the title
+        // and the tabs. The Inbox keeps its line.
+        if (view === 'inbox') {
+            expect(moved.border, 'no line separates the band from what passes under it')
+                .toBeGreaterThan(0);
+        } else {
+            expect(moved.border, 'a rule appeared under a header that has none').toBe(0);
+        }
 
         // And back up: the same band it was.
         await page.evaluate(() => window.scrollTo(0, 0));

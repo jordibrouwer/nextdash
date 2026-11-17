@@ -12407,10 +12407,12 @@
       "step5Explain": "Ce qui vous attend y patiente : alertes, mises à jour, questions et deux astuces par jour. La même touche la ferme.",
       "step6": "Masquer ou afficher la légende des touches",
       "step6Explain": "La légende sous la grille liste les touches qui fonctionnent maintenant.",
-      "step7": "Suivre le flux du favori sous le curseur",
-      "step7Explain": "Choisissez quels flux du site suivre et à quelle fréquence vérifier. Ses actualités s’affichent ensuite sur le favori.",
-      "step8": "Lire les actualités des flux que vous suivez",
-      "step8Explain": "Tous les sites suivis dans un seul journal, avec lu et non lu par élément. Si aucun flux n’est encore suivi, il le dit et renvoie vers l’aide."
+      "step7": "Ouvrir les nouveautés",
+      "step7Explain": "Les notes de version : ce qui a changé dans cette version et dans celles que vous n’avez pas encore lues. Esc les ferme.",
+      "step8": "Suivre le flux du favori sous le curseur",
+      "step8Explain": "Choisissez quels flux du site suivre et à quelle fréquence vérifier. Ses actualités s’affichent ensuite sur le favori.",
+      "step9": "Lire les actualités des flux que vous suivez",
+      "step9Explain": "Tous les sites suivis dans un seul journal, avec lu et non lu par élément. Si aucun flux n’est encore suivi, il le dit et renvoie vers l’aide."
     },
     "library": {
       "title": "La vue Favoris",

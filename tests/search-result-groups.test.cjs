@@ -69,8 +69,14 @@ test('a domain match is elsewhere, not contains, even though it scores 300', () 
     assert.strictEqual(groupOf(results, 'Untitled'), 'elsewhere');
 });
 
-test('a tag match is elsewhere', () => {
+test('a tag typed in full is a best match', () => {
     const fuzzy = loadFuzzy([{ name: 'Untitled', url: 'https://a.test', tags: ['media'] }]);
+    const results = fuzzy.handleFuzzy('media');
+    assert.strictEqual(groupOf(results, 'Untitled'), 'strong');
+});
+
+test('part of a tag is elsewhere', () => {
+    const fuzzy = loadFuzzy([{ name: 'Untitled', url: 'https://a.test', tags: ['mediacenter'] }]);
     const results = fuzzy.handleFuzzy('media');
     assert.strictEqual(groupOf(results, 'Untitled'), 'elsewhere');
 });

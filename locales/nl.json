@@ -12407,10 +12407,12 @@
       "step5Explain": "Wat jou nodig heeft wacht daar: waarschuwingen, updates, vragen en twee tips per dag. Dezelfde toets sluit hem.",
       "step6": "De toetsenlegenda verbergen of tonen",
       "step6Explain": "De legenda onder het raster toont de toetsen die nu werken.",
-      "step7": "De feed van de bookmark onder de cursor volgen",
-      "step7Explain": "Kies welke feeds van de site je volgt en hoe vaak er gecontroleerd wordt. Het nieuws verschijnt dan bij de bookmark.",
-      "step8": "Het nieuws van de feeds die je volgt lezen",
-      "step8Explain": "Elke gevolgde site in één krant, met gelezen en ongelezen per item. Volg je nog geen feed, dan zegt het dat en verwijst het naar de help."
+      "step7": "Open Wat is er nieuw",
+      "step7Explain": "De release notes: wat er veranderd is in deze versie en in de versies die je nog niet las. Esc sluit ze.",
+      "step8": "De feed van de bookmark onder de cursor volgen",
+      "step8Explain": "Kies welke feeds van de site je volgt en hoe vaak er gecontroleerd wordt. Het nieuws verschijnt dan bij de bookmark.",
+      "step9": "Het nieuws van de feeds die je volgt lezen",
+      "step9Explain": "Elke gevolgde site in één krant, met gelezen en ongelezen per item. Volg je nog geen feed, dan zegt het dat en verwijst het naar de help."
     },
     "library": {
       "title": "De weergave Bookmarks",

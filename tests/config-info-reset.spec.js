@@ -94,7 +94,7 @@ test.describe('config info + reset affordances', () => {
         // one of them carries an ℹ now and none of them is listed below.
         const allowed = new Set([
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
-            'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers', 'pushNotifyGlances',
+            'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers', 'pushNotifyReminders', 'pushNotifyGlances',
             'pushNotifyRelease', 'pushNotifySubject', 'pushNotifyNews', 'notifyNewsTarget',
             // The two news-window settings: the group's note says what they do and
             // the options name themselves (15 minutes, Newspaper), so no ℹ.

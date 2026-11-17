@@ -279,7 +279,7 @@ test.describe('a release flagged hideFromModal', () => {
         }
     });
 
-    test('the release constants name v1.30.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.31.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
@@ -289,11 +289,11 @@ test.describe('a release flagged hideFromModal', () => {
          * and were never named here (v1.19.10, v1.19.11 and now every other held-back release are shown); v1.22.4 led, so it was named; v1.22.5 led too and left the token alone; v1.23.0 leads and moves it again.
          *
          * Leaving it behind is the quiet failure this pins: every install that
-         * had already read v1.21.1's notes would simply never be shown v1.30.0.
+         * had already read v1.21.1's notes would simply never be shown v1.31.0.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.11-dashboard-release-v1.30.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.11-dashboard-release-v1.31.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.30.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v379'");
+        // holding its old copy would never learn v1.31.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v380'");
     });
 });

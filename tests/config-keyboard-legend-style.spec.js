@@ -80,10 +80,12 @@ test.describe('config keyboard legends match the inbox/health treatment', () => 
         await openConfig(page, 'structure');
         const list = await page.locator('.config-list-keyboard-legend').evaluate(eval(CHROME));
 
+        // Config's Bookmarks page has no sample legend of its own any more: its legend is
+        // the one at the foot of the page, the same element the other pages carry.
         await openConfig(page, 'bookmarks');
-        await page.waitForSelector('.config-bm-keyboard-legend', { timeout: 10_000 });
-        const bm = await page.locator('.config-bm-keyboard-legend').evaluate(eval(CHROME));
-        const bmKbd = await page.locator('.config-bm-keyboard-legend').evaluate(eval(KBD_CHROME));
+        await page.waitForSelector('.config-form-keyboard-legend', { timeout: 10_000 });
+        const bm = await page.locator('.config-form-keyboard-legend').evaluate(eval(CHROME));
+        const bmKbd = await page.locator('.config-form-keyboard-legend').evaluate(eval(KBD_CHROME));
 
         // Bookmarks was already correct, so it is the reference the other two
         // are pulled towards.

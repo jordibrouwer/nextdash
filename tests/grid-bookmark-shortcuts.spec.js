@@ -66,13 +66,13 @@ const searchOpen = (page) => page.evaluate(
 
 test('with the cursor on a row, a shortcut letter starts a search and does not open the bookmark', async ({ page }) => {
     await openDashboard(page);
-    await seedShortcut(page, 'z');
+    await seedShortcut(page, 'u');
     await watchOpens(page);
 
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('.bookmark-link.keyboard-selected')).toHaveCount(1);
 
-    await page.keyboard.press('z');
+    await page.keyboard.press('u');
 
     await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
     // Guards a check that nothing happens: without the pause the check passes at once.
@@ -83,20 +83,20 @@ test('with the cursor on a row, a shortcut letter starts a search and does not o
 
 test('with nothing selected, typing a shortcut opens the bookmark directly', async ({ page }) => {
     await openDashboard(page);
-    const url = await seedShortcut(page, 'z');
+    const url = await seedShortcut(page, 'u');
     await watchOpens(page);
     await page.evaluate(() => {
         const d = window.dashboardInstance;
         d.settings.shortcutOpenMode = 'instant';
         d.searchComponent.settings = d.settings;
     });
-    await page.keyboard.press('z');
+    await page.keyboard.press('u');
     await expect.poll(() => opened(page), { timeout: 10_000 }).toContain(url);
 });
 
 test('after >, a shortcut shows up in the results and does not open', async ({ page }) => {
     await openDashboard(page);
-    await seedShortcut(page, 'z');
+    await seedShortcut(page, 'u');
     await watchOpens(page);
     await page.evaluate(() => {
         const d = window.dashboardInstance;
@@ -105,7 +105,7 @@ test('after >, a shortcut shows up in the results and does not open', async ({ p
     });
     await page.keyboard.press('>');
     await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
-    await page.keyboard.press('z');
+    await page.keyboard.press('u');
     // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(600);
     expect(await opened(page), 'the shortcut opened the bookmark').toEqual([]);

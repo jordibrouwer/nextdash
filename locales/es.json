@@ -12407,10 +12407,12 @@
       "step5Explain": "Lo que te necesita espera allí: avisos, actualizaciones, preguntas y dos consejos al día. La misma tecla la cierra.",
       "step6": "Ocultar o mostrar la leyenda de teclas",
       "step6Explain": "La leyenda bajo la cuadrícula lista las teclas que funcionan ahora.",
-      "step7": "Vigilar el feed del marcador bajo el cursor",
-      "step7Explain": "Elige qué feeds del sitio seguir y cada cuánto comprobarlos. Sus noticias se muestran entonces en el marcador.",
-      "step8": "Leer las noticias de los feeds que vigilas",
-      "step8Explain": "Todos los sitios vigilados en un solo periódico, con leído y sin leer por elemento. Si aún no vigilas ningún feed, lo dice y lleva a la ayuda."
+      "step7": "Abrir las novedades",
+      "step7Explain": "Las notas de versión: qué cambió en esta versión y en las que aún no has leído. Esc las cierra.",
+      "step8": "Vigilar el feed del marcador bajo el cursor",
+      "step8Explain": "Elige qué feeds del sitio seguir y cada cuánto comprobarlos. Sus noticias se muestran entonces en el marcador.",
+      "step9": "Leer las noticias de los feeds que vigilas",
+      "step9Explain": "Todos los sitios vigilados en un solo periódico, con leído y sin leer por elemento. Si aún no vigilas ningún feed, lo dice y lleva a la ayuda."
     },
     "library": {
       "title": "La vista Marcadores",

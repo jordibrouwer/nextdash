@@ -71,7 +71,7 @@ test('only safe steps carry Try it: nothing that changes a bookmark', async ({ p
     await load(page);
     const unsafe = await page.evaluate(() => {
         const bad = [];
-        const safe = new Set(['ArrowDown', 'j', ']', '/', ':', '>', '!', '#', '*', '=', '@', 'B', 'H', 'K', 'N']);
+        const safe = new Set(['ArrowDown', 'j', ']', '/', ':', '>', '!', '#', '*', '=', '@', 'B', 'H', 'K', 'N', 'V']);
         Object.entries(window.KeyboardPageHelp.HELP).forEach(([id, h]) => h.steps.forEach((s) => {
             if (s.try && s.try.key && !safe.has(s.try.key)) bad.push(`${id}: ${s.keys}`);
         }));

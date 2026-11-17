@@ -955,7 +955,7 @@ test('the panel draws over a list view header, also on a theme without backdrop 
     expect(foreign).toEqual([]);
 });
 
-test('every hour that something is unread the bell shakes and pulses, without a tone', async ({ page }) => {
+test('while something is unread the bell pulses every 20 seconds and shakes every 90, without a tone', async ({ page }) => {
     await page.clock.install();
     await loadDashboard(page);
     await refresh(page);
@@ -963,14 +963,15 @@ test('every hour that something is unread the bell shakes and pulses, without a 
     // Time itself: the load shake ends in real time, not on the fake clock, and the next shake must start from rest.
     await page.waitForTimeout(1200);
     await watchAttention(page);
-    // Nothing changes: no refresh finds more. A minute only pulses.
+    // Nothing changes: no refresh finds more. Past a minute it has pulsed, and not yet shaken.
     await page.clock.runFor(61 * 1000);
-    expect((await seen(page)).shake).toBe(0);
-    // An hour on, something is still unread: it shakes too.
-    await page.clock.runFor(60 * 60 * 1000);
+    const early = await seen(page);
+    expect(early.pulse).toBeGreaterThan(0);
+    expect(early.shake).toBe(0);
+    // Past ninety seconds, something is still unread: it shakes too.
+    await page.clock.runFor(40 * 1000);
     const after = await seen(page);
     expect(after.shake).toBeGreaterThan(0);
-    expect(after.pulse).toBeGreaterThan(0);
     expect(after.sound).toBe(0);
 });
 
