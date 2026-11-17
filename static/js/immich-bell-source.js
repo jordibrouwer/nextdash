@@ -36,19 +36,21 @@
         const held = dash()?._widgetMedia || {};
         return Object.entries(held)
             .filter(([key]) => key.startsWith('immich-status:'))
-            .map(([, entry]) => entry?.result?.immich)
-            .filter((immich) => immich && immich.jobsRead);
+            .filter(([, entry]) => entry?.result?.immich?.jobsRead)
+            .map(([, entry]) => ({ immich: entry.result.immich, at: Number(entry.at) || 0 }));
     }
 
     async function state() {
-        // Two status tiles for one server read the same jobs: the larger count
-        // of each server, not the sum.
+        // Two status tiles for one server read the same jobs: the newest answer
+        // of each server, not the sum. Not the largest either: a tile on a page
+        // left behind keeps its old answer, and failures cleared since must not
+        // stay in the bell on its word.
         const byServer = new Map();
-        answers().filter((immich) => Number(immich.failed) > 0).forEach((immich) => {
-            const known = byServer.get(immich.openUrl);
-            if (!known || Number(immich.failed) > Number(known.failed)) byServer.set(immich.openUrl, immich);
+        answers().forEach((answer) => {
+            const known = byServer.get(answer.immich.openUrl);
+            if (!known || answer.at > known.at) byServer.set(answer.immich.openUrl, answer);
         });
-        const list = [...byServer.values()];
+        const list = [...byServer.values()].map((answer) => answer.immich).filter((immich) => Number(immich.failed) > 0);
         if (!list.length) return null;
         const count = list.reduce((sum, immich) => sum + Number(immich.failed), 0);
         return {

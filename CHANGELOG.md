@@ -165,6 +165,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Dashboard
 
 - **fix — Dropping text that is not a link no longer leaves the dashboard.** Words or a `mailto:` link dragged in from another window were taken at dragover but not at the drop, so Firefox loaded them in the dashboard's tab. The drop is now cancelled whenever it was taken (`dashboard-link-drop.js`).
+- **fix — The bell drops Immich failures once they are cleared.** With status tiles on two pages for one server, the bell kept the largest failed count, so a tile on a page left behind held it after the jobs were cleared. It now follows the newest answer per server (`immich-bell-source.js`, `dashboard-media-tile.js`).
 
 ### Docs
 

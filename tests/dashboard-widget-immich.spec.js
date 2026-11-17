@@ -401,4 +401,33 @@ test.describe('the Immich widgets', () => {
         await page.evaluate(() => { window.dashboardInstance._widgetMedia = {}; window.ImmichBellSource.refresh(); });
         await expect(page.locator('.notification-bell-row[data-bell-id="immich-failed"]')).toHaveCount(0);
     });
+
+    test('the bell follows the newest answer of a server, not the largest', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0 && window.NotificationBell && window.ImmichBellSource, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        const row = page.locator('.notification-bell-row[data-bell-id="immich-failed"]');
+        await page.evaluate(() => {
+            window.DiscoverabilityState.schedulePersist = () => {};
+            const now = Date.now();
+            // A tile on a page left behind still holds three failures; the tile
+            // read since, on this page, found them cleared.
+            window.dashboardInstance._widgetMedia = {
+                'immich-status:2:w_old': { at: now - 60_000, until: now + 60_000, result: { immich: { jobsRead: true, failed: 3, openUrl: 'https://immich.example', queues: [{ name: 'faceDetection', failed: 3 }] } } },
+                'immich-status:1:w_new': { at: now, until: now + 60_000, result: { immich: { jobsRead: true, failed: 0, openUrl: 'https://immich.example', queues: [] } } },
+            };
+            window.ImmichBellSource.refresh();
+        });
+        // The row is drawn only after the bell looked; give it the time a draw takes.
+        await page.waitForTimeout(500);
+        await expect(row).toHaveCount(0);
+        // Newer failures on the same server are shown.
+        await page.evaluate(() => {
+            window.dashboardInstance._widgetMedia['immich-status:1:w_new'] = { at: Date.now(), until: Date.now() + 60_000, result: { immich: { jobsRead: true, failed: 1, openUrl: 'https://immich.example', queues: [{ name: 'thumbnailGeneration', failed: 1 }] } } };
+            window.ImmichBellSource.refresh();
+        });
+        await expect(row).toContainText('An Immich job failed');
+    });
 });
