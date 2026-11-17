@@ -112,6 +112,7 @@ class DockerDrawer {
             defaultSections: DOCKER_SECTIONS_DEFAULT,
             closeLabel: this.t('dockerDrawerClose', 'Close'),
             onClose: () => this._onBaseClosed(),
+            guardClose: (proceed) => this.guardStack(proceed),
             // As in Bookmarks and Inbox: a press beside the panel closes it, a
             // press on another row moves it there, unless Config keeps it open.
             closeOnOutside: (target) => this.view.dash?.settings?.dockerViewCloseOutside !== false
@@ -133,10 +134,23 @@ class DockerDrawer {
         return [100, 200, 500, 1000].includes(n) ? n : 200;
     }
 
+    /**
+     * The stack panel holds an editor with unsaved text: asks once, naming what
+     * is lost, then runs proceed. true = proceed runs later (or never, on
+     * Cancel); false = nothing to ask, the caller carries on itself.
+     */
+    guardStack(proceed) {
+        const c = this._compose;
+        if (!c || !c.hasUnsaved?.() || !this.isOpen()) return false;
+        void c.confirmLeave().then((ok) => { if (ok) proceed(); });
+        return true;
+    }
+
     /** container: a row summary ({name, state, health, …}) or a bare name string. */
     open(container) {
         const name = typeof container === 'string' ? container : container?.name;
         if (!name) return;
+        if (this.guardStack(() => { this._compose?.discard?.(); this.open(container); })) return;
         this._stopResourcePolling();
         this._destroyCharts();
         this._name = name;
@@ -145,7 +159,12 @@ class DockerDrawer {
         this._changesLoaded = false;
         this._healthLoaded = false;
         this._timelineLoaded = false;
-        this._buildSkeleton(typeof container === 'string' ? { name } : container);
+        // A bare name (the stack panel's back link, a :docker command) is looked up in
+        // the list: the skeleton's image and project chips come from the summary.
+        const summary = typeof container === 'string'
+            ? ((this.view.containers || []).find((c) => c.name === name) || { name })
+            : container;
+        this._buildSkeleton(summary);
         void this._loadDetail(name);
     }
 
@@ -349,8 +368,9 @@ class DockerDrawer {
 
     /** The project chip opens the stack's files; the way in when the list is not grouped. */
     _projectChip(esc, project) {
+        const tip = this.t('dockerComposeOpenTip', 'Open the compose stack panel: services, compose file, .env, logs and backups');
         return `<button type="button" class="config-bm-details-chip is-link docker-project-chip" data-slp-action="open-stack"
-            title="${esc(this.t('dockerComposeOpen', 'Show this stack\'s compose file'))}">${esc(project)} ↗</button>`;
+            title="${esc(tip)}" aria-label="${esc(`${this.t('dockerComposeStackLabel', 'Compose stack {name}', { name: project })}. ${tip}`)}">${esc(this.t('dockerComposeStackLabel', 'Compose stack {name}', { name: project }))} ›</button>`;
     }
 
     /**
@@ -360,6 +380,7 @@ class DockerDrawer {
      */
     openStack(project, { members = null, backName = null } = {}) {
         if (!project) return;
+        if (this.guardStack(() => { this._compose?.discard?.(); this.openStack(project, { members, backName }); })) return;
         this._stopResourcePolling();
         this._destroyCharts();
         this._name = null;
