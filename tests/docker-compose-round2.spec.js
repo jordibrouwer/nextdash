@@ -22,6 +22,7 @@ const CONTAINERS = [
   { id: 'd'.repeat(64), shortId: 'd'.repeat(12), name: 'nextdash', image: 'ghcr.io/jordibrouwer/nextdash:latest', tag: 'latest', state: 'running', status: 'Up 1 hour', health: '', created: 1790000000, ports: [], self: true },
 ];
 const overlay = (page) => page.locator('#nextdash-progress-overlay');
+const confirmUp = (page) => page.locator('.modal[role="dialog"]').getByRole('button', { name: /^up$/i }).click();
 
 async function openPanel(page, { tab = 'services', answerOver = {}, mock = {} } = {}) {
   const state = await mockDocker(page, { compose: { media: answer(answerOver) }, containers: CONTAINERS, ...mock });
@@ -60,6 +61,7 @@ test.describe('docker compose panel, round 2', () => {
     const { state, panel } = await openPanel(page, { answerOver: { pendingChange: true } });
     await expect(panel.locator('[data-docker-compose-pending]')).toBeVisible();
     await panel.locator('[data-docker-compose-pending-note] [data-slp-action="up"]').click();
+    await confirmUp(page);
     await expect.poll(() => state.composeRuns || []).toEqual(['up?stream=1']);
     // A second panel on a stack that matches shows no chip.
     await page.reload();
@@ -135,6 +137,7 @@ test.describe('docker compose panel, round 2', () => {
     const ta = await startEdit(panel);
     await ta.fill(RAW.replace('postgres:15', 'postgres:16'));
     await panel.locator('[data-docker-compose-editor-action="apply"]').click();
+    await confirmUp(page);
     await expect(overlay(page).locator('[data-docker-run-item="media"]')).toHaveAttribute('data-state', 'done');
     expect(state.composeSaves).toHaveLength(1);
     expect(state.composeRuns).toEqual(['up?stream=1']);
@@ -142,6 +145,7 @@ test.describe('docker compose panel, round 2', () => {
     await ta.fill(RAW.replace('postgres:15', 'postgres:17'));
     state.composeRun = { up: { fail: true, tail: ['port is already allocated'] } };
     await panel.locator('[data-docker-compose-editor-action="apply"]').click();
+    await confirmUp(page);
     await expect(overlay(page).locator('[data-docker-run-item="media"]')).toHaveAttribute('data-state', 'fail');
     expect(state.composeSaves).toHaveLength(2);
     await expect(panel.locator('[data-docker-compose-result]')).toContainText('The file is saved, but Up failed');
@@ -153,6 +157,7 @@ test.describe('docker compose panel, round 2', () => {
     const ta = await startEdit(panel);
     await ta.fill('services:\n  db: INVALID\n');
     await panel.locator('[data-docker-compose-editor-action="apply"]').click();
+    await confirmUp(page);
     await expect(panel.locator('[data-docker-compose-error]')).toContainText('Line 2');
     expect(state.composeRuns || []).toHaveLength(0);
   });
@@ -177,12 +182,12 @@ test.describe('docker compose panel, round 2', () => {
       { t: '2026-11-17T09:10:03.000Z', s: 'out', m: 'listening on 7878', service: 'radarr', container: 'media-radarr-1' },
     ];
     await panel.locator('[data-slp-tab="logs"]').click();
-    const lines = panel.locator('.docker-compose-lg');
+    const lines = panel.locator('[data-logs-line]');
     await expect(lines).toHaveCount(2);
     await expect(lines.nth(0)).toContainText('jellyfin');
     await expect(lines.nth(1)).toContainText('radarr');
-    await panel.locator('[data-docker-compose-logchip="radarr"]').click();
-    await expect(panel.locator('.docker-compose-lg:visible')).toHaveCount(1);
-    await expect(panel.locator('.docker-compose-lg:visible')).toContainText('listening on 7878');
+    await panel.locator('[data-logs-service="radarr"]').click();
+    await expect(panel.locator('[data-logs-line]:visible')).toHaveCount(1);
+    await expect(panel.locator('[data-logs-line]:visible')).toContainText('listening on 7878');
   });
 });

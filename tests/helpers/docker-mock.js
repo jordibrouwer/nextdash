@@ -25,9 +25,9 @@ function mockDisk() {
   };
 }
 
-async function mockDocker(page, { control = true, socket = true, containers = null, usage = false, history = null, compose = null } = {}) {
+async function mockDocker(page, { control = true, socket = true, containers = null, usage = false, history = null, compose = null, composeStatus = null } = {}) {
   const state = {
-    control, socket, usage, history, compose, calls: [],
+    control, socket, usage, history, compose, composeStatus, calls: [],
     containers: containers || [
       { id: 'a'.repeat(64), shortId: 'a'.repeat(12), name: 'sonarr', image: 'lscr.io/linuxserver/sonarr:latest', tag: 'latest',
         state: 'running', status: 'Up 6 days (healthy)', health: 'healthy', created: 1790000000,
@@ -50,7 +50,9 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     state.calls.push(`${req.method()} ${path}`);
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/status') return json({ socket: state.socket, control: state.control, reason: state.socket ? '' : 'no-docker-socket',
-      self: 'd'.repeat(12), selfName: state.socket ? 'nextdash' : '', writeToken: Boolean(state.writeToken) });
+      self: 'd'.repeat(12), selfName: state.socket ? 'nextdash' : '', writeToken: Boolean(state.writeToken),
+      // state.composeStatus: the `compose` block of the status answer (the folders map and what was refused).
+      compose: state.composeStatus || { map: [], rejected: [] } });
     // A stack's files: state.compose is the answer, per project; the value route answers 'hunter2'.
     // Phase 2 (docs/compose-management-implementation.md 1.2-1.5): raw, PUT, backups, restore, run.
     //   state.composeRaw[id]      raw text; defaults to the file's content
@@ -70,6 +72,7 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
       const what = m[2];
       if (what === 'files/value') {
         state.valueHeaders = req.headers();
+        state.valueQueries = [...(state.valueQueries || []), url.search];
         return json({ file: fileId, key: url.searchParams.get('key'), value: 'hunter2' });
       }
       if (what === 'files/raw') {
@@ -112,6 +115,7 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
       if (what === 'check' && req.method() === 'POST') {
         state.composeChecks = (state.composeChecks || 0) + 1;
         state.composeCheckBodies = [...(state.composeCheckBodies || []), req.postData() ? JSON.parse(req.postData()) : null];
+        if (state.composeCheck && state.composeCheck.status) return json({ reason: state.composeCheck.reason || 'compose-too-large' }, state.composeCheck.status);
         if (state.composeCheck && state.composeCheck.fail) {
           const c = state.composeCheck;
           return json({ reason: 'compose-invalid', exitCode: 15, tail: c.tail || ['yaml: line 3: could not find expected \':\''], line: c.line, column: c.column }, 422);
@@ -119,7 +123,10 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
         return json({ ok: true });
       }
       if (what === 'logs/stream') {
-        const lines = state.composeLogs || [];
+        // Every connection is recorded (its query string says `since` on a reconnect). The first one
+        // gets state.composeLogs, later ones state.composeLogsNext (default: nothing).
+        state.composeLogRequests = [...(state.composeLogRequests || []), url.search];
+        const lines = (state.composeLogRequests.length === 1 ? state.composeLogs : state.composeLogsNext) || [];
         return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n' });
       }
       // up, down, pull, restart, update: the NDJSON the run route streams (dockerProgressEvent), last line the result.

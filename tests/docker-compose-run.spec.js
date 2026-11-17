@@ -12,6 +12,7 @@ const answer = (over = {}) => ({
 });
 const overlay = (page) => page.locator('#nextdash-progress-overlay');
 const modal = (page) => page.locator('.modal[role="dialog"]');
+const confirmUp = (page) => modal(page).getByRole('button', { name: /^up$/i }).click();
 
 async function openPanel(page, opts = {}) {
   const state = await mockDocker(page, { compose: { media: answer(opts.answer) }, ...opts.mock });
@@ -30,12 +31,23 @@ test.describe('docker compose run (Up, Down, Pull)', () => {
   test('Up streams its log lines into the output and ends done', async ({ page }) => {
     const { state, panel } = await openPanel(page);
     await btn(panel, 'up').click();
+    await confirmUp(page);
     const row = overlay(page).locator('[data-docker-run-item="media"]');
     await expect(row.locator('[data-docker-run-log]')).toContainText('up media: first line');
     await expect(row.locator('[data-docker-run-log]')).toContainText('up media: second line');
     await expect(row).toHaveAttribute('data-state', 'done');
     await expect(row.locator('[data-step="validate"]')).toHaveAttribute('data-state', 'done');
     expect(state.composeRuns).toEqual(['up?stream=1']);
+  });
+
+  test('Up asks first: it names the recreated services and the blank variables, and Cancel sends nothing', async ({ page }) => {
+    const { state, panel } = await openPanel(page);
+    await btn(panel, 'up').click();
+    await expect(modal(page)).toContainText('recreates every service whose file or image changed');
+    await expect(modal(page)).toContainText('blank');
+    await modal(page).getByRole('button', { name: /cancel/i }).click();
+    expect(state.composeRuns || []).toHaveLength(0);
+    await expect(btn(panel, 'up')).toBeEnabled();
   });
 
   test('Pull runs without asking and shows its steps', async ({ page }) => {
@@ -57,10 +69,35 @@ test.describe('docker compose run (Up, Down, Pull)', () => {
     expect(state.composeRuns[0]).toBe('down?stream=1');
   });
 
+  test('the stack panel stays open after a run: confirm, the progress overlay and its Close', async ({ page }) => {
+    const { state, panel } = await openPanel(page);
+    await btn(panel, 'down').click();
+    await modal(page).getByRole('button', { name: /^down$/i }).click();
+    await expect.poll(() => (state.composeRuns || []).length).toBe(1);
+    await expect(overlay(page).locator('[data-docker-run-item="media"]')).toHaveAttribute('data-state', 'done');
+    await expect(overlay(page)).toBeHidden();
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText('services');
+  });
+
+  test('the stack panel also stays open after a failed run: a press on the overlay and on its Close', async ({ page }) => {
+    const { state, panel } = await openPanel(page);
+    state.composeRun = { up: { fail: true, tail: ['port is already allocated'] } };
+    await btn(panel, 'up').click();
+    await confirmUp(page);
+    await expect(overlay(page).locator('[data-docker-run-item="media"]')).toHaveAttribute('data-state', 'fail');
+    await overlay(page).locator('[data-docker-run-item="media"]').click();
+    await expect(panel).toBeVisible();
+    await overlay(page).getByRole('button', { name: /close/i }).click();
+    await expect(overlay(page)).toBeHidden();
+    await expect(panel).toBeVisible();
+  });
+
   test('a failed run shows the exit code and the last lines', async ({ page }) => {
     const { state, panel } = await openPanel(page);
     state.composeRun = { up: { fail: true, tail: ['service db: exited with code 1', 'port is already allocated'] } };
     await btn(panel, 'up').click();
+    await confirmUp(page);
     const row = overlay(page).locator('[data-docker-run-item="media"]');
     await expect(row).toHaveAttribute('data-state', 'fail');
     await expect(row).toContainText('exit code 1');

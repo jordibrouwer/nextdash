@@ -59,6 +59,38 @@ test.describe('docker compose files (stack panel)', () => {
     await expect(page.locator('[data-docker-drawer]')).toContainText('jellyfin');
   });
 
+  test('the project link says where it leads, and is still there after Back', async ({ page }) => {
+    await open(page, { compose: { media: answer() } }, 'none');
+    await page.locator('[data-docker-row="jellyfin"]').click();
+    const link = page.locator('[data-docker-drawer] .docker-project-chip');
+    await expect(link).toHaveText(/Compose stack media/);
+    await expect(link).toHaveAttribute('title', /services, compose file, \.env, logs and backups/);
+    await link.click();
+    await expect(page.locator('[data-docker-stack-panel="media"]')).toBeVisible();
+    await page.locator('.docker-compose-back').click();
+    // The chips under the tabs come back with the container: its image and the stack link.
+    await expect(page.locator('[data-docker-drawer] .config-bm-details-chips .config-bm-details-chip').first()).toBeVisible();
+    await expect(link).toHaveText(/Compose stack media/);
+    await link.click();
+    await expect(page.locator('[data-docker-stack-panel="media"]')).toBeVisible();
+  });
+
+  test('the stack panel explains its parts behind an info button, in the view-header modal', async ({ page }) => {
+    await open(page, { compose: { media: answer() } });
+    await page.locator('[data-docker-stack-files="media"]').click();
+    const panel = page.locator('[data-docker-stack-panel="media"]');
+    await panel.locator('[data-docker-compose-info="actions"]').click();
+    const modal = page.locator('.view-explain-modal');
+    await expect(modal).toContainText('helper container');
+    await modal.getByRole('button', { name: /got it/i }).click();
+    await expect(modal).toHaveCount(0);
+    await expect(panel).toBeVisible();
+    for (const [tab, topic] of [['services', 'services'], ['compose', 'files'], ['logs', 'logs'], ['backups', 'backups']]) {
+      await panel.locator(`[data-slp-tab="${tab}"]`).click();
+      await expect(panel.locator(`[data-slp-panel="${tab}"] [data-docker-compose-info="${topic}"], [data-docker-compose-info="${topic}"]:visible`).first()).toBeVisible();
+    }
+  });
+
   test('Reload makes exactly one more files request', async ({ page }) => {
     const state = await open(page, { compose: { media: answer() } });
     await page.locator('[data-docker-stack-files="media"]').click();
@@ -132,9 +164,11 @@ test.describe('docker compose files (stack panel)', () => {
   test('another Docker host says it is not supported yet and asks for nothing', async ({ page }) => {
     const state = await open(page, { compose: { media: answer() } });
     await page.evaluate(() => { window.nextdashDockerHost = 'd_remote'; });
+    // The list's pending-chip scan ran for the local host before this switch; from here nothing is asked.
+    const before = state.calls.length;
     await page.locator('[data-docker-stack-files="media"]').click();
     await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     await expect(page.locator('[data-docker-stack-panel="media"]')).toContainText('Files on another host are not supported yet');
-    expect(state.calls.filter((c) => c.startsWith('GET /compose/'))).toHaveLength(0);
+    expect(state.calls.slice(before).filter((c) => c.startsWith('GET /compose/'))).toHaveLength(0);
   });
 });
