@@ -503,6 +503,12 @@ body:not([data-depth="flat"]) .shortcut-search .search-matches {
     color: var(--text-primary);
 }
 
+/* The calculator's and the tools' answer: read whole, so it wraps. */
+.search-match.calc-entry .search-match-name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 /* Finder entries */
 .search-match.finder-entry .search-match-shortcut {
     color: var(--accent-info, #60a5fa);

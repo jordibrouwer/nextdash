@@ -1454,6 +1454,13 @@ class SearchComponent {
             // shown with the setting off. Returning here dropped the key the
             // overlay had just told the reader to press.
             e.preventDefault();
+            // After a whole IPv4 address (or "mask "), / is the slash of a subnet,
+            // 192.168.1.0/24, which search-tools.js answers. Everywhere else it
+            // stays the mode switch below.
+            if (this.searchActive && /^(?:\d{1,3}(?:\.\d{1,3}){3}|mask )$/i.test(this.currentQuery || '')) {
+                this.addToQuery('/');
+                return;
+            }
             // The prefix leads the query: _hasModeSwitchPrefix reads the first
             // character, and the hint's own Enter action builds `/${query}`.
             // Appending would have put it where nothing reads it -- the key
@@ -3074,11 +3081,12 @@ class SearchComponent {
          */
         this.searchMatches = this._composeScopedSections(this.searchMatches);
 
-        // A sum, a percentage or a unit conversion answers at the top, as the
+        // A sum, a percentage, a unit conversion or one of the small tools
+        // (search-tools.js: a hash, a subnet, a cron line) answers at the top, as the
         // first row; Enter copies the answer. Only for a plain question: the
         // command, finder, global and assistant modes (a leading =) keep their own words.
         const calc = this.currentScope() === 'all' && !String(this.currentQuery || '').startsWith('@')
-            ? window.SearchCalc?.evaluate?.(this.currentQuery) : null;
+            ? (window.SearchCalc?.evaluate?.(this.currentQuery) || window.SearchTools?.evaluate?.(this.currentQuery)) : null;
         if (calc) {
             this.searchMatches = [{
                 type: 'finder',
@@ -3087,6 +3095,14 @@ class SearchComponent {
                 calc: true,
                 action: () => this._copyCalcResult(calc.copy),
             }, ...this.searchMatches];
+        }
+
+        // No answer yet, but the query may be the start of a tool's command: help type
+        // it. A whole word with nothing (or nothing useful) after it goes on top, the
+        // first letters of one go under what the bookmarks found.
+        if (!calc && this.currentScope() === 'all' && !String(this.currentQuery || '').startsWith('@')) {
+            const hints = window.SearchTools?.suggest?.(this.currentQuery) || [];
+            this.searchMatches = [...hints.filter((h) => h.top), ...this.searchMatches, ...hints.filter((h) => !h.top)];
         }
 
         // Always show search interface, even with no matches
@@ -4260,12 +4276,14 @@ class SearchComponent {
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
             const isNoticeRow = match.type === 'whats-new' || match.type === 'keyboard-tour';
             const whatsNewClass = isNoticeRow ? ' whats-new-entry' : '';
+            // An answer (a sum, a subnet, a cron line) is read whole: it wraps instead of ending in dots.
+            const calcClass = match.calc ? ' calc-entry' : '';
             const groupChildClass = (match.groupId || match.type === 'filter-completion' || isNoticeRow) ? ' command-group-child' : '';
             // Set only on rows a command handler explicitly marked as the
             // setting's present value (see _markCurrentRow / _buildOnOffRows
             // in search-commands.js) — most match types never carry it.
             const currentValueClass = match.current === true ? ' is-current-value' : '';
-            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass + currentValueClass;
+            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + calcClass + groupChildClass + currentValueClass;
             matchElement.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
             if (match.type === 'docker-container') {
                 matchElement.setAttribute('data-match-type', 'docker-container');
@@ -4444,17 +4462,25 @@ class SearchComponent {
     _copyCalcResult(text) {
         const done = () => window.dashboardInstance?.showNotification?.(
             this.dashboardLabel('calcCopied', 'Copied {n}').replace('{n}', text), 'success');
+        // A copy that fails says so and shows the text, so it can be taken by hand:
+        // nothing at all reads as a key that does nothing.
+        const failed = () => window.dashboardInstance?.showNotification?.(
+            this.dashboardLabel('calcCopyFailed', "Couldn't copy. Here it is: {n}").replace('{n}', text), 'error', { duration: 12000 });
         const fallback = () => {
             const box = document.createElement('textarea');
             box.value = text;
             box.setAttribute('readonly', '');
             box.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
             document.body.appendChild(box);
+            // Safari copies only what is focused and selected by range.
+            box.focus({ preventScroll: true });
             box.select();
+            box.setSelectionRange(0, text.length);
             let ok = false;
             try { ok = document.execCommand('copy'); } catch (_error) { ok = false; }
             box.remove();
             if (ok) done();
+            else failed();
         };
         if (navigator.clipboard?.writeText) {
             navigator.clipboard.writeText(text).then(done, fallback);
@@ -4462,25 +4488,17 @@ class SearchComponent {
             fallback();
         }
     }
-        // A copy that fails says so and shows the text, so it can be taken by hand:
-        // nothing at all reads as a key that does nothing.
-        const failed = () => window.dashboardInstance?.showNotification?.(
-            this.dashboardLabel('calcCopyFailed', "Couldn't copy. Here it is: {n}").replace('{n}', text), 'error', { duration: 12000 });
 
     selectCurrentMatch({ newTab = false, alt = false } = {}) {
         if (this.rowActions) {
             void this.runRowAction();
             return;
         }
-            // Safari copies only what is focused and selected by range.
-            box.focus({ preventScroll: true });
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
-            box.setSelectionRange(0, text.length);
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (String(selectedMatch?.type || '').startsWith('web-')) {
                 this._activateWebMatch(selectedMatch, {});
                 return;
-            else failed();
             }
             if (selectedMatch.type === 'command-group-header') {
                 if (selectedMatch._emptyStateGroup) {
