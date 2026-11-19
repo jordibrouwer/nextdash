@@ -31,6 +31,7 @@
     "test:edit-mode-model": "node tests/edit-mode-model.test.cjs",
     "test:widget-state": "node tests/widget-state.test.cjs",
     "test:bell-model": "node tests/notification-bell-model.test.cjs",
+    "test:reminder-weekend": "node tests/reminder-weekend-preset.test.cjs",
     "test:net-checks-model": "node tests/net-checks-model.test.cjs",
     "test:net-trend": "node tests/net-trend.test.cjs",
     "test:checkup-model": "node tests/checkup-model.test.cjs",

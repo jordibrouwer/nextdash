@@ -52,8 +52,12 @@ class DashboardReminders {
         if (now.getHours() < 15) {
             list.push({ key: 'evening', label: this.t('dashboard.reminderEvening', 'This evening'), at: at(day(0, 18)) });
         }
+        // The first Saturday or Sunday 09:00 still ahead: on a Saturday morning
+        // that is today, later that day it is Sunday, not a week on.
         const weekend = day(0, 9);
-        do { weekend.setDate(weekend.getDate() + 1); } while (weekend.getDay() !== 6);
+        while ((weekend.getDay() !== 6 && weekend.getDay() !== 0) || weekend.getTime() <= now.getTime()) {
+            weekend.setDate(weekend.getDate() + 1);
+        }
         list.push(
             { key: 'tomorrow', label: this.t('dashboard.reminderTomorrow', 'Tomorrow'), at: at(day(1, 9)) },
             { key: 'weekend', label: this.t('dashboard.reminderWeekend', 'This weekend'), at: at(weekend) },
