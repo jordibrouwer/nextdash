@@ -1,0 +1,18 @@
+/* The title-cleanup fields (dashboard-title-rewrite-field.js), shared by the
+   RSS widget's settings and the per-feed settings of Watch feeds. */
+.trf { display: grid; gap: 0.35rem; min-width: 0; }
+.trf-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.trf label { font-size: var(--text-sm, 0.85rem); color: var(--text-secondary); }
+.trf-input { width: 100%; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-sm, 0.85rem); }
+.trf-hint, .trf-status, .trf-caption { margin: 0; font-size: var(--text-2xs, 0.75rem); color: var(--text-tertiary); }
+.trf-error { margin: 0; font-size: var(--text-sm, 0.85rem); color: var(--status-error, var(--text-secondary)); }
+.trf-input:has(~ .trf-error:not([hidden])) { border-color: var(--status-error, currentColor); }
+.trf-preview {
+    display: grid; gap: 0.2rem; margin-top: 0.25rem; padding-top: 0.5rem;
+    border-top: 1px solid var(--border-secondary); font-size: var(--text-sm, 0.85rem);
+}
+.trf-before { margin: 0; color: var(--text-tertiary); text-decoration: line-through; overflow-wrap: anywhere; }
+.trf-after { margin: 0; color: var(--text-primary); font-weight: 500; overflow-wrap: anywhere; }
+.trf-actions { display: flex; justify-content: flex-start; }
+.fwm-field--wide { grid-column: 1 / -1; }
+.trf [hidden] { display: none; }

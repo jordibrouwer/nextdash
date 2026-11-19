@@ -35,6 +35,9 @@ type watchFeedEntry struct {
 	Paused  bool     `json:"paused"`
 	Include []string `json:"include"`
 	Exclude []string `json:"exclude"`
+	// TitleFind and TitleReplace are the title cleanup, empty when unset.
+	TitleFind    string `json:"titleFind"`
+	TitleReplace string `json:"titleReplace"`
 }
 
 type watchEntry struct {
@@ -149,9 +152,11 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark, cutoff int64) map[st
 			CheckedAt: w.CheckedAt, Failures: w.Failures, Retired: w.Failures >= feedMaxFailures,
 			LastError: w.LastError, LastStatus: w.LastStatus, MovedFrom: w.MovedFrom, MovedAt: w.MovedAt,
 			Muted: w.Muted, Paused: w.Paused, Include: nonNilWords(w.Include), Exclude: nonNilWords(w.Exclude),
+			TitleFind: w.TitleFind, TitleReplace: w.TitleReplace,
 		})
+		rewrite := w.titleRewrite()
 		entry.Muted = w.Muted && (len(entry.Feeds) == 1 || entry.Muted)
-		fresh := watchNewItems(w, read[w.BookmarkKey], cutoff)
+		fresh := rewriteFeedItemTitles(rewrite, watchNewItems(w, read[w.BookmarkKey], cutoff))
 		entry.NewCount += len(fresh)
 		if len(fresh) > 0 {
 			newestItemFirst(fresh)
@@ -177,7 +182,7 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark, cutoff int64) map[st
 		for _, list := range [][]FeedItem{w.Items, w.Recent} {
 			for _, it := range list {
 				if at := itemStamp(it); at > entry.LatestAt {
-					entry.LatestAt, entry.LatestTitle = at, it.Title
+					entry.LatestAt, entry.LatestTitle = at, rewrite.apply(it.Title)
 				}
 			}
 		}
@@ -262,6 +267,12 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 			first[key] = b
 		}
 	}
+	// raw=1 is the settings panel asking for the titles as the feed wrote them,
+	// to try a pattern on.
+	rewriteFor := FeedWatch.titleRewrite
+	if r.URL.Query().Get("raw") == "1" {
+		rewriteFor = func(FeedWatch) *titleRewrite { return nil }
+	}
 	type outItem struct {
 		BookmarkKey  string `json:"bookmarkKey"`
 		BookmarkName string `json:"bookmarkName"`
@@ -280,6 +291,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 		for _, it := range wt.Items {
 			unread := watchItemUnread(it, read[wt.BookmarkKey], cutoff)
 			it.ImageSource = "" // the client gets our copy, never the remote address
+			it = rewriteFeedItemTitle(rewriteFor(wt), it)
 			items = append(items, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, wt.FeedURL, unread, it})
 		}
 	}
@@ -306,6 +318,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 			if isNew[wt.BookmarkKey+"|"+it.ID] {
 				continue
 			}
+			it = rewriteFeedItemTitle(rewriteFor(wt), it)
 			recent = append(recent, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, wt.FeedURL, false, it})
 		}
 	}
@@ -380,6 +393,8 @@ type watchRequest struct {
 	Paused          *bool     `json:"paused"`
 	Include         *[]string `json:"include"`
 	Exclude         *[]string `json:"exclude"`
+	TitleFind       *string   `json:"titleFind"`
+	TitleReplace    *string   `json:"titleReplace"`
 	// Seed, on the watch route, starts a new watch with the feed's ten newest
 	// entries as unread news (baselineWatchOpts). The page asks for it; a caller
 	// that does not (a script, the MCP tools) gets the plain baseline as before.
@@ -721,6 +736,19 @@ func (h *Handlers) UpdateFeedWatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	var titleFind, titleReplace string
+	if body.TitleFind != nil || body.TitleReplace != nil {
+		if body.TitleFind != nil {
+			titleFind = strings.TrimSpace(*body.TitleFind)
+		}
+		if body.TitleReplace != nil {
+			titleReplace = *body.TitleReplace
+		}
+		if _, err := compileTitleRewrite(titleFind, titleReplace); err != nil {
+			writeWatchError(w, http.StatusBadRequest, "bad-title-pattern", nil)
+			return
+		}
+	}
 	key := canonicalBookmarkURLKey(body.BookmarkURL)
 	feedURL := strings.TrimSpace(body.FeedURL)
 
@@ -733,6 +761,12 @@ func (h *Handlers) UpdateFeedWatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	wt := &file.Watches[i]
+	if body.TitleFind != nil {
+		wt.TitleFind = titleFind
+	}
+	if body.TitleReplace != nil {
+		wt.TitleReplace = strings.TrimSpace(titleReplace)
+	}
 	if body.IntervalMinutes != nil {
 		wt.IntervalMinutes = *body.IntervalMinutes
 	}

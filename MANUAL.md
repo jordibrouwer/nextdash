@@ -1541,7 +1541,7 @@ While a panel is open, the grid behind it does not react. `Tab` stays inside the
 ## 8. 🔎 Search, commands and finders
 
 > [!NOTE]
-> **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `!` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
+> **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `!` for finders that search another site. Filters narrow it, the top row answers sums and a few homelab questions, and it can reach other pages and the web.
 
 Search, commands and finders are three modes of one panel, which opens in the middle of the window like every other dashboard modal (only the theme studio stays docked at the side, so the page it previews stays in view). A rail on its left lists the modes; the one you are in is marked, and a mode your words do not reach is dimmed. `Tab` switches between them.
 
@@ -1595,6 +1595,36 @@ With the panel empty, the first group is **Usually now**: up to three bookmarks 
 **Switch search mode** (Behavior → Keyboard & search, or **`Shift + X`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
 
 **A sum answers itself.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row of the list, written as *expression = answer*. **`Enter`** copies the answer and says *Copied*. Sums use `+ - * / ^ %` and brackets. A conversion reads *number unit* `in` (or `to`) *unit* and covers length, weight, volume, time, data sizes, speed and temperature. It is worked out in your browser by a small parser of its own; nothing is sent anywhere and nothing is evaluated as code. Only what is plainly a sum is answered: a word or a shortcut never is, and neither is a phrase, range, phone number or date such as `24/7`, `20-30`, `06-12345678` or `03-11-2026`. A `-` or `/` counts as an operator only with a space on both sides. The answer shows in the ordinary search, not after `:`, `!`, `@` or a leading `=`, and the row is not counted in your search history.
+
+**Small tools answer too.** The same top row answers a few questions a homelab asks all the time. Each has a word or shape of its own, so an ordinary word or number is never taken for one: `pass` is still a bookmark, `pass 20` is a password.
+
+| Type | Answer |
+|------|--------|
+| `192.168.1.0/24` | the range, the number of addresses, the usable hosts and the mask of a subnet (IPv4) |
+| `255.255.255.0`, `mask 22` | the prefix (`/24`), or the netmask of a prefix length |
+| `8096`, `port 22` | the service that uses that port, from a list of about 75 (Jellyfin, Plex, SSH, the Arr apps, Portainer and so on); an unknown number answers nothing |
+| `sha256 text`, `sha1 text`, `md5 text` | the hash of the text |
+| `base64 text`, `base64 decode text` | the text encoded, or decoded when it was base64 of plain text |
+| `urlencode text`, `urldecode text` | the text escaped for a URL, or read back |
+| `uuid` | a random version 4 UUID, new at every press |
+| `pass 20` | a random password of that length (8 to 128) |
+| `timestamp`, `1700000000` | the time now, or the date of a Unix time (ten digits in seconds or thirteen in milliseconds, 2001 to 2100) |
+| `chmod 755`, `rwxr-xr-x` | file permissions both ways, with setuid, setgid and sticky |
+| `cron 0 9 * * 1-5` | what the schedule means and when it runs next; `@daily`, day and month names and ranges work too |
+
+<p align="center"><img src="screenshots/manual.md/08-search-tools.jpg" alt="The search panel with cron 0 9 * * 1-5 typed: the top row reads cron 0 9 * * 1-5 = at 09:00 on Monday to Friday and lists the next three runs, wrapped over two lines" width="860"></p>
+<p align="center"><sub>A cron line explained, with when it runs next.</sub></p>
+
+**`Enter`** copies the answer; for a cron line it copies the schedule itself, ready for a crontab. A password or UUID is made in your browser with `crypto.getRandomValues`, and the hashes are worked out on the page, so nothing is sent anywhere and it works on a plain-http address. A `/` after a whole IPv4 address, or after `mask `, is part of the subnet; anywhere else it still switches search mode.
+
+**The panel helps you type a tool.** The first letters of a tool's word (`cr`, `sha`) put a hint under the bookmarks with its shape. The word followed by a space, or a command that does not work yet, puts working examples on top: pick one with `Enter` or a click and it is filled in, and the answer follows. A whole IPv4 address offers `/24`. A bare word such as `pass` or `port` is only offered under the list, so `Enter` still opens a bookmark of that name.
+
+<p align="center"><img src="screenshots/manual.md/08-search-tools-help.jpg" alt="The search panel with cron and a space typed: three examples (cron 0 9 * * 1-5, cron */15 * * * * and cron @daily), each with the shape cron minute hour day month weekday under it" width="860"></p>
+<p align="center"><sub>Examples to pick from while you type a tool.</sub></p>
+
+**Paste into the panel.** `Cmd + V` or `Ctrl + V` puts the copied text into an open panel, on one line, as if you had typed it, so a cron line or a hash from elsewhere can be explained or checked. With the panel closed, a pasted link still goes to quick-add ([§5.3](#53-paste-a-url-ctrl-v)).
+
+If an answer cannot be put on the clipboard, a message says so and shows the text, so it can be taken by hand.
 
 **Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint. *Search unsorted bookmarks* (on by default) lets search reach links kept on **Bookmarks → Unsorted** ([§11.11](#1111-unsorted-and-promote)); they stay out of every other list.
 
@@ -2868,9 +2898,13 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-config.jpg" alt="Config, Watch feeds: six watched feeds with their newest count, when they were checked, the interval and a Mute button; one feed shows Paused, one Muted and one a word filter, and above the list Open the paper, Check all now and Watch more" width="720"></p>
 <p align="center"><sub>Config → Watch feeds: every feed with its news, interval, mute, pause and word filter.</sub></p>
 
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-title-cleanup.jpg" alt="The settings of one watched feed on Config, Watch feeds: its address, interval, Mute, the two word filters, then Title: remove or find with a suggested pattern, Replace with, the first title before and after, and Save" width="860"></p>
+<p align="center"><sub>A feed's settings: the title cleanup with a suggested pattern.</sub></p>
+
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-stats.jpg" alt="Stats, Watch feeds tab: tiles for feeds watched, items this week, read share, unread now, errors and busiest feed, a bar chart of items per day with a period switch, health this week, a table per feed and a heat map of when a site publishes" width="640"></p>
 <p align="center"><sub>Stats → Watch feeds: what the feeds publish, what you read and how their checks go.</sub></p>
 
+- **Clean up titles.** In a feed's detail on **Config → Watch feeds → Feeds**, **Title: remove or find** and **Replace with** work as in the RSS widget ([§16.2](#162-adding-and-arranging)): a pattern cut out of every title, with **Suggest** and a before and after, and its own **Save**. The list, the news window, the bell and the push and webhook notices show the cleaned titles; the stored items keep the feed's own, and a word filter still matches the original title. A pattern that does not compile is refused.
 - **What the settings do.** On **Config → Watch feeds → Settings**:
   - **Keep the news modal open for** — 15 minutes, 30 (the default), 1 hour or 2 hours; see **When it goes away** below.
   - **Count news as unread for** — 4 hours, 8 hours, 1 day (the default), 2, 3, 7, 14 or 30 days; see **When it goes away** below.
@@ -3540,7 +3574,10 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 **Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows every occurrence that falls within the widget's look-ahead, at the same local time on both sides of a clock change; skipped, extra, moved and cancelled occurrences show as your calendar app set them. A repeat pattern the widget cannot read (such as *the last weekday of the month*) shows only its first occurrence. Changing the address redraws the widgets at once.
 
-**RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus; on a touch screen a tap or a press and hold opens a sheet at the bottom with the summary and the buttons **Open article**, **Open in a new tab** and **Close**. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
+**RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus; on a touch screen a tap or a press and hold opens a sheet at the bottom with the summary and the buttons **Open article**, **Open in a new tab** and **Close**. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile. Some feeds put the same number or tag in front of every title; **Title: remove or find** cuts a pattern out of every title and **Replace with** says what goes in its place (empty removes it). The pattern is a regular expression of at most 200 characters, checked by the server when you save, in the dialect that Go uses, which has no lookahead. **Suggest** reads the feed's own titles and proposes a pattern for a beginning most of them share (an advisory number, brackets) or a ` | Site name` ending, only when at least four in five agree and no title would be emptied; it never applies one by itself. A line under the fields shows the first title the pattern changes, before and after. A pattern that would leave a title empty keeps that title as it was. The titles are changed when they are shown; the feed's own titles stay as they are.
+
+<p align="center"><img src="screenshots/manual.md/16-rss-title-cleanup.jpg" alt="The settings of an RSS widget: Title: remove or find holds a suggested pattern that cuts the advisory number and its severity off the front, Replace with is empty, and under them the first title before and after" width="520"></p>
+<p align="center"><sub>A suggested pattern, and what it does to the first title it changes.</sub></p>
 
 **Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/media-images/`, shared by all the media tiles (up to 200 MB, oldest out first, not in backups; the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§16.5](#165-the-custom-widget)).
 

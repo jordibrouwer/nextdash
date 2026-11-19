@@ -10,7 +10,7 @@
 
 It started because my bookmark bar had become a graveyard, and grew into one place that shows how your whole setup is doing. Run it on any machine or container, open it in your browser, and reach everything from the keyboard.
 
-- **Bookmarks** across pages and categories, with tags, notes, an inbox for links you have not filed yet, smart collections, and search, commands and finders in one panel.
+- **Bookmarks** across pages and categories, with tags, notes, an inbox for links you have not filed yet, smart collections, and search, commands, finders and quick answers (sums, subnets, hashes, cron lines) in one panel.
 - **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Jellystat, Sonarr, Bazarr, Prowlarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.

@@ -70,7 +70,7 @@ widget's own `show`.
 */
 type widgetField struct {
 	Key string
-	// Kind is bool, int, string, url, list or urlList.
+	// Kind is bool, int, string, text, regex, url, list or urlList.
 	Kind string
 	// Min and Max bound an int. Ignored for other kinds.
 	Min, Max int
@@ -326,6 +326,11 @@ var widgetFields = map[WidgetType][]widgetField{
 		 */
 		{Key: "feedUrls", Kind: "urlList", Max: widgetMaxFeedsPerWidget},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A pattern cut out of every title, and what goes in its place. The
+		// pattern is checked on save (kind regex) so a stored one always
+		// compiles; see title_rewrite.go.
+		{Key: "titleFind", Kind: "regex", MaxLen: titleRewriteMaxLen},
+		{Key: "titleReplace", Kind: "text", MaxLen: titleRewriteMaxLen},
 	},
 	WidgetTypeFeedNews: {
 		// How the news is drawn: a row per site, the newest headlines with
@@ -581,6 +586,27 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 				}
 				if value = trimToLength(strings.TrimSpace(value), limit); value != "" &&
 					widgetValueAllowed(value, field.Allowed) {
+					clean[field.Key] = value
+				}
+			}
+		case "regex":
+			// Compiled here so a pattern that cannot run is refused rather than
+			// stored: it would read as configured and change nothing.
+			if value, isString := raw.(string); isString {
+				value = strings.TrimSpace(value)
+				if _, err := compileTitleRewrite(value, ""); err == nil && value != "" {
+					clean[field.Key] = value
+				}
+			}
+		case "text":
+			// Free text with only a cap. Empty is the default for a replacement
+			// -- cut the match -- so an empty value is simply not stored.
+			if value, isString := raw.(string); isString {
+				limit := field.MaxLen
+				if limit <= 0 {
+					limit = widgetMaxIDLen
+				}
+				if value = trimToLength(value, limit); value != "" {
 					clean[field.Key] = value
 				}
 			}
@@ -973,4 +999,10 @@ func widgetClockTime(raw any) string {
 		return ""
 	}
 	return text
+}
+
+// widgetConfigString reads one stored setting as text; anything else is empty.
+func widgetConfigString(raw any) string {
+	value, _ := raw.(string)
+	return value
 }

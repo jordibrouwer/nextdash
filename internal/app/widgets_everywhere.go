@@ -54,6 +54,12 @@ what is stored: only an explicit false switches it off. The skip list belongs to
 the server: a stale list sent back must not forget a page that took its copy
 off, so for a widget that is on in both the two lists are joined. Switching it on
 again from off starts the list over.
+
+The revision is the server's too. A tab that saves a lower one than stored has
+not seen a change another page pushed into this copy; its title and shared
+settings are what it loaded, and sent back they would undo that change on
+every page. The stored ones stay, the page's own keys are taken. A save without
+a revision (an older tab, a payload built by hand) is taken as it is.
 */
 func keepEverywhere(incoming, stored []Widget) []Widget {
 	byID := make(map[string]Widget, len(stored))
@@ -74,8 +80,25 @@ func keepEverywhere(incoming, stored []Widget) []Widget {
 			out[i].EverywhereSkip = slices.Clone(old.EverywhereSkip)
 		case widget.everywhereOn() && old.everywhereOn():
 			out[i].EverywhereSkip = append(slices.Clone(old.EverywhereSkip), widget.EverywhereSkip...)
+			if widget.EverywhereRev > 0 && widget.EverywhereRev < old.EverywhereRev {
+				out[i].Title = old.Title
+				out[i].Config = staleSharedConfig(old.Config, widget.Config)
+			}
 		case widget.everywhereOn():
 			out[i].EverywhereSkip = nil
+		}
+		out[i].EverywhereRev = old.EverywhereRev
+	}
+	return out
+}
+
+// staleSharedConfig is the stored shared settings with the page's own keys
+// taken from what a stale tab sent.
+func staleSharedConfig(stored, sent map[string]any) map[string]any {
+	out := sharedConfig(stored)
+	for _, key := range perPageWidgetKeys {
+		if value, ok := sent[key]; ok {
+			out[key] = value
 		}
 	}
 	return out
@@ -146,6 +169,7 @@ func mirroredInto(source Widget, existing *Widget) Widget {
 		return out
 	}
 	out.VisibleOn = existing.VisibleOn
+	out.EverywhereRev = existing.EverywhereRev
 	for _, key := range perPageWidgetKeys {
 		if value, ok := existing.Config[key]; ok {
 			config[key] = value
@@ -263,6 +287,9 @@ func (fs *FileStore) pushEverywhereLocked(pageID int, source Widget) error {
 				if reflect.DeepEqual(next, widgets[i]) {
 					return widgets, false
 				}
+				// A tab still holding this page's copy at the old revision
+				// now reads as stale.
+				next.EverywhereRev = max(widgets[i].EverywhereRev, source.EverywhereRev) + 1
 				out := slices.Clone(widgets)
 				out[i] = next
 				return out, true

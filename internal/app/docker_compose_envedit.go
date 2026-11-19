@@ -58,6 +58,12 @@ func composeMergeMaskedEnv(original, posted []byte) ([]byte, *composeMergeError)
 	origLines := strings.Split(string(original), "\n")
 	byName := map[string][]composeEnvEntry{}
 	for _, e := range parseComposeEnv(original) {
+		// An empty value is never masked (redactEnvFile), so it is never what
+		// a mask in the view stands for: counted here, DB= before DB=secret
+		// would hand the secret's mask the empty line.
+		if e.value == "" && e.extraLines == 0 {
+			continue
+		}
 		byName[e.name] = append(byName[e.name], e)
 	}
 	used := map[string]int{}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -184,17 +185,26 @@ func composeServiceDefs(p composeProject, staged *composeStage) map[string]compo
 				d.image = composeInterpolate(im.Value, env)
 			}
 			if pn := yamlMapGet(svc, "ports"); pn != nil && pn.Kind == yaml.SequenceNode {
-				d.ports = nil
-				for _, it := range pn.Content {
-					if hp := composeHostPortOf(it, env); hp != "" {
-						d.ports = append(d.ports, hp)
-					}
-				}
+				d.ports = composeMergePorts(d.ports, pn, env)
 			}
 			defs[name] = d
 		}
 	}
 	return defs
+}
+
+// composeMergePorts adds a later file's ports: to those of the files before it,
+// as compose merges them; a list tagged !override replaces them instead.
+func composeMergePorts(have []string, pn *yaml.Node, env map[string]string) []string {
+	if pn.Tag == "!override" {
+		have = nil
+	}
+	for _, it := range pn.Content {
+		if hp := composeHostPortOf(it, env); hp != "" && !slices.Contains(have, hp) {
+			have = append(have, hp)
+		}
+	}
+	return have
 }
 
 // composeHostPortOf is the published host port of one ports: entry, or "".

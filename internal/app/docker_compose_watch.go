@@ -329,6 +329,10 @@ func (h *Handlers) composeWatchRun(ctx context.Context, api *dockerAPI, project,
 	start := time.Now()
 	failed := 0
 	first := true
+	// The restart counts are taken from the first poll that answers, not the
+	// first poll: one that fails would leave them out, and every restart a
+	// container ever had would then read as a restart loop.
+	haveBase := false
 	for {
 		if !first {
 			select {
@@ -358,11 +362,12 @@ func (h *Handlers) composeWatchRun(ctx context.Context, api *dockerAPI, project,
 			continue
 		}
 		failed = 0
-		if first {
+		first = false
+		if !haveBase {
 			for _, s := range svcs {
 				base.restarts[s.Container] = s.Restarts
 			}
-			first = false
+			haveBase = true
 		}
 		elapsed := time.Since(start)
 		window := baseWindow

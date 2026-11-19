@@ -328,6 +328,16 @@ func (h *Handlers) RSSWidgetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Per widget and after the cache: two tiles on one feed may clean its
+	// titles differently, and the cache holds what the feed said.
+	rewrite, _ := compileTitleRewrite(
+		widgetConfigString(found.Config["titleFind"]),
+		widgetConfigString(found.Config["titleReplace"]))
+	// raw=1 is the settings panel asking for the titles as the feed wrote them,
+	// to try a pattern on; reading never needs it hidden.
+	if r.URL.Query().Get("raw") == "1" {
+		rewrite = nil
+	}
 	merged := make([]RSSItem, 0, rssMaxItems)
 	lastError := ""
 	for _, url := range urls {
@@ -339,7 +349,10 @@ func (h *Handlers) RSSWidgetHandler(w http.ResponseWriter, r *http.Request) {
 			lastError = errText
 			continue
 		}
-		merged = append(merged, items...)
+		for _, item := range items {
+			item.Title = rewrite.apply(item.Title)
+			merged = append(merged, item)
+		}
 	}
 
 	result := RSSWidgetResult{FetchedAt: now.UnixMilli()}

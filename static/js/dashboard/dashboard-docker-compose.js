@@ -1439,10 +1439,26 @@
             return off + Math.min(Math.max((column || 1) - 1, 0), lines[at].length);
         }
 
+        /*
+         * Answers whether the file on disk now holds the editor's text. A save
+         * already on its way (Ctrl+S, then Apply at once) is waited for rather
+         * than read as a failure; what was typed since is saved after it.
+         */
         async _save() {
             const ed = this._editing;
+            if (!ed || !this._editor()) return false;
+            while (ed.saving) {
+                if (!(await ed.savingNow) || this._editing !== ed || !this._editor()) return false;
+            }
+            if (!ed.dirty) return true;
+            ed.savingNow = this._saveNow();
+            return ed.savingNow;
+        }
+
+        async _saveNow() {
+            const ed = this._editing;
             const ta = this._editor();
-            if (!ed || !ta || ed.saving || !ed.dirty) return;
+            if (!ed || !ta) return false;
             const content = ta.value;
             ed.saving = true;
             this._dirtyCheck();
@@ -1461,7 +1477,7 @@
                 res = null;
             }
             ed.saving = false;
-            if (!this._editor()) return;
+            if (!this._editor()) return false;
             if (status) status.textContent = '';
             const show = (sel, text) => { const n = this._$(sel); if (n) { n.textContent = text; n.hidden = !text; } return n; };
             if (res && res.ok) {

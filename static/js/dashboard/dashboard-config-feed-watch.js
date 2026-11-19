@@ -157,6 +157,15 @@
                         t('config.feedWatchIncludeHint', 'At least one of these words in the title or summary. Empty: every item.'))}
                     ${wordEditor('exclude', feed.exclude, t('config.feedWatchExclude', 'Never items with'),
                         t('config.feedWatchExcludeHint', 'An item with any of these words is skipped.'))}
+                    <div class="fwm-field fwm-field--wide">
+                        ${global.TitleRewriteField.render({
+                            id: `fwd-title-${r.id}`,
+                            find: feed.titleFind || '',
+                            replace: feed.titleReplace || '',
+                            source: `data-trf-key="${esc(r.key)}" data-trf-feed="${esc(feed.feedUrl)}"`,
+                            save: true,
+                        })}
+                    </div>
                 </div>
                 <div class="fwm-detail-actions">
                     <button type="button" class="config-btn config-btn--small" data-fwd-pause aria-pressed="${feed.paused === true ? 'true' : 'false'}">${esc(feed.paused === true ? t('config.feedWatchResume', 'Resume') : t('config.feedWatchPause', 'Pause'))}</button>
@@ -311,7 +320,9 @@
 
         const notify = (message, type = 'success') => this.dash.showNotification?.(message, type, { duration: 3000 });
         const failed = (result) => {
-            const text = result?.error === 'bad-filter'
+            const text = result?.error === 'bad-title-pattern'
+                ? t('config.titleRewriteBad', "That isn't a valid pattern. Check the brackets.")
+                : result?.error === 'bad-filter'
                 ? t('config.feedWatchBadFilter', 'Up to {max} words of at most {len} letters each').replace('{max}', String(MAX_WORDS)).replace('{len}', String(MAX_WORD_LENGTH))
                 : t('dashboard.feedWatchFailed', 'Could not save the watch');
             notify(text, 'error');
@@ -572,6 +583,15 @@
                 const kind = remove.closest('[data-fwd-words]')?.getAttribute('data-fwd-words');
                 const word = remove.getAttribute('data-fwd-word-remove');
                 if (kind) await update(r, { [kind]: words(r.feed[kind]).filter((w) => w !== word) });
+                return;
+            }
+            const saveTitle = target.closest('[data-trf-save]');
+            if (saveTitle) {
+                const block = saveTitle.closest('[data-trf]');
+                await update(r, {
+                    titleFind: block.querySelector('[data-trf-find]').value.trim(),
+                    titleReplace: block.querySelector('[data-trf-replace]').value.trim(),
+                });
                 return;
             }
             if (target.closest('[data-fwl-edit]')) { await picker()?.open({ bookmark: r.bookmark }); paint(); return; }
