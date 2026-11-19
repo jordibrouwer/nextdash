@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.32.0 — 19 November 2026](#v1320--19-november-2026)
 - [v1.31.0 — 17 November 2026](#v1310--17-november-2026)
 - [v1.30.0 — 16 November 2026](#v1300--16-november-2026)
 - [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
@@ -147,6 +148,38 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+## v1.32.0 — 19 November 2026
+
+Small homelab tools in the search panel, clean titles for the RSS widget and Watch feeds, and a round of Compose, widget and reminder fixes.
+
+### Search
+
+- **new — Small homelab tools in the search panel.** Typing one of these answers as the first row, and Enter copies the answer: `sha256 <text>`, `sha1 <text>` and `md5 <text>` (written out in the page, since `crypto.subtle` is missing on a plain-http address and has no md5); `base64 <text>` and `base64 decode <text>`; `urlencode <text>` and `urldecode <text>`; `uuid`; `pass <length>` (8 to 128, drawn without bias from `crypto.getRandomValues`); `timestamp` for the time now and a lone Unix time of ten digits (seconds) or thirteen (milliseconds) between 2001 and 2100; `192.168.1.0/24` for the range, the number of addresses, the usable hosts and the mask; `255.255.255.0` for `/24` and `mask 22` for the mask; `8096` or `port 8096` for the service that uses a port (74 are known); `chmod 755` and `rwxr-xr-x`, with setuid, setgid and sticky; and `cron 0 9 * * 1-5`, which says what the schedule means and when it runs next, with `@daily` and day and month names. Enter copies the schedule itself, not the sentence about it. Each has its own word or shape, so a plain word, a name or an unknown number is never an answer (`pass` is still a bookmark; `pass 20` is a password). The calculator keeps priority when both fit (`search-tools.js`, `search.js`).
+- **new — Suggestions while you type a tool's command.** The first letters of a tool's word (`cr`, `sha`) put a hint under the bookmarks with the shape of the command. The word and a space, or a command that does not work yet, puts working examples on top; picking one fills it in and the answer follows. A whole IPv4 address offers `/24`. A bare word such as `pass` or `port` is only offered under the list, so Enter still opens a bookmark of that name (`SearchTools.suggest`).
+- **fix — A `/` after an IPv4 address is a slash.** In the open panel `/` is the mode switch and put itself in front of the query, so `192.168.1.0/24` could not be typed. After a whole IPv4 address, or `mask `, it is now a character; everywhere else it still switches (`search.js`).
+- **new — Paste into the open search panel.** On a computer the panel is not a text field, so Cmd+V had nowhere to land. A paste while it is open now goes in as if typed, on one line and with only the characters typing takes. With the panel closed a pasted link still goes to quick-add (`search.js`).
+- **fix — A failed copy says so, and long answers wrap.** If an answer cannot be put on the clipboard, a message shows the text so it can be taken by hand, where it used to do nothing. The fallback focuses and selects its field the way Safari wants. A row with an answer wraps over lines instead of ending in dots (`search.js`, `search.css`).
+
+### Widgets
+
+- **new — Clean up titles in the RSS widget.** Config → Widgets → RSS gets *Title: remove or find* and *Replace with* (empty removes), with a before and after of the feed's first title that changes. *Suggest* reads the feed's own titles and proposes a pattern for a shared beginning (an advisory number, brackets) or a shared ` | Site name` ending, and only when most titles agree and none would be emptied; it never applies one by itself. The pattern is an RE2 regular expression of at most 200 characters, checked by the server on save and in the preview, since a lookahead that a browser accepts is refused here. A pattern that would empty a title keeps the original (`title_rewrite.go`, `widgets_rss.go`, `dashboard-title-rewrite-field.js`).
+- **fix — A tab with an old copy of an every-page widget no longer undoes a change from another page.** Each copy now carries a revision (`everywhereRev`) that the server bumps on every change pushed into it. A save with a lower one keeps the stored title and shared settings and takes only the page's own keys; a save without a revision is taken as it is (`widgets_everywhere.go`, `dashboard-config-widgets.js`).
+
+### Watch feeds
+
+- **new — Clean up titles per feed.** The settings of a watched feed get the same *Title: remove or find* and *Replace with*, with *Suggest* and a preview, and its own Save. The titles are changed when shown (the list, new items, the bell, push and webhook notices); the stored items keep the feed's own titles, and the include and exclude word filters still match the original. A pattern that does not compile is refused with `bad-title-pattern` (`feed_watch.go`, `feed_watch_handlers.go`, `POST /api/title-rewrite`).
+
+### Bookmarks
+
+- **fix — *This weekend* means the coming Saturday or Sunday.** The reminder preset took the next Saturday, so on a Saturday morning it skipped to a week later and on a Sunday it did not use the day it was. It is now the first Saturday or Sunday at 09:00 still ahead (`dashboard-reminders.js`).
+
+### Containers
+
+- **fix — Apply waits for a save already running.** Ctrl+S followed at once by Apply read the save in flight as a failure. Apply now waits for it, then saves whatever was typed since (`dashboard-docker-compose.js`).
+- **fix — An override file adds ports instead of replacing them.** The compose preview now merges the `ports:` of a later file into those before it, as compose does; only a list tagged `!override` replaces them (`docker_compose_preview.go`).
+- **fix — An empty env value does not take a secret's mask.** `DB=` above `DB=secret` handed the secret's mask to the empty line when an edited env file was merged back. An empty value is never masked, so it never stands for a mask (`docker_compose_envedit.go`).
+- **fix — The restart baseline comes from the first poll that answers.** A failed first poll left the restart counts out, so every restart a container ever had read as a restart loop (`docker_compose_watch.go`).
 
 ## v1.31.0 — 17 November 2026
 
