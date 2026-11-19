@@ -365,6 +365,23 @@ class SearchComponent {
             this.handleKeyPress(e);
         });
 
+        // Paste into the open panel. The panel is not a text field on a computer (the
+        // keys are read one by one), so Cmd+V had nowhere to land and a copied cron line,
+        // hash or subnet could not be put in to be explained. The text goes in as if typed:
+        // one line, and only the characters typing would take. The mobile field handles its
+        // own pastes.
+        document.addEventListener('paste', (e) => {
+            if (!this.searchActive) return;
+            if (e.target?.closest?.('input, textarea, [contenteditable]:not([contenteditable="false"])')) return;
+            const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            const line = text.replace(/\s*[\r\n]+\s*/g, ' ').trim();
+            if (!line) return;
+            e.preventDefault();
+            for (const ch of line.slice(0, 500)) {
+                if (SearchComponent.isTypedChar(ch)) this.addToQuery(ch);
+            }
+        });
+
         // Close search when clicking outside
         document.addEventListener('click', (e) => {
             const searchElement = document.getElementById('shortcut-search');
