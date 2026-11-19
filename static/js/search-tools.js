@@ -21,6 +21,31 @@
     const MAX_QUERY = 500;
     const SEP = ' · ';
 
+    /*
+     * The words around an answer come from the language files (searchTools.*),
+     * with the English kept here as the fallback; the commands themselves (cron,
+     * sha256, mask) and the answers stay the same in every language. Day and
+     * month names come from Intl, in the language of the dashboard.
+     */
+    const language = () => global.dashboardInstance?.language;
+    function tr(key, fallback, vars = {}) {
+        let text = fallback;
+        const lang = language();
+        if (lang?.t) {
+            const value = lang.t(`searchTools.${key}`);
+            if (value && value !== `searchTools.${key}`) text = value;
+        }
+        Object.entries(vars).forEach(([name, value]) => { text = text.split(`{${name}}`).join(String(value)); });
+        return text;
+    }
+    const localeTag = () => language()?.currentLanguage || 'en';
+    function nameOf(options, date) {
+        try { return new Intl.DateTimeFormat(localeTag(), options).format(date); } catch (_error) { return new Intl.DateTimeFormat('en', options).format(date); }
+    }
+    // January 2001 starts on a Monday, so day n of it is weekday n (0 is Sunday: day 7).
+    const dayName = (n) => nameOf({ weekday: 'long', timeZone: 'UTC' }, new Date(Date.UTC(2001, 0, n === 0 ? 7 : n)));
+    const monthName = (n) => nameOf({ month: 'long', timeZone: 'UTC' }, new Date(Date.UTC(2001, n - 1, 1)));
+
     /* ---------- hashes ---------- */
 
     const utf8 = (text) => new TextEncoder().encode(text);
@@ -245,7 +270,7 @@
         const date = new Date(ms);
         return {
             expression: m[1],
-            result: `${date.toISOString()}${SEP}${localStamp(date)} local`,
+            result: `${date.toISOString()}${SEP}${tr('local', '{time} local', { time: localStamp(date) })}`,
             copy: date.toISOString(),
         };
     }
@@ -274,9 +299,12 @@
         const last = (network | (~mask >>> 0)) >>> 0;
         const count = 2 ** (32 - prefix);
         const usable = prefix >= 31 ? count : count - 2;
-        const parts = [`${dotted(network)} – ${dotted(last)}`, `${count.toLocaleString('en')} ${count === 1 ? 'address' : 'addresses'}`];
-        if (prefix < 31) parts.push(`${usable.toLocaleString('en')} usable`);
-        parts.push(`mask ${dotted(mask)}`);
+        const parts = [
+            `${dotted(network)} – ${dotted(last)}`,
+            count === 1 ? tr('address', '1 address') : tr('addresses', '{n} addresses', { n: count.toLocaleString(localeTag()) }),
+        ];
+        if (prefix < 31) parts.push(tr('usable', '{n} usable', { n: usable.toLocaleString(localeTag()) }));
+        parts.push(tr('mask', 'mask {mask}', { mask: dotted(mask) }));
         return { expression: query, result: parts.join(SEP), copy: `${dotted(network)} – ${dotted(last)}` };
     }
 
@@ -354,8 +382,6 @@
 
     const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const CRON_SHORT = {
         '@hourly': '0 * * * *', '@daily': '0 0 * * *', '@midnight': '0 0 * * *',
         '@weekly': '0 0 * * 0', '@monthly': '0 0 1 * *', '@yearly': '0 0 1 1 *', '@annually': '0 0 1 1 *',
@@ -394,32 +420,30 @@
 
     const isAll = (text) => text === '*';
 
-    function describeCron(f, weekdays) {
-        const [min, hour, dom, month, dow] = f;
+    function describeCron(f, weekdays, months) {
+        const [min, hour, dom, , dow] = f;
         let when;
-        if (isAll(min) && isAll(hour)) when = 'every minute';
-        else if (/^\*\/\d+$/.test(min) && isAll(hour)) when = `every ${min.slice(2)} minutes`;
-        else if (/^\d+$/.test(min) && isAll(hour)) when = `at minute ${min} of every hour`;
-        else if (/^\d+$/.test(min) && /^\d+$/.test(hour)) when = `at ${pad2(hour)}:${pad2(min)}`;
-        else if (/^\d+$/.test(min) && /^\*\/\d+$/.test(hour)) when = `at minute ${min}, every ${hour.slice(2)} hours`;
-        else when = `minute ${min}, hour ${hour}`;
+        // "Every minute" and "every 5 minutes" already say every day.
+        const everyForm = isAll(hour) && (isAll(min) || /^\*\/\d+$/.test(min));
+        if (isAll(min) && isAll(hour)) when = tr('cronEveryMinute', 'every minute');
+        else if (/^\*\/\d+$/.test(min) && isAll(hour)) when = tr('cronEveryMinutes', 'every {n} minutes', { n: min.slice(2) });
+        else if (/^\d+$/.test(min) && isAll(hour)) when = tr('cronMinuteOfHour', 'at minute {min} of every hour', { min });
+        else if (/^\d+$/.test(min) && /^\d+$/.test(hour)) when = tr('cronAt', 'at {time}', { time: `${pad2(hour)}:${pad2(min)}` });
+        else if (/^\d+$/.test(min) && /^\*\/\d+$/.test(hour)) when = tr('cronMinuteEveryHours', 'at minute {min}, every {n} hours', { min, n: hour.slice(2) });
+        else when = tr('cronMinuteHour', 'minute {min}, hour {hour}', { min, hour });
         const days = [];
-        if (!isAll(dom)) days.push(`on day ${dom} of the month`);
+        if (!isAll(dom)) days.push(tr('cronDayOfMonth', 'on day {day} of the month', { day: dom }));
         if (!isAll(dow)) {
             // A run of three days or more reads as a range: Monday to Friday.
             const sorted = [...weekdays].sort((a, b) => a - b);
-            const names = sorted.map((n) => DAY_NAMES[n]);
+            const names = sorted.map(dayName);
             const run = sorted.length >= 3 && sorted[sorted.length - 1] - sorted[0] === sorted.length - 1;
-            days.push(`on ${run ? `${names[0]} to ${names[names.length - 1]}` : names.join(', ')}`);
+            days.push(tr('cronOnDays', 'on {days}', {
+                days: run ? tr('cronRange', '{from} to {to}', { from: names[0], to: names[names.length - 1] }) : names.join(', '),
+            }));
         }
-        if (!isAll(month)) {
-            days.push(`in ${month.split(',').map((x) => {
-                const n = MONTHS.indexOf(x.toLowerCase());
-                if (n >= 0) return MONTH_NAMES[n];
-                return /^\d+$/.test(x) ? (MONTH_NAMES[Number(x) - 1] || x) : x;
-            }).join(', ')}`);
-        }
-        return `${when}${days.length ? ` ${days.join(' ')}` : (/^every/.test(when) ? '' : ' every day')}`;
+        if (!isAll(f[3])) days.push(tr('cronInMonths', 'in {months}', { months: [...months].sort((a, b) => a - b).map(monthName).join(', ') }));
+        return `${when}${days.length ? ` ${days.join(' ')}` : (everyForm ? '' : ` ${tr('cronEveryDay', 'every day')}`)}`;
     }
 
     function cron(query, now = new Date()) {
@@ -452,10 +476,10 @@
             t.setMinutes(t.getMinutes() + 1);
         }
         if (!runs.length) return null;
-        const text = describeCron(fields, sets[4]);
+        const text = describeCron(fields, sets[4], sets[3]);
         // What Enter copies is the schedule itself, the five fields to paste into a crontab
         // (an @daily comes out as 0 0 * * *), not the sentence that explains it.
-        return { expression: `cron ${expression}`, result: `${text}${SEP}next ${runs.join(', ')}`, copy: fields.join(' ') };
+        return { expression: `cron ${expression}`, result: `${text}${SEP}${tr('next', 'next {times}', { times: runs.join(', ') })}`, copy: fields.join(' ') };
     }
 
     /* ---------- the one entry ---------- */
@@ -492,18 +516,20 @@
         { key: 'sha256', usage: 'sha256 <text>', meta: 'Hash a text', complete: 'sha256 ', examples: ['sha256 hello'] },
         { key: 'sha1', usage: 'sha1 <text>', meta: 'Hash a text', complete: 'sha1 ', examples: ['sha1 hello'] },
         { key: 'md5', usage: 'md5 <text>', meta: 'Hash a text', complete: 'md5 ', examples: ['md5 hello'] },
-        { key: 'base64', usage: 'base64 <text> or base64 decode <text>', meta: 'Encode or decode base64', complete: 'base64 ', examples: ['base64 hello', 'base64 decode aGVsbG8='] },
+        { key: 'base64', usage: 'base64 <text> | base64 decode <text>', meta: 'Encode or decode base64', complete: 'base64 ', examples: ['base64 hello', 'base64 decode aGVsbG8='] },
         { key: 'urlencode', usage: 'urlencode <text>', meta: 'Escape a text for a URL', complete: 'urlencode ', examples: ['urlencode a b&c'] },
         { key: 'urldecode', usage: 'urldecode <text>', meta: 'Read an escaped URL text', complete: 'urldecode ', examples: ['urldecode a%20b%26c'] },
         { key: 'uuid', usage: 'uuid', meta: 'Make a random UUID', complete: 'uuid', examples: ['uuid'] },
         { key: 'pass', usage: 'pass <length>', meta: 'Make a password', complete: 'pass 20', examples: ['pass 20', 'pass 32'] },
-        { key: 'timestamp', usage: 'timestamp, or a Unix time', meta: 'The time now, or what a Unix time is', complete: 'timestamp', examples: ['timestamp', '1700000000'] },
+        { key: 'timestamp', usage: 'timestamp | <unix time>', meta: 'The time now, or what a Unix time is', complete: 'timestamp', examples: ['timestamp', '1700000000'] },
         { key: 'mask', usage: 'mask <bits>', meta: 'The netmask of a prefix length', complete: 'mask 24', examples: ['mask 24', '255.255.255.0'] },
-        { key: 'chmod', usage: 'chmod <755> or chmod <rwxr-xr-x>', meta: 'File permissions, both ways', complete: 'chmod 755', examples: ['chmod 755', 'rwxr-xr-x'] },
+        { key: 'chmod', usage: 'chmod <755> | chmod <rwxr-xr-x>', meta: 'File permissions, both ways', complete: 'chmod 755', examples: ['chmod 755', 'rwxr-xr-x'] },
         { key: 'port', usage: 'port <number>', meta: 'Which service uses a port', complete: 'port 8096', examples: ['port 8096', 'port 22'] },
     ];
 
     const row = (shortcut, name, completion, meta, top) => ({ shortcut, name, completion, meta, top, type: 'finder-completion' });
+    // The line saying what a tool does is the one translated part of a hint.
+    const aboutOf = (g) => tr(`hint${g.key[0].toUpperCase()}${g.key.slice(1)}`, g.meta);
 
     /**
      * Rows that help type a tool's command, or [] when the query already
@@ -518,7 +544,7 @@
         const text = raw.trim();
         // A whole address, and the slash it may be waiting for.
         if (parseIPv4(text) !== null) {
-            return [row('CIDR', `${text}/24`, `${text}/24`, 'Range and size of the subnet, add the bits after the /', true)];
+            return [row('CIDR', `${text}/24`, `${text}/24`, tr('hintCidr', 'Range and size of the subnet, add the bits after the /'), true)];
         }
         const m = /^([a-z0-9]+)(\s[\s\S]*)?$/i.exec(raw.replace(/^\s+/, ''));
         if (!m) return [];
@@ -531,15 +557,15 @@
                 // does it go on top; a bare "pass" or "port" may as well be a bookmark, and
                 // Enter must still open that.
                 const spaced = raw !== raw.trim();
-                return exact.examples.filter((e) => e !== raw.trim()).map((e) => row(exact.key, e, e, exact.meta, spaced));
+                return exact.examples.filter((e) => e !== raw.trim()).map((e) => row(exact.key, e, e, aboutOf(exact), spaced));
             }
             return GUIDE.filter((g) => g.key.startsWith(word)).slice(0, 3)
-                .map((g) => row(g.key, g.usage, g.complete, g.meta, false));
+                .map((g) => row(g.key, g.usage, g.complete, aboutOf(g), false));
         }
         const guide = GUIDE.find((g) => g.key === word);
         if (!guide) return [];
         // The word and something that does not work yet: show the shape and examples.
-        const meta = m[2].trim() ? `Not quite. The shape is ${guide.usage}` : guide.usage;
+        const meta = m[2].trim() ? tr('notQuite', 'Not quite. The shape is {usage}', { usage: guide.usage }) : guide.usage;
         return guide.examples.map((e) => row(guide.key, e, e, meta, true));
     }
 

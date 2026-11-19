@@ -195,4 +195,20 @@ test.describe('search tools', () => {
         await page.keyboard.type('sha');
         await expect(page.locator('#search-matches')).toContainText('sha256 <text>');
     });
+
+    test('the words around an answer follow the language, the answer does not', async ({ page }) => {
+        await openDashboard(page);
+        const nl = await page.evaluate(async () => {
+            await window.dashboardInstance.language.loadTranslations('nl');
+            const r = (q) => window.SearchTools.evaluate(q)?.result ?? null;
+            return {
+                cron: r('cron 0 9 * * 1-5'), cidr: r('192.168.1.0/24'),
+                hint: window.SearchTools.suggest('sha').map((h) => h.meta)[0],
+            };
+        });
+        // Day names come from Intl in the dashboard's language; the commands stay as typed.
+        expect(nl.cron).toMatch(/^om 09:00 op maandag tot vrijdag · volgende \d{4}-/);
+        expect(nl.cidr).toBe('192.168.1.0 – 192.168.1.255 · 256 adressen · 254 bruikbaar · masker 255.255.255.0');
+        expect(nl.hint).toBe('Een tekst hashen');
+    });
 });
