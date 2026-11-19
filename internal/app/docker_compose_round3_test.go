@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ---- fixture ----
@@ -287,6 +289,23 @@ func TestComposePreviewSortsTheDryRun(t *testing.T) {
 		t.Errorf("Cmd = %v", cmd)
 	}
 	composeAllHelpersRemoved(t, f)
+}
+
+func TestComposeMergePortsAddsAnOverrideFile(t *testing.T) {
+	list := func(src string) *yaml.Node {
+		var doc yaml.Node
+		if err := yaml.Unmarshal([]byte(src), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc.Content[0]
+	}
+	base := composeMergePorts(nil, list(`["8080:80"]`), nil)
+	if got := composeMergePorts(base, list(`["8443:443", "8080:80"]`), nil); !reflect.DeepEqual(got, []string{"8080", "8443"}) {
+		t.Errorf("merged = %v", got)
+	}
+	if got := composeMergePorts(base, list(`!override ["8443:443"]`), nil); !reflect.DeepEqual(got, []string{"8443"}) {
+		t.Errorf("!override = %v", got)
+	}
 }
 
 func TestComposePreviewWithRemoveOrphans(t *testing.T) {
