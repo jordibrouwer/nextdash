@@ -97,6 +97,7 @@
                 'tipFindFilters',
                 'tipFindHashTags',
                 'tipFindSums',
+                'tipFindTools',
                 'tipFindShortcutMode',
                 'tipFindGridShortcut',
                 'tipFindAllPages',
