@@ -181,6 +181,14 @@ Small homelab tools in the search panel, clean titles for the RSS widget and Wat
 - **fix — An empty env value does not take a secret's mask.** `DB=` above `DB=secret` handed the secret's mask to the empty line when an edited env file was merged back. An empty value is never masked, so it never stands for a mask (`docker_compose_envedit.go`).
 - **fix — The restart baseline comes from the first poll that answers.** A failed first poll left the restart counts out, so every restart a container ever had read as a restart loop (`docker_compose_watch.go`).
 
+### Docs
+
+- **docs — Translations for the new strings.** The search tools' words come from a new `searchTools` group (32 keys: the words around an answer, the cron sentence in pieces, and one line per tool for the hints), the title cleanup from `config.titleRewrite*` (14 keys) and the failed copy from `dashboard.calcCopyFailed`, in all six languages. Day and month names in a cron answer come from `Intl` in the dashboard's language, so they need no keys; the commands and the answers themselves stay as typed (`search-tools.js`).
+- **docs — Config → Help.** The search paragraph gets *Small tools* (the commands, what Enter copies, the hints, paste), the RSS widget's entry names the title settings, and the Watch feeds paragraph adds cutting a pattern out of a feed's titles, in six languages. A new tip, `tipFindTools`, sits in the Finding group after the sums.
+- **docs — Config → Overview and About → News & features.** Two entries with `since: "v1.32.0"` in `overview-features.json`: *Search answers subnets, hashes and cron lines* and *Clean titles in the RSS widget and Watch feeds*, ten keys each language.
+- **docs — What's new.** `v1.32.0.json`, first in `index.json`, with both tokens in `whats-new-stub.js` (`DASHBOARD_RELEASE`, `whats-new-v381`) and the constants spec moved.
+- **docs — `README.md` and `MANUAL.md`.** The README's Bookmarks line names the quick answers. The manual's search chapter gains the table of tools, the hints and paste; the RSS widget's paragraph and §14.4 describe the title settings. Four new screenshots from `tests/manual-screenshots-v1-32.spec.js` (added to `scripts/run-manual-shots.sh`): `08-search-tools.jpg`, `08-search-tools-help.jpg`, `16-rss-title-cleanup.jpg` and `12-watch-feeds-title-cleanup.jpg`.
+
 ## v1.31.0 — 17 November 2026
 
 Compose stacks you can read, edit, check and run from the Containers view, reminders on bookmarks, related links on the preview card, and a bell that rings less and shakes more.
