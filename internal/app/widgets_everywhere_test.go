@@ -91,6 +91,44 @@ func TestEverywhereChangeKeepsWhatEachPageDecidedForItself(t *testing.T) {
 	}
 }
 
+// A tab that loaded page 1 before page 3 changed the widget sends the old
+// title back with its next save; that must not undo the change everywhere.
+func TestEverywhereStaleTabDoesNotUndoAChangeFromAnotherPage(t *testing.T) {
+	fs := everywhereStore(t)
+	id := putEverywhere(t, fs)
+	stale, _ := widgetOn(t, fs, 1, id)
+
+	copy, _ := widgetOn(t, fs, 3, id)
+	copy.Title = "Edited on three"
+	copy.Config["text"] = "eggs"
+	if err := fs.SavePageBlocks(3, []Widget{copy}, nil); err != nil {
+		t.Fatalf("save page 3: %v", err)
+	}
+	stale.Config["columns"] = 2
+	if err := fs.SavePageBlocks(1, []Widget{stale}, nil); err != nil {
+		t.Fatalf("save page 1: %v", err)
+	}
+	for _, pageID := range []int{1, 2, 3} {
+		got, _ := widgetOn(t, fs, pageID, id)
+		if got.Title != "Edited on three" || got.Config["text"] != "eggs" {
+			t.Errorf("page %d = %+v: the stale tab undid the change", pageID, got)
+		}
+	}
+	if one, _ := widgetOn(t, fs, 1, id); one.Config["columns"] == nil {
+		t.Errorf("page 1 lost its own width: %+v", one)
+	}
+
+	// Once reloaded, the same tab's edit travels again.
+	fresh, _ := widgetOn(t, fs, 1, id)
+	fresh.Title = "Fresh"
+	if err := fs.SavePageBlocks(1, []Widget{fresh}, nil); err != nil {
+		t.Fatalf("save page 1: %v", err)
+	}
+	if two, _ := widgetOn(t, fs, 2, id); two.Title != "Fresh" {
+		t.Errorf("page 2 = %+v: a fresh edit did not travel", two)
+	}
+}
+
 // A save that only changes something else must not overwrite a copy edited a
 // moment ago from another page.
 func TestEverywhereSaveWithoutSharedChangeLeavesCopiesAlone(t *testing.T) {

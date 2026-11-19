@@ -3390,7 +3390,7 @@
             this._widgetBlocks = (blocks.order || []).map((id) => {
                 const widget = widgetById.get(id);
                 if (widget) {
-                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {}, visibleOn: widget.visibleOn, everywhere: widget.everywhere, everywhereSkip: widget.everywhereSkip };
+                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {}, visibleOn: widget.visibleOn, everywhere: widget.everywhere, everywhereSkip: widget.everywhereSkip, everywhereRev: widget.everywhereRev };
                 }
                 const category = categoryById.get(String(id));
                 return { id, isWidget: false, name: category?.name || id };
@@ -3444,6 +3444,7 @@
                         visibleOn: widget.visibleOn,
                         everywhere: widget.everywhere,
                         everywhereSkip: widget.everywhereSkip,
+                        everywhereRev: widget.everywhereRev,
                         pageId: Number(page.id),
                         pageName: page.name || String(page.id),
                     });
@@ -3903,7 +3904,7 @@
         return {
             widgets: blocks.filter((b) => b.isWidget).map((b) => ({
                 id: b.id, type: b.type, title: b.title, config: b.config || {}, ...(b.visibleOn ? { visibleOn: b.visibleOn } : {}),
-                ...(b.everywhere ? { everywhere: true, ...(b.everywhereSkip?.length ? { everywhereSkip: b.everywhereSkip } : {}) } : {}),
+                ...(b.everywhere ? { everywhere: true, ...(b.everywhereSkip?.length ? { everywhereSkip: b.everywhereSkip } : {}), ...(b.everywhereRev ? { everywhereRev: b.everywhereRev } : {}) } : {}),
             })),
             order: blocks.map((b) => b.id),
         };
@@ -3934,7 +3935,7 @@
             const widgets = (current.widgets || []).map((widget) => {
                 const block = edited.get(widget.id);
                 if (!block) return widget;
-                return { id: widget.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}), ...(widget.everywhere ? { everywhere: true, ...(widget.everywhereSkip?.length ? { everywhereSkip: widget.everywhereSkip } : {}) } : {}) };
+                return { id: widget.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}), ...(widget.everywhere ? { everywhere: true, ...(widget.everywhereSkip?.length ? { everywhereSkip: widget.everywhereSkip } : {}), ...(block.everywhereRev ? { everywhereRev: block.everywhereRev } : {}) } : {}) };
             });
 
             const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
@@ -3988,9 +3989,31 @@
     async saveWidgetRow(index) {
         const block = (this._widgetBlocks || [])[index];
         if (this.isAllPagesView()) {
-            return block?.pageId ? this.savePageWidgets(block.pageId) : false;
+            if (!block?.pageId || !await this.savePageWidgets(block.pageId)) return false;
+            if (block.everywhere) this.followEverywhereCopies(block);
+            return true;
         }
         return this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+    },
+
+    /*
+     * The all-pages view holds the other pages' copies of an "on every page"
+     * widget as they were loaded. The server just carried this save to them
+     * and raised their revision, so a later edit of one of those rows would
+     * read as coming from a stale tab and be dropped. They take the shared
+     * state and lose the revision: sent without one, the save is taken as is.
+     */
+    followEverywhereCopies(source) {
+        const own = ['enabled', 'columns'];
+        this._widgetBlocks = (this._widgetBlocks || []).map((b) => {
+            if (b === source || !b.isWidget || b.id !== source.id || !b.everywhere) return b;
+            const config = { ...(source.config || {}) };
+            own.forEach((key) => {
+                if (b.config && key in b.config) config[key] = b.config[key];
+                else delete config[key];
+            });
+            return { ...b, title: source.title, config, everywhereRev: undefined };
+        });
     },
 
     async saveWidgetBlocks(payload) {

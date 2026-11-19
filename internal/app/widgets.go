@@ -313,6 +313,9 @@ type Widget struct {
 	// one that says false: only false switches it off.
 	Everywhere     *bool `json:"everywhere,omitempty"`
 	EverywhereSkip []int `json:"everywhereSkip,omitempty"`
+	// EverywhereRev counts the changes another page pushed into this copy. A
+	// save that sends a lower one comes from a tab that has not seen them.
+	EverywhereRev int `json:"everywhereRev,omitempty"`
 	// Config is whatever that type understands. Never nil after normalisation,
 	// so a renderer can read it without checking.
 	Config map[string]any `json:"config,omitempty"`
@@ -374,10 +377,14 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	if widget.Type == WidgetTypeStack || !widget.everywhereOn() {
 		widget.Everywhere = nil
 		widget.EverywhereSkip = nil
+		widget.EverywhereRev = 0
 	} else {
 		on := true
 		widget.Everywhere = &on
 		widget.EverywhereSkip = normalizeEverywhereSkip(widget.EverywhereSkip)
+		// From 1, so that a tab holding a copy never pushed into still sends
+		// one: 0 is what a save without a revision reads as.
+		widget.EverywhereRev = max(widget.EverywhereRev, 1)
 	}
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
