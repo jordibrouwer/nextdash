@@ -1,0 +1,34 @@
+# Builds the dev branch on the Unraid server and (re)starts the nextdash-dev
+# container. Runs on the repo-scoped runner "unraid-dev" (label dev-deploy),
+# which mounts the host Docker socket. Production (container NextDash) is not touched.
+name: Deploy dev
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: dev-deploy
+    steps:
+      - name: Fetch source
+        run: |
+          apk add --no-cache git >/dev/null
+          git clone --quiet --depth 1 --branch dev \
+            "http://x-access-token:${{ forgejo.token }}@192.168.0.164:3322/${{ forgejo.repository }}.git" src
+          echo "SHA=$(git -C src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: |
+          docker build --build-arg VERSION="dev-${SHA}" --build-arg COMMIT="${SHA}" -t nextdash:dev src
+
+      - name: Restart nextdash-dev
+        run: |
+          docker rm -f nextdash-dev >/dev/null 2>&1 || true
+          docker run -d --name nextdash-dev --restart unless-stopped \
+            -p 8104:8080 \
+            -v /mnt/user/appdata/nextdash-dev:/app/data \
+            -e PORT=8080 -e TZ=Europe/Amsterdam \
+            -e DISABLE_TELEMETRY=true -e DISABLE_UPDATE_CHECK=true \
+            nextdash:dev
+          sleep 5
+          docker ps --filter name=nextdash-dev --format '{{.Names}} {{.Status}}'

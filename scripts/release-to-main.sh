@@ -239,6 +239,7 @@ PRUNE_DIRS=(
   tests
   scripts
   .github/workflows
+  .forgejo
   docs
   site
   test-results
