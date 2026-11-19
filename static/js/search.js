@@ -4448,7 +4448,7 @@ class SearchComponent {
             const box = document.createElement('textarea');
             box.value = text;
             box.setAttribute('readonly', '');
-            box.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+            box.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
             document.body.appendChild(box);
             box.select();
             let ok = false;
@@ -4462,17 +4462,25 @@ class SearchComponent {
             fallback();
         }
     }
+        // A copy that fails says so and shows the text, so it can be taken by hand:
+        // nothing at all reads as a key that does nothing.
+        const failed = () => window.dashboardInstance?.showNotification?.(
+            this.dashboardLabel('calcCopyFailed', "Couldn't copy. Here it is: {n}").replace('{n}', text), 'error', { duration: 12000 });
 
     selectCurrentMatch({ newTab = false, alt = false } = {}) {
         if (this.rowActions) {
             void this.runRowAction();
             return;
         }
+            // Safari copies only what is focused and selected by range.
+            box.focus({ preventScroll: true });
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
+            box.setSelectionRange(0, text.length);
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (String(selectedMatch?.type || '').startsWith('web-')) {
                 this._activateWebMatch(selectedMatch, {});
                 return;
+            else failed();
             }
             if (selectedMatch.type === 'command-group-header') {
                 if (selectedMatch._emptyStateGroup) {
