@@ -18578,6 +18578,9 @@ class DashboardConfig {
               label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetRssRowsHint',
                      'What is past this count folds into a “more” row that opens in place.'] },
+            // One block for two stored keys, titleFind and titleReplace.
+            { key: 'titleFind', kind: 'titleRewrite', replaceKey: 'titleReplace',
+              label: ['config.titleRewriteFind', 'Title: remove or find'] },
         ],
         'feed-news': [
             { key: 'layout', kind: 'choice', label: ['config.widgetFeedNewsLayout', 'Layout'],

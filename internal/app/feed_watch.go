@@ -54,6 +54,14 @@ type FeedWatch struct {
 	Include []string `json:"include,omitempty"`
 	Exclude []string `json:"exclude,omitempty"`
 
+	// TitleFind and TitleReplace clean the titles this feed shows: a pattern
+	// cut out of each, and what goes in its place (title_rewrite.go). The
+	// stored items keep the feed's own titles; the rewrite is applied when
+	// they are served, so changing it needs no new fetch, and the word filter
+	// above keeps matching what the feed actually said.
+	TitleFind    string `json:"titleFind,omitempty"`
+	TitleReplace string `json:"titleReplace,omitempty"`
+
 	ETag         string `json:"etag,omitempty"`
 	LastModified string `json:"lastModified,omitempty"`
 
@@ -182,6 +190,32 @@ func feedItemPlainText(it FeedItem) string {
 		}
 	}
 	return strings.ToLower(b.String())
+}
+
+// titleRewrite is this watch's compiled title cleanup; nil when it has none or
+// the stored pattern no longer compiles.
+func (w FeedWatch) titleRewrite() *titleRewrite {
+	rewrite, _ := compileTitleRewrite(w.TitleFind, w.TitleReplace)
+	return rewrite
+}
+
+// rewriteFeedItemTitle returns the item with its title cleaned. It never
+// writes through to the stored item.
+func rewriteFeedItemTitle(rewrite *titleRewrite, it FeedItem) FeedItem {
+	it.Title = rewrite.apply(it.Title)
+	return it
+}
+
+// rewriteFeedItemTitles is rewriteFeedItemTitle over a list, as a copy.
+func rewriteFeedItemTitles(rewrite *titleRewrite, items []FeedItem) []FeedItem {
+	if rewrite == nil || len(items) == 0 {
+		return items
+	}
+	out := make([]FeedItem, len(items))
+	for i, it := range items {
+		out[i] = rewriteFeedItemTitle(rewrite, it)
+	}
+	return out
 }
 
 // watchKeeps applies a watch's word filter to one entry.

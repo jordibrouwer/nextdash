@@ -71,7 +71,7 @@ test.describe('the RSS widget', () => {
         });
         expect(state.offered).toContain('rss');
         expect(state.renderer).toBe('function');
-        expect(state.settings).toEqual(['feedUrls', 'rows']);
+        expect(state.settings).toEqual(['feedUrls', 'rows', 'titleFind']);
     });
 
     test('with no feeds set, it says where to add one', async ({ page }) => {

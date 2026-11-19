@@ -2627,6 +2627,22 @@
                     ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
                 </div>`;
         }
+        if (field.kind === 'titleRewrite') {
+            const block = (this._widgetBlocks || [])[index];
+            const page = this.isAllPagesView() ? Number(block?.pageId) : Number(this._widgetPageId);
+            const attrs = (key) => `data-widget-setting="${esc(key)}" data-widget-index="${index}" data-widget-kind="text"`;
+            return `
+                <div class="config-widget-field">
+                    ${window.TitleRewriteField.render({
+                        id,
+                        find: config[field.key] ?? '',
+                        replace: config[field.replaceKey] ?? '',
+                        findAttrs: attrs(field.key),
+                        replaceAttrs: attrs(field.replaceKey),
+                        source: `data-trf-widget="${esc(widget?.id ?? '')}" data-trf-page="${esc(page)}"`,
+                    })}
+                </div>`;
+        }
         if (field.kind === 'text') {
             const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
             return `

@@ -391,7 +391,7 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 		}
 		polled = append(polled, polledWatch{from: w.FeedURL, w: next})
 		if len(found) > 0 {
-			news = append(news, watchNews{BookmarkKey: w.BookmarkKey, FeedURL: next.FeedURL, Items: found, Muted: w.Muted})
+			news = append(news, watchNews{BookmarkKey: w.BookmarkKey, FeedURL: next.FeedURL, Items: rewriteFeedItemTitles(w.titleRewrite(), found), Muted: w.Muted})
 		}
 	}
 
@@ -425,6 +425,7 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 				p.w.IntervalMinutes = file.Watches[i].IntervalMinutes
 				p.w.Muted, p.w.Paused = file.Watches[i].Muted, file.Watches[i].Paused
 				p.w.Include, p.w.Exclude = file.Watches[i].Include, file.Watches[i].Exclude
+				p.w.TitleFind, p.w.TitleReplace = file.Watches[i].TitleFind, file.Watches[i].TitleReplace
 				if p.w.FeedURL != p.from {
 					// It moved. When the same bookmark already watches the new
 					// address, that watch stays and takes over what this one had seen.

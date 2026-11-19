@@ -297,3 +297,52 @@ func TestWatchSettingsRoutesNeedTokenAndDemoDenies(t *testing.T) {
 		}
 	}
 }
+
+func TestWatchTitleRewriteShownButNotStored(t *testing.T) {
+	e := newSettingsEnv(t)
+	if rec := e.patch(t, `,"titleFind":" ^Release ","include":["release"]`); rec.Code != 200 {
+		t.Fatalf("patch: %d %s", rec.Code, rec.Body.String())
+	}
+	if got := e.feedEntry(t).TitleFind; got != "^Release" {
+		t.Fatalf("titleFind = %q, want it trimmed", got)
+	}
+	e.srv.set(rssEntry("a", "A", 1), rssEntry("c", "Release 2.0", 3))
+	e.poll()
+	// The word filter still matched the title the feed wrote ("Release"), and
+	// the list shows the cleaned one.
+	entry := e.list(t)[e.key]
+	if entry.NewCount != 1 || entry.Newest == nil || entry.Newest.Title != "2.0" {
+		t.Fatalf("newCount=%d newest=%+v, want the cleaned title 2.0", entry.NewCount, entry.Newest)
+	}
+	if entry.LatestTitle != "2.0" {
+		t.Errorf("latestTitle = %q", entry.LatestTitle)
+	}
+	for _, wt := range readFeedWatchFile().Watches {
+		for _, it := range wt.Items {
+			if it.ID == "c" && it.Title != "Release 2.0" {
+				t.Fatalf("stored title = %q, want the feed's own", it.Title)
+			}
+		}
+	}
+	rec := httptest.NewRecorder()
+	e.h.GetFeedWatchItems(rec, httptest.NewRequest(http.MethodGet, "/api/feeds/watch/items", nil))
+	if !strings.Contains(rec.Body.String(), `"title":"2.0"`) {
+		t.Fatalf("items = %s", rec.Body.String())
+	}
+	// Cleared again, the title is the feed's.
+	e.patch(t, `,"titleFind":""`)
+	if got := e.list(t)[e.key].Newest.Title; got != "Release 2.0" {
+		t.Fatalf("after clearing the pattern title = %q", got)
+	}
+}
+
+func TestWatchTitleRewriteRefusesABadPattern(t *testing.T) {
+	e := newSettingsEnv(t)
+	rec := e.patch(t, `,"titleFind":"^Release ["`)
+	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "bad-title-pattern") {
+		t.Fatalf("= %d %s, want 400 bad-title-pattern", rec.Code, rec.Body.String())
+	}
+	if got := e.feedEntry(t).TitleFind; got != "" {
+		t.Fatalf("a refused pattern was stored: %q", got)
+	}
+}

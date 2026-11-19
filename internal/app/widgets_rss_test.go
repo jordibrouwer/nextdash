@@ -185,3 +185,20 @@ func TestRSSFeedListReadsBothShapes(t *testing.T) {
 		}
 	}
 }
+
+func TestRSSWidgetConfigChecksTheTitlePattern(t *testing.T) {
+	good := sanitizeWidgetConfig(WidgetTypeRSS, map[string]any{
+		"titleFind":    ` ^NCSC-\d+ `,
+		"titleReplace": "x ",
+	})
+	if good["titleFind"] != `^NCSC-\d+` {
+		t.Errorf("titleFind = %#v", good["titleFind"])
+	}
+	if good["titleReplace"] != "x" {
+		t.Errorf("titleReplace = %#v", good["titleReplace"])
+	}
+	bad := sanitizeWidgetConfig(WidgetTypeRSS, map[string]any{"titleFind": `^NCSC-\d+ \[[^\]`})
+	if _, kept := bad["titleFind"]; kept {
+		t.Error("a pattern that does not compile was stored")
+	}
+}

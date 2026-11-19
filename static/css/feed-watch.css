@@ -571,7 +571,8 @@ body.no-animations .feed-news-bar > i { transition: none; }
 @media (pointer: coarse), (max-width: 720px) {
     /* Fingers: every control in the view is at least 44 px tall. */
     .fwm-toolbar .config-btn, .fwm-bulk .config-btn, .fwm-select, .fwm-tick,
-    .feed-watch-list-actions .config-btn, .fwm-detail .config-btn, .feed-watch-list-main, .fwm-word-input, .fwm-chip-x {
+    .feed-watch-list-actions .config-btn, .fwm-detail .config-btn, .feed-watch-list-main, .fwm-word-input, .fwm-chip-x,
+    .fwm-detail .trf-input {
         min-height: 44px;
     }
     .fwm-tick, .fwm-chip-x { min-width: 44px; }
