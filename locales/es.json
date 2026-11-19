@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "Sugerido a partir de los últimos títulos. Revisa la vista previa.",
     "titleRewriteSave": "Guardar",
     "titleRewriteTooLong": "Ese patrón es demasiado largo.",
-    "titleRewriteBad": "Ese no es un patrón válido. Revisa los paréntesis."
+    "titleRewriteBad": "Ese no es un patrón válido. Revisa los paréntesis.",
+    "overviewNewFeatureSearchToolsTitle": "La búsqueda responde a subredes, hashes y líneas cron",
+    "overviewNewFeatureSearchToolsWhat": "Calcular una subred, generar un hash o saber qué significa una línea cron obligaba a abrir una web.",
+    "overviewNewFeatureSearchToolsHow": "Escribe 192.168.1.0/24, sha256 con un texto, base64, uuid, pass 20, un puerto como 8096, chmod 755 o cron 0 9 * * 1-5 en la búsqueda y la respuesta es la primera fila. Intro la copia. Nada sale de tu navegador.",
+    "overviewNewFeatureSearchToolsEnable": "Abre la búsqueda y escribe uno.",
+    "overviewNewFeatureSearchToolsCta": "Abrir el panel →",
+    "overviewNewFeatureTitleCleanupTitle": "Títulos limpios en el widget RSS y en Watch feeds",
+    "overviewNewFeatureTitleCleanupWhat": "Algunos feeds ponen el mismo número o etiqueta delante de cada título, y la parte que merece leerse empieza después.",
+    "overviewNewFeatureTitleCleanupHow": "Indica un patrón que se recorta de cada título y qué poner en su lugar. Sugerir propone uno a partir de los títulos del propio feed, y un antes y después muestra el efecto.",
+    "overviewNewFeatureTitleCleanupEnable": "Config → Widgets → widget RSS, o Config → Watch feeds → ajustes de un feed.",
+    "overviewNewFeatureTitleCleanupCta": "Abrir widgets →"
   },
   "colors": {
     "title": "personalización del tema",

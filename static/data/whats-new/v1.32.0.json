@@ -1,0 +1,71 @@
+{
+  "tag": "v1.32.0",
+  "date": "19 November 2026",
+  "releasedAt": "2026-11-19",
+  "modalLead": "<strong>Small tools in the search panel</strong> for subnets, hashes, cron lines and more, <strong>clean titles</strong> for the RSS widget and Watch feeds, and a round of fixes.",
+  "sections": [
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Small tools in the search panel.</strong> Type a subnet like 192.168.1.0/24, a cron line like cron 0 9 * * 1-5, sha256 or md5 and a text, base64, uuid, pass 20, a port such as 8096, a Unix time or chmod 755, and the answer is the top row. Enter copies it. A cron line says what it means and when it runs next."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help while you type a tool.</strong> The first letters of a tool's word, like cr or sha, show how to use it, and a word with a space after it shows working examples you can pick."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Paste into the search panel.</strong> Cmd+V or Ctrl+V now puts the copied text into an open panel."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A copy that fails says so</strong> and shows the text, instead of doing nothing."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Clean up titles in the RSS widget.</strong> In the widget's settings, cut a pattern out of every title, such as an advisory number in front. Suggest proposes one from the feed's own titles, and a before and after shows the effect.",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A widget on every page</strong> keeps a change made on another page, even when a tab still shows the old one."
+        }
+      ]
+    },
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Clean up titles per feed.</strong> Each watched feed can cut a pattern out of its titles, with Suggest and a preview. The list, the bell and the notices show the cleaned titles."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>This weekend</strong> in a reminder means the coming Saturday or Sunday, also on a Saturday morning."
+        }
+      ]
+    },
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Compose fixes.</strong> Apply waits for a save that is still running, an override file adds ports to a stack instead of replacing them, and a restart that was missed no longer shows as a restart loop."
+        }
+      ]
+    }
+  ]
+}

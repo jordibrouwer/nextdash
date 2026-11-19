@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "Aus den neuesten Titeln vorgeschlagen. Prüfe die Vorschau.",
     "titleRewriteSave": "Speichern",
     "titleRewriteTooLong": "Dieses Muster ist zu lang.",
-    "titleRewriteBad": "Das ist kein gültiges Muster. Prüfe die Klammern."
+    "titleRewriteBad": "Das ist kein gültiges Muster. Prüfe die Klammern.",
+    "overviewNewFeatureSearchToolsTitle": "Die Suche beantwortet Subnetze, Hashes und Cron-Zeilen",
+    "overviewNewFeatureSearchToolsWhat": "Ein Subnetz berechnen, einen Hash bilden oder klären, was eine Cron-Zeile bedeutet, hieß eine Website öffnen.",
+    "overviewNewFeatureSearchToolsHow": "Gib 192.168.1.0/24, sha256 mit einem Text, base64, uuid, pass 20, einen Port wie 8096, chmod 755 oder cron 0 9 * * 1-5 in die Suche ein, und die Antwort steht in der obersten Zeile. Enter kopiert sie. Nichts verlässt deinen Browser.",
+    "overviewNewFeatureSearchToolsEnable": "Suche öffnen und eines davon eingeben.",
+    "overviewNewFeatureSearchToolsCta": "Dashboard öffnen →",
+    "overviewNewFeatureTitleCleanupTitle": "Saubere Titel im RSS-Widget und in Watch feeds",
+    "overviewNewFeatureTitleCleanupWhat": "Manche Feeds setzen vor jeden Titel dieselbe Nummer oder dasselbe Kürzel, und der lesenswerte Teil beginnt danach.",
+    "overviewNewFeatureTitleCleanupHow": "Gib ein Muster an, das aus jedem Titel geschnitten wird, und was an seine Stelle tritt. Vorschlagen macht aus den eigenen Titeln des Feeds einen Vorschlag, und ein Vorher und Nachher zeigt die Wirkung.",
+    "overviewNewFeatureTitleCleanupEnable": "Config → Widgets → RSS-Widget oder Config → Watch feeds → Einstellungen eines Feeds.",
+    "overviewNewFeatureTitleCleanupCta": "Widgets öffnen →"
   },
   "colors": {
     "title": "themenanpassung",

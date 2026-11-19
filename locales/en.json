@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "Suggested from the latest titles. Check the preview.",
     "titleRewriteSave": "Save",
     "titleRewriteTooLong": "That pattern is too long.",
-    "titleRewriteBad": "That isn't a valid pattern. Check the brackets."
+    "titleRewriteBad": "That isn't a valid pattern. Check the brackets.",
+    "overviewNewFeatureSearchToolsTitle": "Search answers subnets, hashes and cron lines",
+    "overviewNewFeatureSearchToolsWhat": "Working out a subnet, a hash or what a cron line means meant opening a website.",
+    "overviewNewFeatureSearchToolsHow": "Type 192.168.1.0/24, sha256 and a text, base64, uuid, pass 20, a port like 8096, chmod 755 or cron 0 9 * * 1-5 in search and the answer is the top row. Enter copies it. Nothing leaves your browser.",
+    "overviewNewFeatureSearchToolsEnable": "Open search and type one of them.",
+    "overviewNewFeatureSearchToolsCta": "Open the dashboard →",
+    "overviewNewFeatureTitleCleanupTitle": "Clean titles in the RSS widget and Watch feeds",
+    "overviewNewFeatureTitleCleanupWhat": "Some feeds put the same number or tag in front of every title, and the part worth reading starts after it.",
+    "overviewNewFeatureTitleCleanupHow": "Give a pattern to cut out of every title and what to put in its place. Suggest proposes one from the feed's own titles, and a before and after shows the effect.",
+    "overviewNewFeatureTitleCleanupEnable": "Config → Widgets → RSS widget, or Config → Watch feeds → a feed's settings.",
+    "overviewNewFeatureTitleCleanupCta": "Open Widgets →"
   },
   "colors": {
     "title": "theme customization",

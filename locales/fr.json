@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "Suggéré d'après les derniers titres. Vérifiez l'aperçu.",
     "titleRewriteSave": "Enregistrer",
     "titleRewriteTooLong": "Ce motif est trop long.",
-    "titleRewriteBad": "Ce motif n'est pas valide. Vérifiez les parenthèses."
+    "titleRewriteBad": "Ce motif n'est pas valide. Vérifiez les parenthèses.",
+    "overviewNewFeatureSearchToolsTitle": "La recherche répond aux sous-réseaux, hashes et lignes cron",
+    "overviewNewFeatureSearchToolsWhat": "Calculer un sous-réseau, produire un hash ou comprendre une ligne cron obligeait à ouvrir un site.",
+    "overviewNewFeatureSearchToolsHow": "Tapez 192.168.1.0/24, sha256 suivi d'un texte, base64, uuid, pass 20, un port comme 8096, chmod 755 ou cron 0 9 * * 1-5 dans la recherche et la réponse est la première ligne. Entrée la copie. Rien ne quitte votre navigateur.",
+    "overviewNewFeatureSearchToolsEnable": "Ouvrez la recherche et tapez l'un d'eux.",
+    "overviewNewFeatureSearchToolsCta": "Ouvrir le tableau de bord →",
+    "overviewNewFeatureTitleCleanupTitle": "Des titres propres dans le widget RSS et Watch feeds",
+    "overviewNewFeatureTitleCleanupWhat": "Certains flux placent le même numéro ou la même balise devant chaque titre, et la partie à lire commence après.",
+    "overviewNewFeatureTitleCleanupHow": "Indiquez un motif à retirer de chaque titre et ce qui le remplace. Suggérer en propose un d'après les titres du flux, et un avant et après montre l'effet.",
+    "overviewNewFeatureTitleCleanupEnable": "Config → Widgets → widget RSS, ou Config → Watch feeds → réglages d'un flux.",
+    "overviewNewFeatureTitleCleanupCta": "Ouvrir les widgets →"
   },
   "colors": {
     "title": "personnalisation du thème",

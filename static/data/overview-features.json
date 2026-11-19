@@ -2,6 +2,38 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureTitleCleanupTitle",
+      "titleFallback": "Clean titles in the RSS widget and Watch feeds",
+      "whatKey": "config.overviewNewFeatureTitleCleanupWhat",
+      "whatFallback": "Some feeds put the same number or tag in front of every title, and the part worth reading starts after it.",
+      "howKey": "config.overviewNewFeatureTitleCleanupHow",
+      "howFallback": "Give a pattern to cut out of every title and what to put in its place. Suggest proposes one from the feed's own titles, and a before and after shows the effect.",
+      "enableKey": "config.overviewNewFeatureTitleCleanupEnable",
+      "enableFallback": "Config → Widgets → RSS widget, or Config → Watch feeds → a feed's settings.",
+      "ctaKey": "config.overviewNewFeatureTitleCleanupCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.32.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSearchToolsTitle",
+      "titleFallback": "Search answers subnets, hashes and cron lines",
+      "whatKey": "config.overviewNewFeatureSearchToolsWhat",
+      "whatFallback": "Working out a subnet, a hash or what a cron line means meant opening a website.",
+      "howKey": "config.overviewNewFeatureSearchToolsHow",
+      "howFallback": "Type 192.168.1.0/24, sha256 and a text, base64, uuid, pass 20, a port like 8096, chmod 755 or cron 0 9 * * 1-5 in search and the answer is the top row. Enter copies it. Nothing leaves your browser.",
+      "enableKey": "config.overviewNewFeatureSearchToolsEnable",
+      "enableFallback": "Open search and type one of them.",
+      "ctaKey": "config.overviewNewFeatureSearchToolsCta",
+      "ctaFallback": "Open the dashboard →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.32.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureJellystatTitle",
       "titleFallback": "A Jellystat widget: who watched what",
       "whatKey": "config.overviewNewFeatureJellystatWhat",

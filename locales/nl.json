@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "Voorgesteld op basis van de nieuwste titels. Controleer het voorbeeld.",
     "titleRewriteSave": "Opslaan",
     "titleRewriteTooLong": "Dat patroon is te lang.",
-    "titleRewriteBad": "Dat is geen geldig patroon. Controleer de haakjes."
+    "titleRewriteBad": "Dat is geen geldig patroon. Controleer de haakjes.",
+    "overviewNewFeatureSearchToolsTitle": "Zoeken beantwoordt subnetten, hashes en cron-regels",
+    "overviewNewFeatureSearchToolsWhat": "Een subnet uitrekenen, een hash maken of uitzoeken wat een cron-regel betekent betekende een website openen.",
+    "overviewNewFeatureSearchToolsHow": "Typ 192.168.1.0/24, sha256 met een tekst, base64, uuid, pass 20, een poort zoals 8096, chmod 755 of cron 0 9 * * 1-5 in het zoekvenster en het antwoord is de bovenste rij. Enter kopieert het. Er verlaat niets je browser.",
+    "overviewNewFeatureSearchToolsEnable": "Open zoeken en typ er een.",
+    "overviewNewFeatureSearchToolsCta": "Dashboard openen →",
+    "overviewNewFeatureTitleCleanupTitle": "Nette titels in de RSS-widget en Watch feeds",
+    "overviewNewFeatureTitleCleanupWhat": "Sommige feeds zetten voor elke titel hetzelfde nummer of label, en het leesbare deel begint erachter.",
+    "overviewNewFeatureTitleCleanupHow": "Geef een patroon op dat uit elke titel wordt geknipt en wat ervoor in de plaats komt. Stel voor doet een voorstel uit de eigen titels van de feed, en een voor en na laat het effect zien.",
+    "overviewNewFeatureTitleCleanupEnable": "Config → Widgets → RSS-widget, of Config → Watch feeds → de instellingen van een feed.",
+    "overviewNewFeatureTitleCleanupCta": "Widgets openen →"
   },
   "colors": {
     "title": "thema-aanpassing",

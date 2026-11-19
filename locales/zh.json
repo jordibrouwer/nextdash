@@ -11760,7 +11760,17 @@
     "titleRewriteSuggested": "根据最新标题生成的建议。请查看预览。",
     "titleRewriteSave": "保存",
     "titleRewriteTooLong": "该模式太长。",
-    "titleRewriteBad": "这不是有效的模式。请检查括号。"
+    "titleRewriteBad": "这不是有效的模式。请检查括号。",
+    "overviewNewFeatureSearchToolsTitle": "搜索可以解答子网、哈希和 cron 行",
+    "overviewNewFeatureSearchToolsWhat": "计算子网、生成哈希或弄清 cron 行的含义，以前都要去打开网站。",
+    "overviewNewFeatureSearchToolsHow": "在搜索中输入 192.168.1.0/24、sha256 加文本、base64、uuid、pass 20、8096 这样的端口、chmod 755 或 cron 0 9 * * 1-5，答案就在第一行。按 Enter 复制。数据不会离开你的浏览器。",
+    "overviewNewFeatureSearchToolsEnable": "打开搜索并输入其中一种。",
+    "overviewNewFeatureSearchToolsCta": "打开仪表板 →",
+    "overviewNewFeatureTitleCleanupTitle": "RSS 小组件和 Watch feeds 的整洁标题",
+    "overviewNewFeatureTitleCleanupWhat": "有些订阅源会在每个标题前加上相同的编号或标签，值得阅读的部分在其后。",
+    "overviewNewFeatureTitleCleanupHow": "填写要从每个标题中剪掉的模式，以及用什么替换它。建议会根据订阅源自己的标题给出一个，前后对比显示效果。",
+    "overviewNewFeatureTitleCleanupEnable": "配置 → 小组件 → RSS 小组件，或 配置 → Watch feeds → 某个订阅源的设置。",
+    "overviewNewFeatureTitleCleanupCta": "打开小组件 →"
   },
   "colors": {
     "title": "主题自定义",
