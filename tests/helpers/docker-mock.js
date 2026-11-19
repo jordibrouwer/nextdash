@@ -115,6 +115,8 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
       if (what === 'check' && req.method() === 'POST') {
         state.composeChecks = (state.composeChecks || 0) + 1;
         state.composeCheckBodies = [...(state.composeCheckBodies || []), req.postData() ? JSON.parse(req.postData()) : null];
+        // state.composeCheckHold, a promise, keeps the answer back until it settles.
+        if (state.composeCheckHold) await state.composeCheckHold;
         if (state.composeCheck && state.composeCheck.status) return json({ reason: state.composeCheck.reason || 'compose-too-large' }, state.composeCheck.status);
         if (state.composeCheck && state.composeCheck.fail) {
           const c = state.composeCheck;

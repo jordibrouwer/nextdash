@@ -152,6 +152,23 @@ test.describe('docker compose panel, round 2', () => {
     await expect(panel.locator('[data-docker-compose-editor-action="restore-prev"]')).toHaveCount(1);
   });
 
+  test('Ctrl+S while Apply checks: the saved file counts as saved and Up runs', async ({ page }) => {
+    const { state, panel } = await openPanel(page, { tab: 'compose' });
+    let release;
+    state.composeCheckHold = new Promise((resolve) => { release = resolve; });
+    const ta = await startEdit(panel);
+    await ta.fill(RAW.replace('postgres:15', 'postgres:16'));
+    await panel.locator('[data-docker-compose-editor-action="apply"]').click();
+    await expect.poll(() => state.composeChecks || 0).toBe(1);
+    await ta.press('Control+s');
+    await expect.poll(() => (state.composeSaves || []).length).toBe(1);
+    release();
+    await confirmUp(page);
+    await expect(overlay(page).locator('[data-docker-run-item="media"]')).toHaveAttribute('data-state', 'done');
+    expect(state.composeSaves).toHaveLength(1);
+    expect(state.composeRuns).toEqual(['up?stream=1']);
+  });
+
   test('Apply with a file that does not parse writes nothing and runs nothing', async ({ page }) => {
     const { state, panel } = await openPanel(page, { tab: 'compose' });
     const ta = await startEdit(panel);
