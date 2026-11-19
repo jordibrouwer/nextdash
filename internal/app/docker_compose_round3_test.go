@@ -874,6 +874,14 @@ func TestComposeMergeMaskedEnv(t *testing.T) {
 			t.Fatalf("%+v", err)
 		}
 	})
+	t.Run("an empty duplicate before a secret keeps the secret", func(t *testing.T) {
+		orig := "DB=\nDB=s3cret\n"
+		view, _ := redactEnvFile([]byte(orig))
+		got, err := composeMergeMaskedEnv([]byte(orig), view)
+		if err != nil || string(got) != orig {
+			t.Fatalf("%v\nview %q\ngot %q", err, view, got)
+		}
+	})
 	t.Run("the mask text inside a typed value is refused", func(t *testing.T) {
 		_, err := composeMergeMaskedEnv([]byte(r3Env), []byte(strings.Replace(string(masked), "TZ="+composeMask, "TZ=abc"+composeMask, 1)))
 		if err == nil || err.Reason != composeMaskLiteral {
