@@ -59,7 +59,9 @@ type fakeDocker struct {
 	// that call fail the way an old or locked-down daemon might.
 	networks     map[string]string
 	failNetworks bool
-	seq          int // creates so far, for unique ids
+	// failList is how many GET /containers/json calls fail before one answers.
+	failList int
+	seq      int // creates so far, for unique ids
 	// events is what GET /events streams, one JSON object per line, before
 	// the stream is held open until the client lets go.
 	events []map[string]any
@@ -349,6 +351,11 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case r.Method == "GET" && path == "/containers/json":
+		if f.failList > 0 {
+			f.failList--
+			writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "busy"})
+			return
+		}
 		f.handleList(w)
 		return
 

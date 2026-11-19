@@ -525,6 +525,24 @@ func TestComposeWatchProblemRaisesANotice(t *testing.T) {
 	}
 }
 
+// Restarts from before the Up are the baseline even when the first poll fails.
+func TestComposeWatchBaselineSurvivesAFailedFirstPoll(t *testing.T) {
+	f, _, h, router := r3Fixture(t)
+	f.mu.Lock()
+	f.containers[r3WebID].RestartCount = 3
+	f.failList = 1
+	f.mu.Unlock()
+	api, _ := newDockerAPI()
+	h.composeWatchStart(api, r3Project(), "")
+	r3Wait(t, "an end", func() bool {
+		s := r3WatchState(t, router)["state"]
+		return s == composeWatchHealthy || s == composeWatchProblem
+	})
+	if st := r3WatchState(t, router); st["state"] != composeWatchHealthy {
+		t.Fatalf("old restarts read as a loop: %v", st)
+	}
+}
+
 func TestComposeWatchProblemIsMutedLikeADockerNotice(t *testing.T) {
 	f, _, h, router := r3Fixture(t)
 	s := h.store.GetSettings()
