@@ -3,6 +3,9 @@
  * "health changed", so a monitor outage reaches the badge and the bell in
  * seconds instead of at the next poll.
  *
+ * A second event, "docker", says a container changed state; it becomes the
+ * DOM event livechannel:docker for whatever is open and shows containers.
+ *
  * The event carries no data. The page answers with the requests it already
  * makes -- the health badge and the net-check rows -- so the bell and the badge
  * keep reading one source.
@@ -32,6 +35,7 @@
     let source = null;
     let connected = false;
     let debounce = null;
+    let dockerDebounce = null;
     let retryTimer = null;
     let refusals = 0;
     let catchUp = false;
@@ -49,6 +53,21 @@
             // The badge refresh also refreshes the bell's outage row.
             void global.dashboardInstance?.updateHealthBadge?.();
             void global.NetBellSource?.refresh?.();
+            // Whatever else shows monitoring (the Service overview) listens.
+            global.dispatchEvent(new CustomEvent('livechannel:health'));
+        }, DEBOUNCE_MS);
+    }
+
+    /*
+     * A container changed state. Nothing here refreshes by itself: whatever
+     * shows containers and is open (the Service overview) listens. The health poll
+     * and the 30 s polls stay as the fallback.
+     */
+    function onDocker() {
+        clearTimeout(dockerDebounce);
+        dockerDebounce = setTimeout(() => {
+            if (document.visibilityState !== 'visible') return;
+            global.dispatchEvent(new CustomEvent('livechannel:docker'));
         }, DEBOUNCE_MS);
     }
 
@@ -77,6 +96,7 @@
             }
         });
         es.addEventListener('health', onHealth);
+        es.addEventListener('docker', onDocker);
         es.addEventListener('error', () => {
             setConnected(false);
             catchUp = true;
