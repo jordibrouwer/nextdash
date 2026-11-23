@@ -21620,7 +21620,7 @@ class DashboardConfig {
             ['c', this.t('config.bmKeyChecking', 'checking')],
             ['y / #', this.t('config.bmKeyFindTags', 'find tags: bookmark / category')],
             ['b / w', this.t('config.bmKeyOnlyCategoryPage', 'only this category / page')],
-            ['Ctrl/Cmd+Enter', this.t('dashboardKeyNewTab', 'new tab')],
+            ['Ctrl/Cmd+Enter', this.t('dashboard.inboxKeyNewTab', 'new tab')],
             ['Ctrl/Cmd+C', this.t('config.bmKeyCopyUrl', 'copy URL')],
             ['s', this.t('config.bmKeyShare', 'share')],
             ['q', this.t('config.bmKeyQr', 'QR code')],

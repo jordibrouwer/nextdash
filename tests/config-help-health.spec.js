@@ -116,7 +116,7 @@ test.describe('config help — health', () => {
         await expect(body.locator('code', { hasText: /^f$/ }).first()).toBeVisible();
         // The two behaviours that are not guessable from the button.
         await expect(body).toContainText(/starts at the row your cursor is on/i);
-        await expect(body).toContainText(/rather than quietly wrapping/i);
+        await expect(body).toContainText(/rather than silently wrapping/i);
     });
 
     test('covers accepting drift: what it clears and what it asserts', async ({ page }) => {
