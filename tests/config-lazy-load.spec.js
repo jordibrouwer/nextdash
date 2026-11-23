@@ -241,6 +241,24 @@ test.describe('config lazy load', () => {
         await expect.poll(() => bookmarkFiles.length, { timeout: 15_000 }).toBeGreaterThan(10);
     });
 
+    // The help drawings are 28 KB of data only Help reads: fetched when Help
+    // first draws, not with every open of Config.
+    test('the help drawings are fetched when Help opens, not before', async ({ page }) => {
+        /** @type {string[]} */
+        const art = [];
+        page.on('request', (req) => { if (req.url().includes('help-panel-art.json')) art.push(req.url()); });
+        await page.goto('/#config/overview');
+        await waitReady(page);
+        await page.waitForSelector('.config-view-body', { timeout: 15_000 });
+        await page.waitForTimeout(800);
+        expect(art).toEqual([]);
+
+        await page.locator('[data-config-section="help"]').click();
+        await expect.poll(() => art.length, { timeout: 15_000 }).toBe(1);
+        // They land and the panels that have a drawing get it.
+        await expect(page.locator('.config-help-art').first()).toBeAttached({ timeout: 15_000 });
+    });
+
     test('Appearance still opens with its own tabs and the theme browser', async ({ page }) => {
         await page.goto('/#config/appearance/background');
         await waitReady(page);
