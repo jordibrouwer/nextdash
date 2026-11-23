@@ -299,6 +299,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/health", handlers.DockerContainerHealthHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/timeline", handlers.DockerContainerTimelineHandler).Methods("GET")
 	r.HandleFunc("/api/docker/history", handlers.DockerHistoryHandler).Methods("GET")
+	r.HandleFunc("/api/timeline", handlers.TimelineHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")

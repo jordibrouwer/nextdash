@@ -149,6 +149,9 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	if err := h.seedDemoHealth(now); err != nil {
 		return err
 	}
+	if err := h.seedDemoTimeline(now); err != nil {
+		return err
+	}
 
 	// A few weeks of an inbox in use, oldest first (demo_inbox.go).
 	for _, link := range demoInboxLinks(now) {
@@ -186,6 +189,7 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	settings := h.store.GetSettings()
 	settings.UnraidServers = []UnraidServer{{ID: demoUnraidServerID, Name: "Tower", BaseURL: "http://tower.local", Enabled: true}}
 	settings.OnboardingCompleted = true
+	settings.DockerBookmarkLinks = demoTimelineLinks
 	settings.CurrentPage = 1
 	settings.QuickStart.Dismissed = true
 	settings.QuickStart.TemplatePicked = "keep"
