@@ -149,6 +149,12 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
+## Unreleased
+
+### Network checks
+
+- **new — TLS checks speak STARTTLS.** A TLS check on a mail or FTP port no longer stops at a handshake error. On 25, 587 and 2525 (SMTP), 143 (IMAP), 110 (POP3) and 21 (FTP) it asks for STARTTLS first (`EHLO` + `STARTTLS`, `STARTTLS`, `STLS`, `AUTH TLS`) and only then starts the handshake, so a server with a pregreet test never sees a ClientHello before its greeting. Any other port that answers a ClientHello with a mail or FTP greeting is tried once more over STARTTLS, the protocol read from that greeting. The result names the protocol (`TLS 1.3 via SMTP STARTTLS`, field `tls.starttls`); a server that refuses the upgrade is down with its reply. The plain-text part is bounded at 64 lines of 1 KiB (`nettool_starttls.go`, `tlsInspect` in `nettool_guard.go`).
+
 ## v1.32.0 — 19 November 2026
 
 Small homelab tools in the search panel, clean titles for the RSS widget and Watch feeds, and a round of Compose, widget and reminder fixes.

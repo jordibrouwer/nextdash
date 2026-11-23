@@ -492,7 +492,25 @@ func (e netTLSError) Unwrap() error { return e.err }
 // *tls.CertificateVerificationError, which carries the certificates the server
 // sent; those are still shown (and the error is returned, class "tls"). The
 // version, cipher and ALPN are only known for a handshake that completed.
+//
+// A well-known plain-text port (SMTP, IMAP, POP3, FTP, see netStartTLSProto)
+// first asks for STARTTLS. Any other port that answers a ClientHello with a
+// mail or FTP greeting is tried once more over STARTTLS, the protocol read
+// from that greeting. TLSResult.StartTLS names the protocol used.
 func (g netGuard) tlsInspect(ctx context.Context, host string, port int, serverName string, timeout time.Duration) (TLSResult, error) {
+	proto := netStartTLSProto(port)
+	out, err := g.tlsInspectOnce(ctx, host, port, serverName, timeout, proto != "", proto)
+	var rh tls.RecordHeaderError
+	if proto == "" && errors.As(err, &rh) && starttlsGreetingLooksPlain(rh.RecordHeader) {
+		return g.tlsInspectOnce(ctx, host, port, serverName, timeout, true, "")
+	}
+	return out, err
+}
+
+// tlsInspectOnce is one connection of tlsInspect. With starttls set, the plain
+// conversation of proto ("" reads it from the greeting) runs before the
+// handshake.
+func (g netGuard) tlsInspectOnce(ctx context.Context, host string, port int, serverName string, timeout time.Duration, starttls bool, proto string) (TLSResult, error) {
 	var out TLSResult
 	conn, _, err := g.dialTCP(ctx, host, port, timeout)
 	if err != nil {
@@ -501,10 +519,21 @@ func (g netGuard) tlsInspect(ctx context.Context, host string, port int, serverN
 	defer conn.Close() // the raw connection: no close_notify is written
 	_ = conn.SetDeadline(time.Now().Add(timeout))
 
+	if starttls {
+		used, err := netStartTLS(conn, proto)
+		if err != nil {
+			return out, err
+		}
+		out.StartTLS = used
+	}
+	nextProtos := []string{"h2", "http/1.1"}
+	if starttls {
+		nextProtos = nil // ALPN names HTTP; a mail server has nothing to pick
+	}
 	tc := tls.Client(conn, &tls.Config{
 		ServerName: serverName,
 		RootCAs:    g.tlsRoots,
-		NextProtos: []string{"h2", "http/1.1"},
+		NextProtos: nextProtos,
 	})
 	hsErr := tc.HandshakeContext(ctx)
 	now := time.Now()

@@ -292,13 +292,13 @@ func TestNetTLSNotTLSPort(t *testing.T) {
 			if err != nil {
 				return
 			}
-			_, _ = c.Write([]byte("220 mail.example ESMTP ready\r\n"))
+			_, _ = c.Write([]byte("SSH-2.0-OpenSSH_9.6\r\n"))
 			time.Sleep(200 * time.Millisecond)
 			c.Close()
 		}
 	}()
 	res := runTLSTest(t, netGuard{allowLocal: true}, ln.Addr().(*net.TCPAddr).Port, NetCheck{})
-	if res.OK || res.Class != "tls" || res.TLS != nil || !strings.Contains(res.Error, "STARTTLS") {
+	if res.OK || res.Class != "tls" || res.TLS != nil || !strings.Contains(res.Error, "does not speak TLS") {
 		t.Fatalf("%+v", res)
 	}
 }

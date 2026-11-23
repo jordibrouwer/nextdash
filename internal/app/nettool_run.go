@@ -75,6 +75,9 @@ type TLSResult struct {
 	// ServerName is the name the certificate was checked against (also the SNI).
 	ServerName string `json:"serverName,omitempty"`
 	MinDays    int    `json:"minDays,omitempty"` // the warning threshold used
+	// StartTLS is the plain-text protocol (SMTP, IMAP, POP3, FTP) that was
+	// upgraded before the handshake; empty for a port that speaks TLS at once.
+	StartTLS string `json:"starttls,omitempty"`
 }
 
 // HTTPTimings is the timeline of an HTTP-detail run, in milliseconds. The

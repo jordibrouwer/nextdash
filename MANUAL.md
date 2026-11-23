@@ -2378,7 +2378,7 @@ Checks run in the server's monitor loop together with the bookmarks' own checks:
 
 #### TLS in detail
 
-The handshake runs against the check's port: its own, else the port of an https bookmark address, else 443; the bookmark's host is the server name. A chain that does not verify is down (class *certificate*), and the unverified certificates are still shown (up to 5, with subject, issuer, validity and names). **Warn at or below (days)** (1 to 120, 14 by default; exactly 14 days left already warns) turns a valid certificate into a **Warning** and sends one expiry notice at each mark of a ladder derived from it (14, 3 and 1 days by default), apart from the host certificate warnings of [§12.4](#124-alerts). A STARTTLS port does not speak TLS first and shows the handshake error.
+The handshake runs against the check's port: its own, else the port of an https bookmark address, else 443; the bookmark's host is the server name. A chain that does not verify is down (class *certificate*), and the unverified certificates are still shown (up to 5, with subject, issuer, validity and names). **Warn at or below (days)** (1 to 120, 14 by default; exactly 14 days left already warns) turns a valid certificate into a **Warning** and sends one expiry notice at each mark of a ladder derived from it (14, 3 and 1 days by default), apart from the host certificate warnings of [§12.4](#124-alerts). A mail or FTP port speaks plain text first: on 25, 587 and 2525 (SMTP), 143 (IMAP), 110 (POP3) and 21 (FTP) the check asks for STARTTLS before the handshake, and any other port that greets like one of these is tried again over STARTTLS. The result then shows the protocol (*SMTP STARTTLS*). A server that refuses STARTTLS is down with its reply.
 
 #### HTTP detail and JSON
 
