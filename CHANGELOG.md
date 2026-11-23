@@ -188,6 +188,7 @@ Small homelab tools in the search panel, clean titles for the RSS widget and Wat
 - **fix — A `/` after an IPv4 address is a slash.** In the open panel `/` is the mode switch and put itself in front of the query, so `192.168.1.0/24` could not be typed. After a whole IPv4 address, or `mask `, it is now a character; everywhere else it still switches (`search.js`).
 - **new — Paste into the open search panel.** On a computer the panel is not a text field, so Cmd+V had nowhere to land. A paste while it is open now goes in as if typed, on one line and with only the characters typing takes. With the panel closed a pasted link still goes to quick-add (`search.js`).
 - **fix — A failed copy says so, and long answers wrap.** If an answer cannot be put on the clipboard, a message shows the text so it can be taken by hand, where it used to do nothing. The fallback focuses and selects its field the way Safari wants. A row with an answer wraps over lines instead of ending in dots (`search.js`, `search.css`).
+- **new — A typo in a command still finds it.** Type `:dokcer` and the palette offers `:DOCKER` as *Did you mean*; a swapped, missing, extra or wrong letter counts as one slip (two for names longer than four letters). Anything that already matches a command by its first letters is answered as before.
 
 ### Widgets
 

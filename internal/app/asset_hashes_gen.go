@@ -380,7 +380,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/reorder.js":                                          "4994b66b559a",
 	"js/scroll-lock.js":                                      "efa8c7224af1",
 	"js/search-calc.js":                                      "af9549f0777f",
-	"js/search-commands.js":                                  "21e0a1fc6440",
+	"js/search-commands.js":                                  "5f660abca65f",
 	"js/search-commands/search-commands-columns.js":          "52390d02317a",
 	"js/search-commands/search-commands-fontsize.js":         "8e3d6ca22faa",
 	"js/search-commands/search-commands-new.js":              "e15a40aeb833",
