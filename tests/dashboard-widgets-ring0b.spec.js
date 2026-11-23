@@ -25,6 +25,7 @@ test.describe('uptime, trend, inbox and neglected', () => {
         await open(page);
         const state = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig
                 || window.dashboardInstance.config?.instance?.constructor;
             return {

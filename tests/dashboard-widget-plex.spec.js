@@ -90,6 +90,7 @@ test.describe('the Plex widgets', () => {
         await open(page);
         const state = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig || window.dashboardInstance.config?.instance?.constructor;
             const keys = (type) => (Config?.WIDGET_SETTINGS?.[type] || []).map((f) => f.key);
             return {
@@ -110,6 +111,7 @@ test.describe('the Plex widgets', () => {
         await open(page);
         const fields = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig || window.dashboardInstance.config?.instance?.constructor;
             return { plex: Config?.WIDGET_SETTINGS?.plex || [], jellyfin: Config?.WIDGET_SETTINGS?.jellyfin || [] };
         });

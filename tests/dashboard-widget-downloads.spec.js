@@ -103,6 +103,7 @@ test.describe('the download widgets', () => {
         await open(page);
         const state = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig || window.dashboardInstance.config?.instance?.constructor;
             return ['qbittorrent', 'sabnzbd'].map((type) => ({
                 offered: (Config?.WIDGET_TYPES || []).includes(type),

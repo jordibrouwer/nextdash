@@ -26,6 +26,7 @@ test.describe('ring 0 widgets', () => {
         // ships — so the class does not exist until config is opened.
         const state = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig
                 || window.dashboardInstance.config?.instance?.constructor
                 || window.dashboardInstance.config?.constructor;

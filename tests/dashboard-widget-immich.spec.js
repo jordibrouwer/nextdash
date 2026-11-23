@@ -61,6 +61,7 @@ test.describe('the Immich widgets', () => {
         await open(page);
         const state = await page.evaluate(async () => {
             await window.dashboardInstance.config?.load?.();
+            await (window.dashboardInstance.config?._module || window.dashboardInstance.config)?.ensureSection?.('widgets');
             const Config = window.DashboardConfig || window.dashboardInstance.config?.instance?.constructor;
             const types = ['immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status'];
             return {
