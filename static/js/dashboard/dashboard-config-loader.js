@@ -233,15 +233,18 @@ class DashboardConfigLoader {
         const onIntent = (e) => {
             if (!e.target?.closest?.(SELECTOR)) return;
             events.forEach((type) => document.removeEventListener(type, onIntent, true));
-            this.prewarm();
+            // Only the Bookmarks button is on its way to the list's scripts.
+            // The Config link opens Overview, which has no use for sixteen
+            // files of them.
+            this.prewarm({ bookmarks: Boolean(e.target.closest('.library-link-anchor')) });
         };
         events.forEach((type) => document.addEventListener(type, onIntent, { capture: true, passive: true }));
     }
 
     /** What opening loads, without opening anything, and without a word on failure. */
-    prewarm() {
+    prewarm({ bookmarks = true } = {}) {
         const health = this.dash?.health;
-        DashboardConfigLoader.preloadBookmarkScripts();
+        if (bookmarks) DashboardConfigLoader.preloadBookmarkScripts();
         return Promise.all([
             this.load(),
             this.dash?.language?.ensureHelpTranslations?.(),

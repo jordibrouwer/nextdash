@@ -212,6 +212,35 @@ test.describe('config lazy load', () => {
         });
     }
 
+    // Overview is the landing page and draws nothing of the Bookmarks list:
+    // its first click used to fetch and run sixteen of the list's scripts
+    // (600 KB) because opening any section started them.
+    test('the first click on Config fetches none of the Bookmarks scripts', async ({ page }) => {
+        /** @type {string[]} */
+        const bookmarkFiles = [];
+        page.on('request', (req) => {
+            if (/dashboard-config-bookmarks|dashboard-bookmarks-|bookmark-workbench-model/.test(req.url())) {
+                bookmarkFiles.push(req.url());
+            }
+        });
+        await page.goto('/');
+        await waitReady(page);
+        await page.locator('.config-link-anchor').first().hover();
+        await page.locator('.config-link-anchor').first().click();
+        await page.waitForSelector('.config-view-body', { timeout: 15_000 });
+        await page.waitForTimeout(1000);
+        expect(bookmarkFiles).toEqual([]);
+
+        // Picking Bookmarks afterwards still brings them in, and the list is
+        // drawable by the time they have run.
+        await page.locator('[data-config-section="bookmarks"]').click();
+        await expect.poll(() => page.evaluate(() => {
+            const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
+            return typeof c.renderBookmarksList === 'function' && typeof c.renderWorkbenchRow === 'function';
+        }), { timeout: 15_000 }).toBe(true);
+        await expect.poll(() => bookmarkFiles.length, { timeout: 15_000 }).toBeGreaterThan(10);
+    });
+
     test('Appearance still opens with its own tabs and the theme browser', async ({ page }) => {
         await page.goto('/#config/appearance/background');
         await waitReady(page);

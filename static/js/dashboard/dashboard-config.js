@@ -1414,7 +1414,12 @@ class DashboardConfig {
         // Started here and awaited at the render, not before it: the section's
         // own data load runs in the meantime, and awaiting up here delayed it
         // enough that a refresh could land after the first paint.
-        void this.ensureBookmarkRenderers();
+        // Only for the sections that draw the list. Overview, the landing
+        // page, fetched all sixteen of its scripts on a cold first click and
+        // never ran them; setSection loads them when Bookmarks is picked.
+        if (targetSection === 'bookmarks' || targetSection === 'structure') {
+            void this.ensureBookmarkRenderers();
+        }
         void this.ensureSection(targetSection);
         this.applyBookmarksPageFromHash(window.location.hash);
         // A shared link carries the filters as well as the page, so opening
