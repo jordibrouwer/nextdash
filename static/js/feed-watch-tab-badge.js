@@ -15,7 +15,9 @@
 
     const PREFIX = /^(?:\u{1F534}\s\d+\s+)?(?:\(\d+\)\s+)?/u;
     let count = 0;
-    let outage = 0;
+    // null until the first report: the app badge outlives the page, so a first
+    // report of 0 must still clear whatever an earlier page left on the icon.
+    let outage = null;
     let observer = null;
     let originalIcon = null;
     let iconLink = null;
@@ -116,5 +118,5 @@
         if (count > 0 || outage > 0) paintIcon(); else restoreIcon();
     }
 
-    global.FeedWatchTabBadge = { set, setOutage, count: () => count, outage: () => outage };
+    global.FeedWatchTabBadge = { set, setOutage, count: () => count, outage: () => outage || 0 };
 })(window);

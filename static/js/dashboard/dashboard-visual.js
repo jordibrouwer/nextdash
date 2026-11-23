@@ -368,6 +368,8 @@ class DashboardVisual {
             this.syncHealthBadgePolling();
         } else {
             this.stopHealthBadgePolling();
+            // Health is off: an outage still showing in the tab has no source.
+            window.FeedWatchTabBadge?.setOutage(0);
         }
     }
 
@@ -443,6 +445,27 @@ class DashboardVisual {
         // backoff can be exercised without waiting out delays measured in
         // minutes; nothing in the app calls it.
         this._healthBadgePollNow = tick;
+        // The tab title, favicon and app badge are for the reader in another
+        // tab, so an outage must still show up while this one is hidden. One
+        // slow, light poll that touches only those surfaces: no widgets, no
+        // header badge, at the safety-net pace.
+        const hiddenStop = () => {
+            if (this._healthBadgeHiddenTimer) {
+                clearTimeout(this._healthBadgeHiddenTimer);
+                this._healthBadgeHiddenTimer = null;
+            }
+        };
+        const hiddenStart = () => {
+            hiddenStop();
+            this._healthBadgeHiddenTimer = setTimeout(async () => {
+                this._healthBadgeHiddenTimer = null;
+                try {
+                    const summary = await window.HealthBadgeUtils?.fetchBookmarkHealthSummary?.();
+                    if (summary) window.FeedWatchTabBadge?.setOutage(Number(summary.monitorDownCount) || 0);
+                } catch { /* try again next time */ }
+                if (document.visibilityState !== 'visible' && this._healthBadgeVisibilityHandler) hiddenStart();
+            }, max);
+        };
         this._healthBadgeVisibilityHandler = () => {
             if (document.visibilityState === 'visible') {
                 // Returning to the tab is the one moment the badge is most
@@ -454,8 +477,10 @@ class DashboardVisual {
                 // on every tab switch.
                 this._healthBadgePollDelay = base;
                 start();
+                hiddenStop();
             } else {
                 stop();
+                hiddenStart();
             }
         };
         document.addEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
@@ -470,6 +495,8 @@ class DashboardVisual {
         window.addEventListener('livechannel:state', this._healthBadgeLiveHandler);
         if (document.visibilityState === 'visible') {
             start();
+        } else {
+            hiddenStart();
         }
     }
 
@@ -481,6 +508,10 @@ class DashboardVisual {
         if (this._healthBadgePollTimer) {
             clearTimeout(this._healthBadgePollTimer);
             this._healthBadgePollTimer = null;
+        }
+        if (this._healthBadgeHiddenTimer) {
+            clearTimeout(this._healthBadgeHiddenTimer);
+            this._healthBadgeHiddenTimer = null;
         }
         if (this._healthBadgeVisibilityHandler) {
             document.removeEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
