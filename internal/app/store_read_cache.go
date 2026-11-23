@@ -145,6 +145,7 @@ func cloneSettings(in Settings) Settings {
 	out.CollectionVisibleOn = maps.Clone(in.CollectionVisibleOn)
 	out.TagColors = maps.Clone(in.TagColors)
 	out.CertWarnByHost = maps.Clone(in.CertWarnByHost)
+	out.DomainExpiryManual = maps.Clone(in.DomainExpiryManual)
 	out.TagRules = slices.Clone(in.TagRules)
 	out.DismissedTagSuggestions = slices.Clone(in.DismissedTagSuggestions)
 	out.ThemeIconStyling = maps.Clone(in.ThemeIconStyling)

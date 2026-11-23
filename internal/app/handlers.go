@@ -1275,7 +1275,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	})
 	domainSettings := h.store.GetSettings()
 	if domainSettings.DomainExpiry {
-		storedDomains := h.hostDomains()
+		storedDomains := overlayManualDomains(h.hostDomains(), manualDomainDates(domainSettings), h.domainsOfCheckedBookmarks())
 		report.Domains = datedDomains(storedDomains)
 		report.DomainSummary = summarizeDomains(storedDomains, true)
 	} else {
@@ -2850,6 +2850,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.NotifyPausedUntil = h.store.GetSettings().NotifyPausedUntil
 
 	settings.TagColors = sanitizeTagColors(settings.TagColors)
+	settings.DomainExpiryManual = sanitizeDomainExpiryManual(settings.DomainExpiryManual)
 
 	// Validate and sanitize collections.
 	//

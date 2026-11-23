@@ -64,6 +64,7 @@
         'certWarnByHost',
         'domainExpiry',
         'domainWarnDays',
+        'domainExpiryManual',
         'healthCheckTimeoutSeconds',
         'previewImageCacheMB',
         'dockerStatsHistory',

@@ -622,6 +622,46 @@ class DashboardHealth {
 `;
     }
 
+    /**
+     * Whether this row's registered domain can take a date typed by hand: the
+     * registry answered (or has no RDAP at all) and gave no date. A date from the
+     * registry always wins, so a domain that has one gets no field.
+     */
+    domainDateEditable(issue) {
+        if (this.dash.settings?.domainExpiry === false) return false;
+        const name = String(issue?.domain || '').toLowerCase();
+        if (!name) return false;
+        if (this.dash.settings?.domainExpiryManual?.[name]) return true;
+        if (this.report?.domains?.[name]?.manual) return true;
+        const summary = this.report?.domainSummary;
+        if (Array.isArray(summary?.failed) && summary.failed.includes(name)) return true;
+        const noDate = summary?.noDate;
+        return Array.isArray(noDate) && noDate.some((entry) => String(entry?.domain || '').toLowerCase() === name);
+    }
+
+    /**
+     * An expiry date typed in for a registry that publishes none (.nl, .de, .io,
+     * .be, .eu ...). Per registered domain, in settings.domainExpiryManual, so it
+     * covers every bookmark on the domain and warns like a registry date does.
+     */
+    renderDomainDateField(issue) {
+        if (!this.domainDateEditable(issue)) return '';
+        const esc = (v) => this.escape(v);
+        const name = String(issue.domain).toLowerCase();
+        const current = String(this.dash.settings?.domainExpiryManual?.[name] || '');
+        return `
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="domain-date-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthDomainDateLabel', 'Registration of {domain} expires on').replace('{domain}', name))}</label>
+                    <input type="date" id="domain-date-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-domain-date data-domain-name="${esc(name)}"
+                        value="${esc(current)}">
+                    <span class="health-expect-note">${esc(this.t('dashboard.healthDomainDateNote',
+                        'The registry does not publish this date, so nextDash cannot look it up. Enter it from your registrar and it warns like any other domain. Empty the field to remove it.'))}</span>
+                </div>
+`;
+    }
+
     renderExpectPanel(issue) {
         const esc = (v) => this.escape(v);
         const monitored = this.checkModeOf(issue) === window.CheckMode.MONITOR;
@@ -666,6 +706,8 @@ class DashboardHealth {
                 </div>
 
                 ${this.renderCertWarnField(issue)}
+
+                ${this.renderDomainDateField(issue)}
 
                 <div class="health-expect-toggles">
                     <label class="health-expect-check">
@@ -1892,6 +1934,26 @@ class DashboardHealth {
                 if (value) map[host] = value; else delete map[host];
                 this.dash.settings.certWarnByHost = map;
                 if ((await this.dash.saveSettings()) === false) {
+                    this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+                    return 'failed';
+                }
+            }
+        }
+
+        // Per registered domain, in settings, like the certificate rule above.
+        const domainInput = wrap.querySelector('[data-domain-date]');
+        if (domainInput) {
+            const name = String(domainInput.dataset.domainName || '').toLowerCase();
+            const value = String(domainInput.value || '').trim();
+            const previous = this.dash.settings.domainExpiryManual;
+            const map = { ...(previous || {}) };
+            if (String(map[name] || '') !== value) {
+                if (value) map[name] = value; else delete map[name];
+                // {} rather than a missing key: the server keeps what an omitted key held.
+                this.dash.settings.domainExpiryManual = map;
+                if ((await this.dash.saveSettings()) === false) {
+                    // Not saved: do not keep it locally, or the next save writes it.
+                    this.dash.settings.domainExpiryManual = previous;
                     this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
                     return 'failed';
                 }
