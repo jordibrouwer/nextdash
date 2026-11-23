@@ -170,6 +170,12 @@ test.describe('statistics: a future lastOpened cannot corrupt the chart', () => 
     });
 
     test('the chart draws one bar per bucket', async ({ page }) => {
+        // The plain bars are what stays when uPlot cannot be loaded; with it
+        // loaded they are replaced by its own drawing a moment after the
+        // renderers land, and whether the count below caught them first was
+        // a matter of timing. Refuse the library so the plain chart is the
+        // thing under test.
+        await page.route('**/nd-chart*.js*', (route) => route.abort());
         await openStats(page);
         await seedFuture(page);
         await page.evaluate(() => {

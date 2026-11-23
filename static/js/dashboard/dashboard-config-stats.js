@@ -3055,6 +3055,500 @@
                 });
             });
         },
+
+    /**
+     * Per-bar readout on the activity chart.
+     *
+     * On a bar chart the mark is the hit target — no crosshair — so each bar
+     * carries its own tooltip on hover *and* on focus, because a value that
+     * only exists under a pointer is not reachable by keyboard. The screen
+     * reader gets the same numbers from the bar's aria-label and the sr-only
+     * table, so this layer enhances rather than gates.
+     *
+     * Values are written with textContent: the labels are dates we format, but
+     * the rule holds regardless — never build tooltip DOM by string concat.
+     */
+    bindActivityChartTooltip(container) {
+        // Every chart on the page, not just the first: the Inbox tab has its own
+        // trend chart, and binding only container.querySelector('.config-chart')
+        // would leave whichever came second inert.
+        container.querySelectorAll('.config-chart').forEach((chart) => {
+            this.bindOneChartTooltip(chart);
+        });
+    },
+
+    bindOneChartTooltip(chart) {
+        const tip = chart?.querySelector('.config-chart-tip');
+        if (!chart || !tip) return;
+
+        const openLabel = this.t('config.statsActivityUsedLabel', 'bookmarks last used');
+        const hide = () => {
+            tip.hidden = true;
+            chart.querySelectorAll('.config-chart-bar.is-active')
+                .forEach((el) => el.classList.remove('is-active'));
+        };
+
+        const show = (bar) => {
+            const value = bar.getAttribute('data-bar-value') || '0';
+            const value2 = bar.getAttribute('data-bar-value2');
+            const date = bar.getAttribute('data-bar-date') || '';
+            tip.replaceChildren();
+            // Value leads, label follows: the reader already knows which bar
+            // they are pointing at and wants the number.
+            // Each chart names its own series on the bar; the defaults are
+            // what the two charts said before they carried a label.
+            const label1 = bar.getAttribute('data-bar-label') || openLabel;
+            if (value2 === null) {
+                const strong = document.createElement('strong');
+                strong.textContent = `${value} ${label1}`;
+                tip.append(strong);
+            } else {
+                // Two series: both are listed, each keyed by its own colour, so
+                // the pointer never has to land on the right one of the pair.
+                const rows = [
+                    [value, bar.getAttribute('data-bar-label') || this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
+                    [value2, bar.getAttribute('data-bar-label2') || this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
+                ];
+                rows.forEach(([n, label, key]) => {
+                    const row = document.createElement('strong');
+                    row.className = 'config-chart-tip-row';
+                    const swatch = document.createElement('span');
+                    swatch.className = `config-chart-swatch config-chart-swatch--${key}`;
+                    const text = document.createElement('span');
+                    text.textContent = `${n} ${label}`;
+                    row.append(swatch, text);
+                    tip.append(row);
+                });
+            }
+            const when = document.createElement('span');
+            when.textContent = date;
+            tip.append(when);
+            tip.hidden = false;
+
+            chart.querySelectorAll('.config-chart-bar.is-active')
+                .forEach((el) => el.classList.remove('is-active'));
+            bar.classList.add('is-active');
+
+            // Follow the bar horizontally, clamped so the box cannot hang off
+            // either end of the panel.
+            const barBox = bar.getBoundingClientRect();
+            const chartBox = chart.getBoundingClientRect();
+            const centre = barBox.left + barBox.width / 2 - chartBox.left;
+            const half = tip.offsetWidth / 2;
+            const clamped = Math.max(half, Math.min(centre, chartBox.width - half));
+            tip.style.left = `${clamped}px`;
+        };
+
+        chart.querySelectorAll('.config-chart-bar').forEach((bar) => {
+            bar.addEventListener('pointerenter', () => show(bar));
+            bar.addEventListener('pointerleave', hide);
+            bar.addEventListener('focus', () => show(bar));
+            bar.addEventListener('blur', hide);
+        });
+        // The <g> elements do not tile the plot — the SVG has padding around
+        // them — so leaving a bar sideways lands on the svg, not on another bar.
+        // Both leave paths are needed: the bar's own, and the chart's for when
+        // the pointer exits the panel altogether.
+        chart.addEventListener('pointerleave', hide);
+    },
+
+    bindStats(container) {
+        this.bindSubTabStrip(container, 'data-stats-tab', (tab) => {
+            {
+                if (tab === this.statsTab) return;
+                this.statsTab = tab;
+                this.restoreConfigHash();
+                // Fetched on first open rather than with the section: each
+                // tab's endpoint is of no use to the other tabs.
+                this.loadStatsTabData(tab);
+                // Only the body changes; repainting the tab strip too would
+                // rebuild the buttons under the pointer that just clicked one.
+                this.repaintStatsBody();
+                this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            }
+        });
+        container.querySelectorAll('[data-stats-range]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = Number(btn.getAttribute('data-stats-range'));
+                if (!next || next === this.statsRange) return;
+                this.statsRange = next;
+                this.saveStatsRange(next);
+                this.repaintStatsBody();
+            });
+        });
+        this.bindActivityChartTooltip(container);
+        void this.mountStatsHealthLines?.(container);
+        void this.mountStatsColumns?.(container);
+        container.querySelectorAll('[data-stats-action]').forEach((btn) => {
+            // Guarded like the panel links below, and for a sharper reason:
+            // repaintStatsBody binds the replaced foot and then binds the whole
+            // dashboard container, which contains it. Export is not
+            // idempotent, so a second listener meant a second file in the
+            // user's downloads for one click.
+            if (btn.dataset.statsActionBound === '1') return;
+            btn.dataset.statsActionBound = '1';
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-stats-action');
+                if (action === 'export') void this.exportStatsCSV();
+                // Recomputed from what is in memory, so this is a repaint
+                // rather than a fetch — except for the two tabs whose figures
+                // come from the server, which are dropped so they are asked for
+                // again.
+                if (action === 'refresh') {
+                    this._statsTrend = undefined;
+                    this._statsHealth = undefined;
+                    this._statsInboxItems = undefined;
+                    this._statsInboxAgg = undefined;
+                    this._statsFinders = undefined;
+                    this._statsLibrary = undefined;
+                    this._statsServer = undefined;
+                    this._statsNotify = undefined;
+                    this._statsFeeds = undefined;
+                    // Refresh means "work them out again", so the memo goes too
+                    // — otherwise the button would only re-fetch the two
+                    // server-side tabs and hand back the same cached arithmetic
+                    // for the other three.
+                    this.invalidateStatsCache();
+                    this.loadStatsTabData(this.statsTab);
+                    this.repaintStatsBody();
+                }
+                // Duplicates are the actionable half of this panel, and health
+                // is where they can actually be merged.
+                if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
+                // The whole tab, not only its duplicates: broken links and
+                // monitors down were listed here with no way through to the
+                // view that repairs them.
+                if (action === 'open-health-view') this.openViewFromTile('health');
+                if (action === 'add-bookmark') this.openAddBookmarkModal();
+                // The summary's own way through: the shortcut panel it names
+                // lives on Activity, a tab away from where the line is read.
+                if (action === 'shortcuts') {
+                    this.statsTab = 'usage';
+                    this.restoreConfigHash();
+                    this.render();
+                    setTimeout(() => document.getElementById('config-stats-shortcuts')
+                        ?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 80);
+                }
+            });
+        });
+        // Cleanup candidates hand off to the bookmarks list, which is where the
+        // rows can actually be tagged or deleted.
+        container.querySelectorAll('[data-cleanup-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-cleanup-goto');
+                if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
+                this.bmCleanupFilter = key;
+                this.bmTagFilter = [];
+                // A stale search or category from an earlier visit would narrow
+                this.bmQuery = '';
+                this.bmPageFilter = '';
+                this.bmCategoryFilter = '';
+                this.bmSelected.clear();
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
+                void this.openLibraryView();
+            });
+        });
+        // A statistics row that names something the bookmark list can filter by
+        // hands off to it, the way the cleanup panel already does. Same reset of
+        // the other filters, so what lands is the row you clicked and not that
+        // row narrowed by whatever an earlier visit left behind.
+        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const raw = btn.getAttribute('data-stats-goto') || '';
+                const split = raw.indexOf(':');
+                const kind = split < 0 ? '' : raw.slice(0, split);
+                const value = split < 0 ? '' : raw.slice(split + 1);
+                if (!kind || !value) return;
+
+                this.bmCleanupFilter = '';
+                this.bmQuery = '';
+                this.bmPageFilter = '';
+                this.bmCategoryFilter = '';
+                this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
+                // A bookmark names a row rather than a tag, so it arrives as the
+                // list's own search — the filter that reproduces "this row, in
+                // the list where I can act on it". A category arrives as its
+                // pageId::id key, which is what bookmarks carry, not its label.
+                if (kind === 'bookmark') this.bmQuery = String(value);
+                if (kind === 'category') this.bmCategoryFilter = String(value);
+                this.bmSelected.clear();
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
+                this._trackAction('stats-goto', { kind });
+                void this.openLibraryView();
+            });
+        });
+
+        // The 🔗 beside a tab's heading, same clipboard path as Help's.
+        container.querySelectorAll('[data-stats-panel-link]').forEach((btn) => {
+            if (btn.dataset.statsLinkBound === '1') return;
+            btn.dataset.statsLinkBound = '1';
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-stats-panel-link') || this.statsTab;
+                const url = `${window.location.origin}${window.location.pathname}#config/stats/${tab}`;
+                void navigator.clipboard?.writeText(url)
+                    .then(() => this.notify(this.t('config.helpLinkCopied', 'Link copied'), 'success'))
+                    .catch(() => this.notify(this.t('config.copyFailed', 'Could not copy'), 'error'));
+            });
+        });
+
+        const scopeSelect = container.querySelector('[data-stats-scope]');
+        if (scopeSelect) {
+            scopeSelect.addEventListener('change', () => {
+                this.statsPageFilter = scopeSelect.value || '';
+                this.repaintStatsBody();
+            });
+        }
+        // A panel's way to another tab. Its own attribute: it shared
+        // data-stats-goto with the bookmark rows, so clicking the tag "dev"
+        // also set the open tab to "tag:dev".
+        container.querySelectorAll('[data-stats-tab-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-stats-tab-goto');
+                if (!DashboardConfig.STATS_TABS.includes(tab) || tab === this.statsTab) return;
+                this.statsTab = tab;
+                this.restoreConfigHash();
+                this.loadStatsTabData(tab);
+                this.repaintStatsBody();
+                this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            });
+        });
+        // "containers:updates" opens that section on that tab.
+        container.querySelectorAll('[data-stats-section-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const [section, tab] = String(btn.getAttribute('data-stats-section-goto') || '').split(':');
+                const state = DashboardConfig.SUB_TAB_STATE[section];
+                if (tab && state && DashboardConfig.SUB_TABS[section]?.includes(tab)) this[state] = tab;
+                this.selectSection(section);
+            });
+        });
+        container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.getAttribute('data-stats-opens-mode');
+                if (mode !== 'opens' && mode !== 'lastUsed') return;
+                this.statsOpensMode = mode;
+                try { localStorage.setItem(DashboardConfig.STATS_OPENS_MODE_KEY, mode); } catch { /* per session then */ }
+                this.repaintStatsBody();
+            });
+        });
+        this.bindStatsFeeds?.(container);
+        container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = Number(btn.getAttribute('data-stats-inbox-range'));
+                if (![7, 30, 90].includes(next) || next === this.statsInboxRange) return;
+                this.statsInboxRange = next;
+                this.repaintStatsBody();
+            });
+        });
+        this.bindFormKeyboard(container);
+    },
+
+    buildAndDownloadStatsCSV() {
+        const s = this.computeStats();
+        const a = s.activity;
+        const scopePage = this.statsScopePage();
+        const rows = [
+            ['metric', 'value'],
+            // Named first: a file of counts with no scope in it is a file that
+            // will be misread the week after it was exported.
+            ['scope', scopePage ? (scopePage.name || `#${scopePage.id}`) : 'all pages'],
+            ['bookmarks', s.total],
+            ['pages', s.pages],
+            ['categories', s.categories],
+            ['distinct_tags', s.tagCount],
+            ['tagged', s.tagged],
+            ['with_shortcut', s.withShortcut],
+            ['with_note', s.withNote],
+            ['with_icon', s.withIcon],
+            ['availability_checked', s.checked],
+            ['monitored', s.monitored],
+            ['never_opened', s.neverOpened],
+            // The threshold is a setting (7–365 days), so naming the column
+            // after 90 made the export claim something the panel above it did
+            // not: with the setting on 30, both were the same number under two
+            // different names.
+            ['stale_days_threshold', this.bookmarkStaleDays()],
+            ['stale_bookmarks', s.stale90],
+            ['duplicate_urls', s.duplicateUrls],
+            ['shortcut_conflicts', s.shortcutConflicts],
+            ['cleanup_score', s.cleanup.score],
+            // The activity panel's own figures, which the export omitted
+            // entirely — the tab you are looking at contributed nothing to it.
+            ['activity_range_days', this.statsRange || 30],
+            ['activity_bucket_days', a.bucketDays],
+            ['activity_bookmarks_used', a.activeCount],
+            ['activity_opens_all_time', a.totalOpens],
+            ['opens_total', s.concentration.totalOpens],
+            ['bookmarks_ever_opened', s.concentration.usedCount],
+            ['top10_share_of_opens_pct', s.concentration.share],
+        ];
+        s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
+        rows.push(['empty_pages', s.emptyPages || 0]);
+        const scoped = this.statsScopedBookmarks();
+        if (typeof this.statsRecency === 'function') {
+            this.statsRecency(scoped).forEach(([k, n]) => rows.push([`last_opened_${k}`, n]));
+            this.statsOpenCountBands(scoped).forEach(([k, n]) => rows.push([`opened_times_${k}`, n]));
+            this.statsTagsPerBookmark(scoped).forEach(([k, n]) => rows.push([`tags_per_bookmark_${k}`, n]));
+            this.statsAge(scoped).forEach(([k, n]) => rows.push([`saved_${k}`, n]));
+            const d = this.statsDomains(scoped);
+            rows.push(['unique_hosts', d.unique]);
+            rows.push(['self_hosted', d.selfHosted]);
+            d.hosts.forEach(([host, n]) => rows.push([`host:${host}`, n]));
+        }
+        s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
+        // The untruncated lists: the rows are labelled `tag:` and `bookmark:`,
+        // so stopping at the twenty the panel happens to show would be a
+        // silently partial export dressed as a complete one.
+        (s.topTagsAll || s.topTags).forEach(([tag, n]) => rows.push([`tag:${tag}`, n]));
+        (s.topOpenedAll || s.topOpened).forEach(([name, n]) => rows.push([`bookmark_opens:${name}`, n]));
+        s.categoryEffectiveness.forEach((c) => rows.push([`category_opens_per_bookmark:${c.label}`, c.perBookmark.toFixed(2)]));
+        // The chart series itself, one row per bar, so the shape is reproducible
+        // in a spreadsheet rather than only visible on screen.
+        (a.dateLabels || []).forEach((d, i) => rows.push([`bookmarks_last_used:${d}`, a.buckets[i]]));
+
+        // Inbox and Health are two of the five tabs and come from the server
+        // rather than from computeStats(). The section loads both on the way in
+        // now, so an export normally carries them — but a download fired before
+        // those answered would otherwise be a complete-looking file with two
+        // tabs silently missing. So the file says which it is: `included,0`
+        // reads as "asked, and it is not in here".
+        const inbox = this._statsInboxAgg;
+        rows.push(['inbox_included', inbox ? 1 : 0]);
+        rows.push(['health_included', this._statsHealth ? 1 : 0]);
+        // Watch feeds is a third server tab. Off or empty it contributes
+        // nothing, and `included,0` says so rather than leaving the file silent.
+        const feeds = this._statsFeeds;
+        const feedsIn = Boolean(feeds && feeds.enabled && (feeds.feeds || []).length);
+        rows.push(['feeds_included', feedsIn ? 1 : 0]);
+        if (feedsIn) {
+            const tot = feeds.totals || {};
+            rows.push(['feeds_period_days', feeds.days]);
+            rows.push(['feeds_watched', tot.feeds || 0]);
+            rows.push(['feeds_items_last_7_days', tot.published || 0]);
+            rows.push(['feeds_read_last_7_days', tot.read || 0]);
+            rows.push(['feeds_read_pct_last_7_days', tot.readPct || 0]);
+            rows.push(['feeds_unread_now', tot.unreadNow || 0]);
+            rows.push(['feeds_errors_last_7_days', tot.failed || 0]);
+            rows.push(['feeds_push_last_7_days', feeds.health?.push || 0]);
+            rows.push(['feeds_webhooks_last_7_days', feeds.health?.webhooks || 0]);
+            (feeds.feeds || []).forEach((f) => {
+                const label = f.title && f.title !== f.name ? `${f.name} · ${f.title}` : f.name;
+                rows.push([`feed_items:${label}`, f.published]);
+                rows.push([`feed_read:${label}`, f.read]);
+                rows.push([`feed_unread:${label}`, f.unread]);
+                rows.push([`feed_state:${label}`, f.state]);
+            });
+            (feeds.daily || []).forEach((d) => {
+                rows.push([`feed_items_published:${d.date}`, d.published]);
+                rows.push([`feed_items_read:${d.date}`, d.read]);
+            });
+        }
+        if (inbox) {
+            rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
+            rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);
+            rows.push(['inbox_promoted_lifetime', Number(inbox.totalPromoted || 0)]);
+            rows.push(['inbox_kept_lifetime', Number(inbox.totalKept || 0)]);
+            rows.push(['inbox_deleted_lifetime', Number(inbox.totalDeleted || 0)]);
+        }
+        const health = this._statsHealth;
+        if (health) {
+            rows.push(['health_healthy', Number(health.healthy || 0)]);
+            rows.push(['health_broken', Number(health.broken || 0)]);
+            rows.push(['health_monitors_down', Number(health.monitorDown || 0)]);
+            rows.push(['health_unchecked', Number(health.unchecked || 0)]);
+            if (health.avgScore !== null && health.avgScore !== undefined) rows.push(['health_score_avg', health.avgScore]);
+            Object.entries(health.flags || {}).forEach(([flag, n]) => rows.push([`flag:${flag}`, n]));
+            const incidents = health.incidents || [];
+            rows.push(['outages_on_record', Math.max(Number(health.fleet?.totalIncidents) || 0, incidents.length)]);
+            rows.push(['downtime_minutes', Math.round(incidents.reduce((n, i) => n + (Number(i.durationMs) || 0), 0) / 60000)]);
+        }
+
+        const esc = (v) => {
+            const str = String(v ?? '');
+            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        };
+        const csv = rows.map((r) => r.map(esc).join(',')).join('\n');
+        this.triggerDownload(new Blob([csv], { type: 'text/csv' }),
+            `nextdash-stats-${new Date().toISOString().slice(0, 10)}.csv`);
+    },
+
+    /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
+    /**
+     * Every tab's figures, including the two that are not on screen.
+     *
+     * Health and Inbox come from the server and load when their tab is opened —
+     * deliberately, so opening Statistics does not fetch what nobody asked to
+     * see. That left the export carrying three tabs out of five, dressed as a
+     * complete file. It waits for them here instead: the cost lands on the
+     * button that wants them rather than on every visit, and the file says
+     * `inbox_included,0` if a fetch failed rather than quietly dropping rows.
+     */
+    async exportStatsCSV() {
+        await Promise.all([
+            this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
+            this._statsHealth === undefined ? this.loadStatsHealth() : null,
+            this._statsFeeds === undefined ? this.loadStatsFeeds() : null,
+        ].filter(Boolean)).catch(() => {});
+        // The memo lives for one paint, and an export is not one: a bookmark
+        // renamed or opened since the last paint would go out under its old
+        // name or count.
+        this.invalidateStatsCache();
+        return this.buildAndDownloadStatsCSV();
+    },
+
+    /**
+     * Statistics used to be one long scroll of seven panels, which buried
+     * everything below the fold. The same panels are grouped into four tabs:
+     * the headline numbers and score, what you open over time, what your
+     * collection is made of, and what needs fixing.
+     */
+    renderStats() {
+        this.invalidateStatsCache();
+        // The renderers for this section live in dashboard-config-stats.js and
+        // arrive with the first visit to it; the shell below is drawn either way
+        // and renderStatsBody fills in once they are here.
+        void this.ensureStatsRenderers();
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.STATS_TABS.map((tab) => {
+            const active = tab === this.statsTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-stats-body" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
+        }).join('');
+
+        const pages = this.dash.pages || [];
+        // Offered only where there is a choice to make: on a single-page
+        // install every figure is that page's already.
+        const scope = pages.length > 1
+            ? `<label class="config-stats-scope">
+                    <span class="config-stats-scope-label">${esc(this.t('config.statsScopeLabel', 'Showing'))}</span>
+                    <select class="config-select" data-stats-scope>
+                        <option value=""${this.statsPageFilter ? '' : ' selected'}>${esc(this.t('config.statsScopeAll', 'All pages'))}</option>
+                        ${pages.map((p) => `<option value="${esc(String(p.id))}"${String(p.id) === String(this.statsPageFilter) ? ' selected' : ''}>${esc(p.name || `#${p.id}`)}</option>`).join('')}
+                    </select>
+                </label>`
+            : '';
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
+            <div class="config-stats-head">
+                <div class="config-subtabs" role="tablist">${tabs}</div>
+                ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
+                ${scope}
+                ${this.renderStatsTimestampSafe()}
+            </div>
+            ${this.renderSectionTabNote('stats', this.statsTab)}
+            <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
+        `;
+    },
+
+    saveStatsRange(days) {
+        try {
+            localStorage.setItem(DashboardConfig.STATS_RANGE_KEY, String(days));
+        } catch {
+            // localStorage unavailable — the range still applies for this visit
+        }
+    }
+
     });
 
     global.DashboardConfigStatsReady = true;
