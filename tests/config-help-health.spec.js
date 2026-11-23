@@ -297,7 +297,7 @@ test.describe('config help — translations', () => {
             await page.evaluate(async (code) => {
                 const d = window.dashboardInstance;
                 await d.language.loadTranslations(code);
-                d.config.openConfigView('help');
+                await d.config.openConfigView('help');
             }, lang);
             // Help's own strings load in a second, scoped fetch
             // (ensureHelpTranslations), so loadTranslations resolving is not the
