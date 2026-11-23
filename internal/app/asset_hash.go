@@ -172,6 +172,7 @@ var lazyLoadedAssets = []string{
 	// it had from before a deploy and ran old code against new markup.
 	"js/dashboard/dashboard-config-logs.js",
 	"js/dashboard/dashboard-config-help.js",
+	"js/dashboard/dashboard-config-about.js",
 	"js/dashboard/dashboard-config-containers.js",
 	"js/dashboard/dashboard-config-unraid.js",
 	"js/dashboard/dashboard-config-status-page.js",

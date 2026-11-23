@@ -126,6 +126,11 @@ class DashboardConfig {
             datasetKey: 'dashboardConfigHelp',
             ready: () => window.DashboardConfigHelpReady === true,
         },
+        about: {
+            file: 'js/dashboard/dashboard-config-about.js',
+            datasetKey: 'dashboardConfigAbout',
+            ready: () => window.DashboardConfigAboutReady === true,
+        },
         /*
          * The widget editor, and the one panel that is more than a table of
          * settings: the media tiles' connect-then-choose flow, in a file of its own so
@@ -26028,43 +26033,6 @@ class DashboardConfig {
             <div id="config-about-body" role="tabpanel" tabindex="0">${this.renderAboutBody()}</div>`;
     }
 
-    /** The two About tabs, plus the buttons the news tab carries. */
-    bindAboutTabs(container) {
-        const body = container.querySelector('#config-view-body') || container;
-        if (body.dataset.aboutBound === '1') return;
-        body.dataset.aboutBound = '1';
-        // `toggle` does not bubble, so it is caught on the way down.
-        body.addEventListener('toggle', (e) => {
-            if (this.section === 'about' && e.target.matches?.('[data-about-credits]') && e.target.open) void this.loadLicences();
-        }, true);
-        body.addEventListener('click', (e) => {
-            if (this.section !== 'about') return;
-            const tab = e.target.closest('[data-about-tab]');
-            if (tab) {
-                this.aboutTab = DashboardConfig.normalizeAboutTab(tab.getAttribute('data-about-tab'));
-                this._trackAction('subtab', { section: 'about', tab: this.aboutTab, via: 'click' });
-                this.render();
-                this.restoreConfigHash();
-                return;
-            }
-            const chip = e.target.closest('[data-news-filter]');
-            if (chip) {
-                const next = window.DashboardNewsStream?.SOURCES?.includes(chip.getAttribute('data-news-filter'))
-                    ? chip.getAttribute('data-news-filter')
-                    : 'all';
-                this.newsFilter = this.newsFilter === next ? 'all' : next;
-                this.render();
-                return;
-            }
-            if (e.target.closest('[data-about-action="copy-diagnostics"]')) {
-                void this.copyDiagnostics();
-                return;
-            }
-            const go = e.target.closest('[data-overview-go]');
-            if (go) this.handleOverviewGo(go);
-        });
-    }
-
     aboutTabLabel(tab) {
         if (tab === 'news') return this.t('config.aboutTabNews', 'News & features');
         if (tab === 'install') return this.t('config.aboutTabInstall', 'Install');
@@ -26164,19 +26132,6 @@ class DashboardConfig {
             }).join('')}</ul>`).join('');
     }
 
-    /** Fetch the licence list the first time the credits are opened. */
-    async loadLicences() {
-        if (this._licences !== undefined) return;
-        try {
-            const res = await fetch('/static/data/licenses.json');
-            this._licences = res.ok ? await res.json() : null;
-        } catch {
-            this._licences = null;
-        }
-        const target = document.querySelector('[data-about-licences]');
-        if (target) target.innerHTML = this.renderLicenceList();
-    }
-
     /**
      * About → Install: which release this is, whether it is the newest, and the
      * facts a bug report needs. The release comes from the update status the
@@ -26272,140 +26227,6 @@ class DashboardConfig {
         if (!this.isActiveView() || this.section !== 'about' || this.aboutTab !== 'install') return;
         const body = document.getElementById('config-about-body');
         if (body) body.innerHTML = this.renderAboutInstall();
-    }
-
-    /**
-     * The Markdown a bug report needs. Counts and on/off names only: never a
-     * bookmark name or address, the data path, a token or a setting's value.
-     */
-    buildDiagnostics() {
-        const info = this._aboutInfo || {};
-        const status = this._updateStatus || {};
-        const s = this.computeStats();
-        const settings = this.dash.settings || {};
-        const features = Object.entries(DashboardConfig.HELP_PANEL_FEATURES)
-            .filter(([, f]) => f.isOn(settings))
-            .map(([key]) => this.t(key, key));
-        const unknown = 'unknown';
-        const lines = [
-            '### nextDash',
-            `- Release: ${status.current || info.release || unknown}`,
-            `- Build: ${[info.buildVersion, info.buildCommit].filter((v) => v && v !== 'unknown').join(' ') || unknown}${info.buildDate ? ` (${info.buildDate})` : ''}`,
-            status.latest ? `- Latest on GitHub: ${status.latest}` : '',
-            '',
-            '### Environment',
-            `- Platform: ${info.os ? `${info.os}/${info.arch}` : unknown}`,
-            `- Go: ${info.goVersion || unknown}`,
-            `- Uptime: ${info.uptimeSeconds !== undefined ? DashboardConfig.formatUptime(info.uptimeSeconds) : unknown}`,
-            `- Data size: ${info.dataBytes ? this.formatBytes(info.dataBytes) : unknown}`,
-            '',
-            '### Counts',
-            `- Pages: ${(this.dash.pages || []).length}`,
-            `- Categories: ${s.categories}`,
-            `- Bookmarks: ${(this.dash.allBookmarks || []).length}`,
-            `- Widgets: ${this._statsLibrary && this._statsLibrary.widgets !== null ? this._statsLibrary.widgets : unknown}`,
-            `- Tags: ${s.tagCount}`,
-            '',
-            '### Features on',
-            features.length ? features.map((f) => `- ${f}`).join('\n') : '- none of the optional ones',
-            '',
-            '### Browser',
-            `- ${navigator.userAgent}`,
-            `- Language: ${navigator.language || unknown}`,
-            `- Screen: ${window.innerWidth}x${window.innerHeight}`,
-            `- Theme: ${settings.theme || unknown}`,
-        ];
-        return lines.filter((l, i) => l !== '' || lines[i - 1] !== '').join('\n');
-    }
-
-    async copyDiagnostics() {
-        const text = this.buildDiagnostics();
-        let copied = false;
-        try {
-            await navigator.clipboard.writeText(text);
-            copied = true;
-        } catch {
-            // Plain-HTTP LAN installs have no Clipboard API.
-            const area = document.createElement('textarea');
-            area.value = text;
-            area.setAttribute('readonly', '');
-            area.style.position = 'fixed';
-            area.style.opacity = '0';
-            document.body.appendChild(area);
-            area.select();
-            try { copied = document.execCommand('copy'); } catch { copied = false; }
-            area.remove();
-        }
-        this.notify(copied
-            ? this.t('config.aboutDiagCopied', 'Diagnostics copied.')
-            : this.t('config.aboutDiagFailed', 'Could not copy. Select the text and copy it by hand.'), copied ? 'success' : 'error');
-    }
-
-    /**
-     * The Tips tab's own filter.
-     *
-     * Hides rows rather than re-rendering: the tips carry markup we wrote, the
-     * list is short enough to filter in the DOM, and keeping the nodes means the
-     * field never loses focus mid-word. A group with nothing left goes with its
-     * rows, so the page does not fill with empty headings.
-     */
-    bindTipsFilter(container) {
-        const field = container.querySelector('#config-tips-filter');
-        if (!field || field.dataset.tipsFilterBound === '1') return;
-        field.dataset.tipsFilterBound = '1';
-
-        const apply = () => {
-            const query = String(field.value || '').trim().toLowerCase();
-            this.tipsQuery = field.value;
-            let shown = 0;
-            let total = 0;
-            container.querySelectorAll('[data-tip-group]').forEach((group) => {
-                let visible = 0;
-                group.querySelectorAll('[data-tip-row]').forEach((row) => {
-                    total += 1;
-                    const hit = !query || row.textContent.toLowerCase().includes(query);
-                    row.hidden = !hit;
-                    if (hit) visible += 1;
-                });
-                group.hidden = visible === 0;
-                shown += visible;
-            });
-            const count = container.querySelector('[data-tips-count]');
-            if (count) {
-                count.textContent = query
-                    ? this.t('config.helpTipsFilterCount', '{shown} of {total}')
-                        .replace('{shown}', String(shown)).replace('{total}', String(total))
-                    : '';
-            }
-            const empty = container.querySelector('[data-tips-empty]');
-            if (empty) empty.hidden = !(query && shown === 0);
-        };
-
-        field.addEventListener('input', apply);
-        field.addEventListener('search', apply);
-        if (this.tipsQuery) apply();
-    }
-
-    /**
-     * Copy a link that reopens this one topic.
-     *
-     * The address is the config hash with the panel appended, so it survives a
-     * paste into a chat window and lands on the panel rather than on the tab it
-     * happens to live in this month.
-     */
-    async copyHelpPanelLink(panelId) {
-        if (!panelId) return;
-        const url = `${window.location.origin}${window.location.pathname}#config/help/${this.helpTab}/${panelId}`;
-        try {
-            await navigator.clipboard.writeText(url);
-            this.notify(this.t('config.helpLinkCopied', 'Link to this topic copied.'), 'success');
-        } catch {
-            // Clipboard access is refused outside a secure context, which is
-            // every plain-http install — so the address goes in the bar instead,
-            // where it can be copied by hand.
-            window.location.hash = `config/help/${this.helpTab}/${panelId}`;
-            this.notify(this.t('config.helpLinkInAddressBar', 'The link is in the address bar.'), 'info');
-        }
     }
 
     /**
@@ -26545,6 +26366,73 @@ class DashboardConfig {
         const shown = [...DashboardConfig.HELP_TAB_GROUPS[0].tabs];
         if (!shown.includes(this.helpTab)) shown.push(this.helpTab);
         return shown;
+    }
+
+    /**
+     * The Tips tab's own filter.
+     *
+     * Hides rows rather than re-rendering: the tips carry markup we wrote, the
+     * list is short enough to filter in the DOM, and keeping the nodes means the
+     * field never loses focus mid-word. A group with nothing left goes with its
+     * rows, so the page does not fill with empty headings.
+     */
+    bindTipsFilter(container) {
+        const field = container.querySelector('#config-tips-filter');
+        if (!field || field.dataset.tipsFilterBound === '1') return;
+        field.dataset.tipsFilterBound = '1';
+
+        const apply = () => {
+            const query = String(field.value || '').trim().toLowerCase();
+            this.tipsQuery = field.value;
+            let shown = 0;
+            let total = 0;
+            container.querySelectorAll('[data-tip-group]').forEach((group) => {
+                let visible = 0;
+                group.querySelectorAll('[data-tip-row]').forEach((row) => {
+                    total += 1;
+                    const hit = !query || row.textContent.toLowerCase().includes(query);
+                    row.hidden = !hit;
+                    if (hit) visible += 1;
+                });
+                group.hidden = visible === 0;
+                shown += visible;
+            });
+            const count = container.querySelector('[data-tips-count]');
+            if (count) {
+                count.textContent = query
+                    ? this.t('config.helpTipsFilterCount', '{shown} of {total}')
+                        .replace('{shown}', String(shown)).replace('{total}', String(total))
+                    : '';
+            }
+            const empty = container.querySelector('[data-tips-empty]');
+            if (empty) empty.hidden = !(query && shown === 0);
+        };
+
+        field.addEventListener('input', apply);
+        field.addEventListener('search', apply);
+        if (this.tipsQuery) apply();
+    }
+
+    /**
+     * Copy a link that reopens this one topic.
+     *
+     * The address is the config hash with the panel appended, so it survives a
+     * paste into a chat window and lands on the panel rather than on the tab it
+     * happens to live in this month.
+     */
+    async copyHelpPanelLink(panelId) {
+        if (!panelId) return;
+        const url = `${window.location.origin}${window.location.pathname}#config/help/${this.helpTab}/${panelId}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            this.notify(this.t('config.helpLinkCopied', 'Link to this topic copied.'), 'success');
+        } catch {
+            // Clipboard access is refused outside a secure context, which is
+            // every plain-http install — so the address goes in the bar instead,
+            // where it can be copied by hand.
+            window.location.hash = `config/help/${this.helpTab}/${panelId}`;
+            this.notify(this.t('config.helpLinkInAddressBar', 'The link is in the address bar.'), 'info');
+        }
     }
 
     /**
