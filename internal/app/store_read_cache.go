@@ -227,6 +227,11 @@ func cloneCategories(in []Category) []Category {
 	}
 	out := make([]Category, len(in))
 	copy(out, in)
+	for i := range out {
+		if len(out[i].Dividers) > 0 {
+			out[i].Dividers = append([]CategoryDivider(nil), out[i].Dividers...)
+		}
+	}
 	return out
 }
 

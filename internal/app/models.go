@@ -377,6 +377,8 @@ type Category struct {
 	Spread     bool   `json:"spread,omitempty"`     // May run across several grid columns; how many follows from the item limit
 	View       string `json:"view,omitempty"`       // How the bookmarks are drawn: empty is rows, "tiles" is a grid of icons; see category_view.go
 	VisibleOn  string `json:"visibleOn,omitempty"`  // Where it shows: empty is every screen, "desktop" or "mobile"; see visible_on.go
+	// Dividers are label rows between the bookmarks; see category_dividers.go.
+	Dividers []CategoryDivider `json:"dividers,omitempty"`
 }
 
 type Page struct {
@@ -3436,6 +3438,7 @@ func (fs *FileStore) saveCategoriesByPageLocked(pageID int, categories []Categor
 		categories[i].Name = clampEntityName(categories[i].Name)
 		categories[i].View = normalizeCategoryView(categories[i].View)
 		categories[i].VisibleOn = normalizeVisibleOn(categories[i].VisibleOn)
+		categories[i].Dividers = normalizeCategoryDividers(categories[i].Dividers)
 	}
 	fs.ensureDataDir()
 

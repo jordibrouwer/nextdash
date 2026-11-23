@@ -405,6 +405,7 @@ func withLeftoverCategoryPages(prepared []preparedImportFile, leftover map[int][
 			cats[i] = foldCategoryIcon(cats[i])
 			cats[i].Name = clampEntityName(cats[i].Name)
 			cats[i].View = normalizeCategoryView(cats[i].View)
+			cats[i].Dividers = normalizeCategoryDividers(cats[i].Dividers)
 		}
 		data, err := json.MarshalIndent(PageWithBookmarks{
 			Page:       Page{ID: pageID, Name: fmt.Sprintf("Page %d", pageID)},
