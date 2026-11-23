@@ -137,6 +137,36 @@
               label: ['config.widgetCountdownTime', 'Time of day (optional)'] },
             { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
         ],
+        timer: [
+            { key: 'mode', kind: 'choice', label: ['config.widgetTimerMode', 'Kind of timer'],
+              options: [
+                  ['timer', ['config.widgetTimerModeTimer', 'Kitchen timer: one countdown']],
+                  ['pomodoro', ['config.widgetTimerModePomodoro', 'Pomodoro: focus rounds and breaks']],
+              ] },
+            { key: 'look', kind: 'choice', label: ['config.widgetTimerLook', 'Look'],
+              options: [
+                  ['ring', ['config.widgetTimerLookRing', 'A ring around the time']],
+                  ['bar', ['config.widgetTimerLookBar', 'Large time with a bar below']],
+                  ['row', ['config.widgetTimerLookRow', 'One compact row']],
+              ] },
+            { key: 'presets', kind: 'tags',
+              label: ['config.widgetTimerPresets', 'Kitchen timer presets (minutes)'],
+              placeholder: ['config.widgetTimerPresetsPlaceholder', '1, 5, 10, 15'],
+              hint: ['config.widgetTimerPresetsHint', 'Comma separated whole minutes, up to six. For example 1, 5, 10, 15.'] },
+            { key: 'focusMinutes', kind: 'int', min: 1, max: 180,
+              label: ['config.widgetTimerFocus', 'Pomodoro: focus (minutes)'] },
+            { key: 'shortBreakMinutes', kind: 'int', min: 1, max: 60,
+              label: ['config.widgetTimerShortBreak', 'Pomodoro: short break (minutes)'] },
+            { key: 'longBreakMinutes', kind: 'int', min: 1, max: 90,
+              label: ['config.widgetTimerLongBreak', 'Pomodoro: long break (minutes)'] },
+            { key: 'rounds', kind: 'int', min: 2, max: 8,
+              label: ['config.widgetTimerRounds', 'Pomodoro: focus rounds before a long break'] },
+            { key: 'autoNext', kind: 'bool', label: ['config.widgetTimerAutoNext', 'Pomodoro: start the next phase by itself'] },
+            { key: 'sound', kind: 'bool', defaultOn: true, label: ['config.widgetTimerSound', 'Play a sound when time is up'],
+              hint: ['config.widgetTimerSoundHint', 'A running timer lives in this browser only. It changes nothing on other devices, and a change of settings applies from the next phase.'] },
+            { key: 'notify', kind: 'bool', label: ['config.widgetTimerNotify', 'Also show a system notification'],
+              hint: ['config.widgetTimerNotifyHint', 'The browser asks for permission the first time you start the timer with this on.'] },
+        ],
         stack: [
             // max: widgetMaxStackMembers in widgets.go, which drops the rest unsaid.
             { key: 'members', kind: 'checkset', optionsFrom: 'siblings', max: 6,
@@ -3165,7 +3195,8 @@
                         data-widget-index="${index}" data-widget-kind="bool"
                         ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
                     <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
-                </label>`;
+                </label>
+                ${field.hint ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}`;
         }
         if (field.kind === 'int') {
             /*
@@ -3275,7 +3306,8 @@
                     <input type="text" id="${id}" class="config-text"
                         data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                         data-widget-kind="tags" maxlength="400" value="${esc(value)}"
-                        placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                        placeholder="${esc(field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    ${field.hint ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}
                     ${suggestions}
                 </div>`;
         }
@@ -5656,6 +5688,8 @@
         // failed save left the widget pointing at a key that was gone.
         // Not for a widget on every page: the other copies sign in with it.
         if (!block.everywhere) await this.forgetWidgetCredential(block);
+        // A timer run lives in this browser by widget id; it goes with the widget.
+        if (!block.everywhere) window.DashboardWidgetTimer?.forget?.(block.id);
         this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();

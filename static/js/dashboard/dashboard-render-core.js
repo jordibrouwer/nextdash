@@ -1268,6 +1268,7 @@ class DashboardRenderCore {
         stack: 'Tabs',
         clock: 'Clock',
         countdown: 'Countdown',
+        timer: 'Timer',
         'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',

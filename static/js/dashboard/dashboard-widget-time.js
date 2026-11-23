@@ -565,5 +565,5 @@
     window.DashboardWidgets.clock = drawClock;
     window.DashboardWidgets.countdown = drawCountdown;
     // For the tests: the arithmetic apart from the drawing.
-    window.DashboardWidgetTime = { parseZone, targetOf, dayNumber, moonOf, sunTimes };
+    window.DashboardWidgetTime = { parseZone, targetOf, dayNumber, moonOf, sunTimes, keepTicking, stopTicking };
 }());
