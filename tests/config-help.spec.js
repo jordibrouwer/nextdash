@@ -184,6 +184,30 @@ test.describe('one topic can be linked to', () => {
         expect(await page.evaluate(() => location.hash)).toBe('#config/help/monitoring/health-cert');
     });
 
+    // The drawings are data, fetched with the section. Arriving after the first
+    // paint they replaced the whole body: the panel the link named was detached
+    // (and lost its highlight), and the strips pushed its replacement down.
+    test('a linked panel keeps its place when the drawings arrive', async ({ page }) => {
+        // A slow answer, so the drawings land well after anything that did not wait.
+        await page.route('**/help-panel-art.json*', async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 900));
+            await route.continue();
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/help/monitoring/health-cert');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        const panel = page.locator('#help-panel-health-cert');
+        await expect(panel).toBeVisible({ timeout: 15_000 });
+        // Already in the first draw, not put in afterwards.
+        const handle = await panel.elementHandle();
+        expect(await page.evaluate(() => document.querySelectorAll('#config-help-body .config-help-art').length)).toBeGreaterThan(0);
+        await page.waitForTimeout(1500);
+        expect(await handle.evaluate((el) => el.isConnected)).toBe(true);
+    });
+
     test('every panel carries an id, and a link button', async ({ page }) => {
         await openHelp(page, 'health');
         const panels = await page.locator('#config-help-body [data-help-panel]').count();

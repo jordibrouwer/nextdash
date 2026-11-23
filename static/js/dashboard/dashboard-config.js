@@ -1314,6 +1314,9 @@ class DashboardConfig {
         }
         void this.ensureSection(section).then((ok) => {
             if (!ok || this.section !== section || !this.isActiveView()) return;
+            // A file that ran without raising its ready flag would send render()
+            // back here for ever; draw only what can be drawn.
+            if (!mod.ready()) return;
             this.render();
         });
     }
@@ -2692,6 +2695,15 @@ class DashboardConfig {
     render() {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        // A caller outside this file (a data refresh, a language change) can
+        // ask for a draw while the open section's own file is still on its way,
+        // and renderSection would call a method that is not there yet. Wait for
+        // the file, then draw: renderWhenSectionLoaded calls back in once it is.
+        const lazy = DashboardConfig.SECTION_MODULES[this.section];
+        if (lazy && !lazy.ready()) {
+            this.renderWhenSectionLoaded();
+            return;
+        }
         this.closeWorkbenchOverlaysOffList();
         container.classList.remove('inbox-layout');
         container.classList.add('config-layout', 'page-transition');
@@ -19983,6 +19995,11 @@ class DashboardConfig {
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
         const load = window.LazyScript.loadScriptOnce;
+        // Fetched side by side and run in order below. Without this the sixteen
+        // files are sixteen round trips in a row, which is what opening
+        // Bookmarks from the Config rail became once Overview stopped warming
+        // them. A no-op once the loader's own preload has already asked.
+        window.DashboardConfigLoader?.preloadBookmarkScripts?.();
         // In order: the workbench builds on both of the others.
         this._bookmarkRenderersPromise = load('js/shared/bookmark-workbench-model.js',
             'bookmarkWorkbenchModel', () => Boolean(window.BookmarkWorkbenchModel))
@@ -20289,7 +20306,7 @@ class DashboardConfig {
         if (!this.isActiveView()) return;
         if (this.section === 'bookmarks') {
             this.repaintBookmarksList();
-        } else if (this.section === 'stats') {
+        } else if (this.inSection('stats')) {
             this.repaintStatsBody();
         }
     }
@@ -23589,7 +23606,19 @@ class DashboardConfig {
         return (entry.chain || [entry]).every((s) => s.optional || s.ready());
     }
 
+    /**
+     * A section's file, and what it cannot be drawn without. Help's drawings
+     * are data, not code, but a panel linked from the address is scrolled to
+     * once, and strips arriving after that push it away: so they are awaited
+     * here, where the view changes, and not after the first paint.
+     */
     ensureSection(id) {
+        const files = this.ensureSectionFiles(id);
+        if (id !== 'help') return files;
+        return files.then((ok) => (ok ? this.loadHelpArt().then(() => true) : ok));
+    }
+
+    ensureSectionFiles(id) {
         const entry = DashboardConfig.SECTION_MODULES[id];
         if (!entry || entry.ready()) return Promise.resolve(true);
         this._sectionPromises = this._sectionPromises || {};
@@ -23635,7 +23664,8 @@ class DashboardConfig {
         const next = () => {
             const id = ids.shift();
             if (!id) return;
-            this.ensureSection(id).then(() => schedule());
+            // The files only: Help's drawings are for Help being opened.
+            this.ensureSectionFiles(id).then(() => schedule());
         };
         const schedule = () => {
             if (!ids.length) return;
@@ -24945,32 +24975,51 @@ class DashboardConfig {
     }
 
     /**
-     * The help drawings, once. Answers from memory when they are here and
-     * starts the fetch when not; a panel drawn before they land has no strip,
-     * and the repaint on arrival puts it in, the way late help prose does.
+     * The help drawings, from memory. Never starts the fetch on a render path
+     * that Help's own opening already awaited (ensureSection('help') does, so
+     * the first draw has the strips and a linked panel is not pushed down by
+     * them). A caller that got here without it starts one try, and the strips
+     * are put in on arrival.
      */
     ensureHelpArt() {
         if (this._helpArt) return this._helpArt;
-        if (this._helpArtPromise) return null;
-        // Versioned by the app fingerprint, as overview-features.json is: the
-        // asset hasher covers .js and .css only.
+        if (!this._helpArtPromise && !this._helpArtTried) {
+            this._helpArtTried = true;
+            void this.loadHelpArt().then(() => {
+                if (!this._helpArt || this.section !== 'help' || !this.isActiveView()) return;
+                const body = document.getElementById('config-help-body');
+                if (body) this.repaintHelpBodyKeepingSearch(body);
+            });
+        }
+        return null;
+    }
+
+    /**
+     * Fetch the drawings once. Resolves either way: Help without its strips is
+     * what it looked like before the pictures. A failed answer, whether a bad
+     * status or no network, is not remembered, so the next opening of Help
+     * asks again.
+     */
+    loadHelpArt() {
+        if (this._helpArt) return Promise.resolve(this._helpArt);
+        if (this._helpArtPromise) return this._helpArtPromise;
+        // Versioned by the app fingerprint, as overview-features.json is; the
+        // fingerprint covers static/data/*.json, so an edit to the file moves it.
         const version = document.querySelector('meta[name="nextdash-app-version"]')?.content || '';
         const file = DashboardConfig.HELP_PANEL_ART_FILE;
         const url = version ? `${file}?v=${encodeURIComponent(version)}` : file;
         this._helpArtPromise = fetch(url)
             .then((res) => (res.ok ? res.json() : null))
             .then((doc) => {
-                this._helpArt = doc && typeof doc === 'object' ? doc : {};
-                if (this.section !== 'help' || !this.isActiveView()) return;
-                const body = document.getElementById('config-help-body');
-                if (body) this.repaintHelpBodyKeepingSearch(body);
+                if (doc && typeof doc === 'object') this._helpArt = doc;
+                this._helpArtPromise = null;
+                return this._helpArt || null;
             })
             .catch(() => {
-                // No strip is what Help looked like before the pictures; a
-                // later open tries again.
                 this._helpArtPromise = null;
+                return null;
             });
-        return null;
+        return this._helpArtPromise;
     }
 
     /**

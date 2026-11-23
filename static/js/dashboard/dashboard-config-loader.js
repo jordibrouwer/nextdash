@@ -228,15 +228,25 @@ class DashboardConfigLoader {
      * the first time the module is there.
      */
     _bindIntentPrewarm() {
-        const SELECTOR = '.library-link-anchor, .config-link-anchor';
+        // Two kinds of intent, each worth one head start: the Bookmarks button
+        // (and Config's own Bookmarks entry) is on its way to the list's
+        // scripts, the Config link is not -- it opens Overview, which has no
+        // use for sixteen files of them. Hovering one kind first must not
+        // use up the other's, so the listeners go only when both have run.
+        const SELECTOR = '.library-link-anchor, .config-link-anchor, [data-config-section="bookmarks"]';
         const events = ['pointerover', 'focusin', 'touchstart'];
+        const done = { bookmarks: false, plain: false };
         const onIntent = (e) => {
-            if (!e.target?.closest?.(SELECTOR)) return;
-            events.forEach((type) => document.removeEventListener(type, onIntent, true));
-            // Only the Bookmarks button is on its way to the list's scripts.
-            // The Config link opens Overview, which has no use for sixteen
-            // files of them.
-            this.prewarm({ bookmarks: Boolean(e.target.closest('.library-link-anchor')) });
+            const hit = e.target?.closest?.(SELECTOR);
+            if (!hit) return;
+            const bookmarks = Boolean(hit.closest('.library-link-anchor, [data-config-section="bookmarks"]'));
+            const kind = bookmarks ? 'bookmarks' : 'plain';
+            if (done[kind]) return;
+            done[kind] = true;
+            if (done.bookmarks && done.plain) {
+                events.forEach((type) => document.removeEventListener(type, onIntent, true));
+            }
+            this.prewarm({ bookmarks });
         };
         events.forEach((type) => document.addEventListener(type, onIntent, { capture: true, passive: true }));
     }
