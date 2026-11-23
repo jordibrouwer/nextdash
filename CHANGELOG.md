@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.33.0 — 23 November 2026](#v1330--23-november-2026)
 - [v1.32.0 — 19 November 2026](#v1320--19-november-2026)
 - [v1.31.0 — 17 November 2026](#v1310--17-november-2026)
 - [v1.30.0 — 16 November 2026](#v1300--16-november-2026)
@@ -150,7 +150,29 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## Unreleased
+## v1.33.0 — 23 November 2026
+
+A Service overview for every service, one Timeline with a likely cause for each outage, actions in service widgets, STARTTLS in TLS checks, and a lighter first click on Config.
+
+### Search
+
+- **new — A typo in a command still finds it.** Type `:dokcer` and the palette offers `:DOCKER` as *Did you mean*; a swapped, missing, extra or wrong letter counts as one slip (two for names longer than four letters). Anything that already matches a command by its first letters is answered as before.
+
+### Bell and outages
+
+- **new — Outages reach the bell without waiting for a poll.** The live channel now sends a `health` ping the moment a monitor round or a network check round is written, and an open dashboard refreshes its badge and bell at once instead of at the next poll. The ping carries no data; the browser asks the same questions it always asked, so the bell and the badge cannot disagree. Several writes in a burst are folded into one ping (`live_broker.go`, `live_handler.go`, `live-channel.js`).
+- **new — The tab title, the favicon and the app icon show an outage.** When a monitored bookmark is down the title starts with a red dot and the number (`🔴 2`), the favicon gets a red dot with the count (9+ above nine) and an installed app's icon gets the number through the Badging API. An outage wins the favicon over the purple news dot; both can show in the title. The count is cleared on load, kept up to date while the tab is hidden, and cleared when Health is turned off (`feed-watch-tab-badge.js`, `dashboard-visual.js`).
+- **improved — An urgent row always rings, once.** The five-minute limit on the bell's tone no longer holds back an urgent row such as an outage; quiet rows after it still wait. Each urgent row rings once across tabs: the rows already rung are kept for ten minutes in `localStorage`, so several open tabs make one tone, not one each (`notification-bell.js`).
+- **improved — A new three-note bell tone.** The bell's sound is now three short notes instead of the old one (`notification-bell.js`).
+
+### Certificates
+
+- **new — Certificate warnings only when expired, and per host.** Short-lived certificates (Let's Encrypt's six-day profile) renew themselves and sit inside every warning window. Config → Bookmarks gets an *Only when expired* choice next to the warning days, a per-host override that beats the global setting (set from a bookmark's Expectations panel), and a *Certificate rules* list in the Bookmarks rail. The setting is `certWarnDays`: `-1` is only once expired, 3 to 120 is days ahead, absent or 0 follows the global one (`health_cert.go`, `dashboard-config-bookmarks-workbench.js`).
+
+### Performance
+
+- **improved — Timers stand still in a hidden tab.** The weather, clock and countdown widgets, the reminder bell, the phone tab bar, living themes, keyboard tips and the server log skip their ticks while the tab is hidden and catch up when it returns.
+- **improved — Config's first click is lighter.** The Bookmarks scripts are no longer loaded by the first click on Config, and Bookmarks preloads when it is likely to be next. Help's drawings load from a data file when Help opens. The code of Logs, Help, About, Stats and the Widgets settings tables moved out of the core into section files that load with their section. A script measures the first click (`scripts/`, `static/data/`).
 
 ### Network checks
 
@@ -182,6 +204,17 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — Actions in service widgets.** A tile can now act on its service, behind the write token and a per-widget switch in Config → Widgets that is off until you turn it on: **Seerr** approves or declines a pending request (decline asks for a second click), **Sonarr** and **Radarr** start a search for an upcoming episode or film, **qBittorrent** and **SABnzbd** pause and resume one download or the whole client (from the totals line), and **Pi-hole** and **AdGuard Home** pause blocking for 5 minutes, 30 minutes, an hour or until resumed. Home Assistant uses the same pattern; its switch is on unless you turn it off, so existing tiles keep switching. The server reads the address and key itself and only acts on a line the tile was shown; qBittorrent 4 and 5 are both handled (`POST /api/widgets/<type>/action`, `widgets_actions.go`).
 - **new — A kitchen timer and a pomodoro timer.** The Timer widget counts down in the browser with nothing to set up. *Kitchen timer* has preset minutes (1, 5, 10 and 15 by default, changeable) and a box for your own; *Pomodoro* cycles focus, short break and a long break after a number of rounds, optionally starting each phase by itself, and shows the round and how many focus rounds you finished today. Three looks (a ring, a large time with a bar, one compact row) are a setting. A run keeps going through a reload, other tabs on the same device see it, and it ends on time even when its page is not open: a chime, ⏰ in the tab title while the tab is hidden, and a quiet row in the bell that stays until you stop it; a system notification is optional. A running timer lives in this browser only.
 
+### Domains
+
+- **new — A domain date typed by hand.** A domain whose registry publishes no date (`.nl`, and `.de`, `.io`, `.be`, `.eu` and others that have no RDAP service) gets a date field in the bookmark's Expectations panel: **Registration of {domain} expires on**. The date is kept per registered domain in `domainExpiryManual` (`YYYY-MM-DD`), so every bookmark on that domain shares it, and it warns at the same marks as a looked-up date. A date from the registry always wins, so a domain that has one gets no field; emptying the field removes the date (`health_domain.go`, `dashboard-health.js`).
+
+### Docs
+
+- **docs — Refreshed UI texts.** Clearer wording across the six languages and the extension's locales.
+- **docs — `README.md` and Config → Help.** The README counts sixty-four widget kinds, names the Timer, the Service overview and the Timeline. Seven Help bodies gain a paragraph in all six languages (Service overview, certificate and domain dates, `:service` and the typo suggestion, the bell and the tab title, labels, the Timeline, the Timer and actions in tiles), and the widget count reads sixty-four. The five certificate strings are part of that. 
+- **docs — Translations for the new screens.** 276 strings that existed only as English fallbacks are now in all six languages: the whole `service` group (the Service overview, 132 keys), the Timeline, the Timer widget and its settings, actions in tiles, label rows, the domain date, the certificate rules, the *Did you mean* line and the timer's bell rows. Help names them as the screens do. `validate:locale-parity` is green again.
+- **docs — `MANUAL.md`.** New §15.13 (the Service overview) and §12.8 (the timeline); acting from a tile in §16.1; the `l` key, `:service` and the typo suggestion in §7.3 and §8.5; the bell, the tab badge and certificate rules in §4 and §12.4; Timeline in the §18.1 table. §9.2 (labels) and §12.4 (the date typed by hand). The Timer widget in §16.1 and the bell paragraph. Six new screenshots from `tests/manual-screenshots-v1-33.spec.js`: `15-service-overview.jpg`, `18-timeline.jpg`, `08-command-typo.jpg`, `09-label-rows.jpg`, `12-domain-date.jpg` and `16-timer-widget.jpg`.
+
 ## v1.32.0 — 19 November 2026
 
 Small homelab tools in the search panel, clean titles for the RSS widget and Watch feeds, and a round of Compose, widget and reminder fixes.
@@ -193,7 +226,6 @@ Small homelab tools in the search panel, clean titles for the RSS widget and Wat
 - **fix — A `/` after an IPv4 address is a slash.** In the open panel `/` is the mode switch and put itself in front of the query, so `192.168.1.0/24` could not be typed. After a whole IPv4 address, or `mask `, it is now a character; everywhere else it still switches (`search.js`).
 - **new — Paste into the open search panel.** On a computer the panel is not a text field, so Cmd+V had nowhere to land. A paste while it is open now goes in as if typed, on one line and with only the characters typing takes. With the panel closed a pasted link still goes to quick-add (`search.js`).
 - **fix — A failed copy says so, and long answers wrap.** If an answer cannot be put on the clipboard, a message shows the text so it can be taken by hand, where it used to do nothing. The fallback focuses and selects its field the way Safari wants. A row with an answer wraps over lines instead of ending in dots (`search.js`, `search.css`).
-- **new — A typo in a command still finds it.** Type `:dokcer` and the palette offers `:DOCKER` as *Did you mean*; a swapped, missing, extra or wrong letter counts as one slip (two for names longer than four letters). Anything that already matches a command by its first letters is answered as before.
 
 ### Widgets
 
