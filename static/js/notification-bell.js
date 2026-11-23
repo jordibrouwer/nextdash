@@ -29,7 +29,7 @@
  * that was already read. A throwing onRead is logged and ignored.
  *
  * The bell also draws the eye: a shake and a pulse when something unread is
- * there on load, a shake, a pulse and a short bell tone when a refresh finds
+ * there on load, a shake, a pulse and a short three-note bell tone when a refresh finds
  * more unread than the one before (the tone follows the `bellSound` setting),
  * and, while anything stays unread, a pulse every 20 seconds and a shake every
  * 90 seconds. The tone sounds at most once per five minutes, except for an urgent row, which always rings.
@@ -172,24 +172,21 @@
         return audioCtx;
     }
 
-    /** A short bell: three sine partials, a quick attack and about a second of decay. */
+    /** The bell: three rising notes (C, E, G) on a triangle wave, with a soft high C on top. */
     function ring(ctx) {
         const now = ctx.currentTime;
-        const master = ctx.createGain();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(0.2, now + 0.008);
-        master.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
-        master.connect(ctx.destination);
-        [[660, 1], [1320, 0.45], [1980, 0.2]].forEach(([freq, level]) => {
+        [[523, 0, 0.5, 0.18, 'triangle'], [659, 0.11, 0.5, 0.18, 'triangle'], [784, 0.22, 0.5, 0.18, 'triangle'], [1047, 0.22, 0.6, 0.08, 'sine']].forEach(([freq, delay, length, level, type]) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'sine';
+            osc.type = type;
             osc.frequency.value = freq;
-            gain.gain.value = level;
+            gain.gain.setValueAtTime(0.0001, now + delay);
+            gain.gain.exponentialRampToValueAtTime(level, now + delay + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + length);
             osc.connect(gain);
-            gain.connect(master);
-            osc.start(now);
-            osc.stop(now + 1.2);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + length + 0.05);
         });
     }
 
