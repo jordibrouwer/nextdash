@@ -32,7 +32,7 @@
  * there on load, a shake, a pulse and a short bell tone when a refresh finds
  * more unread than the one before (the tone follows the `bellSound` setting),
  * and, while anything stays unread, a pulse every 20 seconds and a shake every
- * 90 seconds. The tone sounds at most once per five minutes.
+ * 90 seconds. The tone sounds at most once per five minutes, except for an urgent row, which always rings.
  *
  * `onReset()` is optional and undoes what onNo did: called by
  * `NotificationBell.resetDismissed()` for each source whose forever "No" it
@@ -244,8 +244,9 @@
      * keeps audio shut until the page has been touched; when the context will
      * not wake, this stays silent.
      */
-    async function playSound(tone = 'bell') {
-        if (!claimSoundSlot()) return;
+    async function playSound(tone = 'bell', always = false) {
+        // An urgent row always rings; claiming the slot still holds back quiet ones after it.
+        if (!claimSoundSlot() && !always) return;
         try {
             const ctx = context();
             if (!ctx) return;
@@ -300,7 +301,7 @@
         // is not such a row, or two sources differ, the plain bell sounds.
         const tones = new Set(fresh.map((r) => r.source.sound || 'bell'));
         const tone = tones.size === 1 ? [...tones][0] : 'bell';
-        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone);
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, fresh.some((r) => r.kind === 'urgent'));
     }
 
     function remind() {
