@@ -282,7 +282,9 @@ console.log('planner (ground truth: the help split)');
  * mention Help failed with `this.bindHelpActions is not a function`. The planner
  * has to read dispatcher branches to see that, so this pins that it still does.
  */
-{
+// Without the pre-split commit (a shallow clone, as in CI) renderHelp is no longer in the live
+// file, and the case would flag it for a reason it is not about. It runs where the commit is.
+if (presplitPath) {
     let report;
     try {
         // Against the pre-split file: once Help and About left the core, renderHelp
