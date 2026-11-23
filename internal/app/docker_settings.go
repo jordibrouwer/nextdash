@@ -137,14 +137,33 @@ var dockerHostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?
 
 const dockerMaxWebUILen = 2048
 
+// dockerBookmarkLinkName splits a stored key into host and container name: a
+// bare name is this host's, "<hostId>::<name>" another host's. A key with a
+// prefix that is no host id is not a key at all (a container name cannot
+// contain a colon), and ok is false.
+func dockerBookmarkLinkName(key string) (host, name string, ok bool) {
+	key = strings.TrimSpace(key)
+	prefix, rest, found := strings.Cut(key, "::")
+	if !found {
+		name = strings.TrimPrefix(key, "/")
+		return "", name, name != ""
+	}
+	if !dockerHostIDRe.MatchString(prefix) {
+		return "", "", false
+	}
+	name = strings.TrimPrefix(rest, "/")
+	return prefix, name, name != "" && !strings.Contains(name, ":")
+}
+
 // normalizeDockerBookmarkLinks keeps "-" (no bookmark) and "<pageId>::<url>"
-// with a web address, per container name.
+// with a web address, per container: by bare name for this host, by
+// "<hostId>::<name>" for a container on another one.
 func normalizeDockerBookmarkLinks(in map[string]string) map[string]string {
 	out := map[string]string{}
 	for rawName, rawLink := range in {
-		name := strings.TrimPrefix(strings.TrimSpace(rawName), "/")
+		host, name, keyOK := dockerBookmarkLinkName(rawName)
 		link := strings.TrimSpace(rawLink)
-		if name == "" || len(name) > dockerMaxHiddenNameLen || link == "" || len(link) > dockerMaxWebUILen {
+		if !keyOK || len(name) > dockerMaxHiddenNameLen || link == "" || len(link) > dockerMaxWebUILen {
 			continue
 		}
 		if link != "-" {
@@ -157,7 +176,7 @@ func normalizeDockerBookmarkLinks(in map[string]string) map[string]string {
 				continue
 			}
 		}
-		out[name] = link
+		out[dockerBookmarkLinkKey(host, name)] = link
 		if len(out) == dockerMaxHidden {
 			break
 		}

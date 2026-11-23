@@ -182,6 +182,36 @@ func TestNormalizeDockerBookmarkLinks(t *testing.T) {
 	}
 }
 
+// A stored setting, so data: the bare key (this host, as stored since before
+// hosts existed) and "<hostId>::<name>" both survive, and a key whose prefix is
+// no host id is dropped.
+func TestNormalizeDockerBookmarkLinksKeepsBareAndHostKeys(t *testing.T) {
+	got := normalizeDockerBookmarkLinks(map[string]string{
+		"postgres":                 "1::https://pg.home.lan",
+		"d_0123456789ab::postgres": "2::https://pg.nas.lan",
+		"d_0123456789ab::/radarr":  "-",
+		"x_0123456789ab::postgres": "1::https://a.lan",
+		"d_0123::postgres":         "1::https://a.lan",
+		"d_0123456789ab::":         "1::https://a.lan",
+		"d_0123456789ab::bad":      "https://no-page.lan",
+		"d_0123456789ab::a:b":      "1::https://a.lan",
+		"::postgres":               "1::https://a.lan",
+	})
+	want := map[string]string{
+		"postgres":                 "1::https://pg.home.lan",
+		"d_0123456789ab::postgres": "2::https://pg.nas.lan",
+		"d_0123456789ab::radarr":   "-",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Fatalf("%s = %q, want %q (all %v)", k, got[k], v, got)
+		}
+	}
+}
+
 // The Config key legend takes the same three choices as the other views.
 func TestConfigViewKeyLegendChoices(t *testing.T) {
 	for in, want := range map[string]string{"": "below", "above": "above", "below": "below", "off": "off", "sideways": "below"} {

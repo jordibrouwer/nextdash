@@ -32,7 +32,9 @@
         if (listPromise) return listPromise;
         listPromise = fetch('/api/docker/containers').then((r) => r.ok ? r.json() : null).catch(() => null)
             .then((body) => {
-                list = Array.isArray(body?.containers) ? body.containers : [];
+                // This list is this host's own, whichever tab the Containers view
+                // shows: said outright so a match never reads the tab's address.
+                list = Array.isArray(body?.containers) ? body.containers.map((c) => (c.hostId ? c : { ...c, hostId: 'local' })) : [];
                 listAt = Date.now();
                 listPromise = null;
                 return list;
@@ -80,7 +82,8 @@
         if (!control || !container || container.self) return [];
         // Update pulls and replaces a container and writes this install's own
         // history: it is for the local host only.
-        const remote = Boolean(window.dockerActiveHost?.());
+        // The container's own host when it says one, else the tab being shown.
+        const remote = container.hostId ? container.hostId !== 'local' : Boolean(window.dockerActiveHost?.());
         switch (container.state) {
             case 'running': return remote ? ['stop', 'restart', 'pause'] : ['stop', 'restart', 'pause', 'update'];
             case 'paused': return ['unpause', 'stop'];
@@ -94,9 +97,12 @@
      * else the host the dashboard was opened on. The one place this is
      * decided, so the table, drawer, row menu and palette open the same address.
      */
-    function hostAddress() {
-        // Showing another Docker host: its ports are on its own address.
-        if (window.dockerActiveHost?.() && window.nextdashDockerHostAddress) return window.nextdashDockerHostAddress;
+    function hostAddress(container) {
+        // A container that names its host decides; else the tab being shown:
+        // another Docker host's ports are on its own address.
+        if (container?.hostId) {
+            if (container.hostId !== 'local') return container.hostAddress || '';
+        } else if (window.dockerActiveHost?.() && window.nextdashDockerHostAddress) return window.nextdashDockerHostAddress;
         let set = String(window.dashboardInstance?.settings?.dockerHostAddress || '').trim();
         // The server keeps a bare host only; until the page reloads the copy
         // here is what was typed, so hold it to the same rule.
@@ -111,7 +117,8 @@
      */
     function webuiHref(raw, container) {
         const value = String(raw || '').trim();
-        const href = value ? value.replace('[IP]', container?.lanIP || hostAddress()) : '';
+        const own = container?.hostId && container.hostId !== 'local' ? (container.hostAddress || '') : hostAddress(container);
+        const href = value ? value.replace('[IP]', container?.lanIP || own) : '';
         // A web UI is a web page. The address comes from a label an image can
         // set, so anything else (javascript:, data:) is no link at all.
         return /^https?:\/\//i.test(href) ? href : '';
@@ -174,6 +181,23 @@
         return [...byUrl.values()];
     }
 
+    /** The container's key in settings.dockerBookmarkLinks: bare on this host, "<hostId>::<name>" on another. */
+    function linkKey(container) {
+        const id = container?.hostId && container.hostId !== 'local' ? String(container.hostId) : '';
+        return id ? `${id}::${container.name}` : String(container?.name || '');
+    }
+
+    /**
+     * A container of the host the Containers view is showing, marked with that
+     * host (hostId, hostAddress) so bookmarkFor reads the right key and the
+     * right address. This host's own containers come back as they were.
+     */
+    function onActiveHost(container) {
+        const id = window.dockerActiveHost?.();
+        if (!id || !container || container.hostId) return container;
+        return { ...container, hostId: id, hostAddress: window.nextdashDockerHostAddress || '' };
+    }
+
     /**
      * The bookmark of a container's web UI, and why: set by hand in its side
      * panel ("manual"), else the same port on this server ("port"), else a
@@ -184,7 +208,12 @@
     function bookmarkFor(container, bookmarks, links) {
         if (!container) return null;
         const all = (bookmarks || []).filter((b) => b && b.url);
-        const manual = (links || window.dashboardInstance?.settings?.dockerBookmarkLinks || {})[container.name];
+        // A container on another Docker host (hostId "d_…") has its own key,
+        // "<hostId>::<name>", and runs on that host's address: this server's
+        // names (the page's hostname, localhost) say nothing about it. The bare
+        // name is this host's, as stored before hosts existed.
+        const remoteId = container.hostId && container.hostId !== 'local' ? String(container.hostId) : '';
+        const manual = (links || window.dashboardInstance?.settings?.dockerBookmarkLinks || {})[linkKey(container)];
         if (manual === '-') return null;
         if (manual) {
             const hit = all.find((b) => bookmarkKey(b) === manual);
@@ -192,8 +221,10 @@
         }
         // This server under any name it goes by here, and the container's
         // own LAN address when it has one.
-        const hosts = new Set([hostAddress(), window.location.hostname, container.lanIP, 'localhost', '127.0.0.1']
-            .filter(Boolean).map((h) => String(h).toLowerCase().replace(/^\[|\]$/g, '')));
+        const names = remoteId
+            ? [container.hostAddress, container.lanIP]
+            : [hostAddress(container), window.location.hostname, container.lanIP, 'localhost', '127.0.0.1'];
+        const hosts = new Set(names.filter(Boolean).map((h) => String(h).toLowerCase().replace(/^\[|\]$/g, '')));
         const ports = new Set();
         const web = parsedUrl(webuiHref(container.webui, container));
         if (web) {
@@ -272,6 +303,6 @@
 
     window.DockerSearchIndex = {
         status, statusNow, refresh, containers: () => (enabled() ? list : []), match, matches, invalidate, allowedActions, enabled,
-        hostAddress, webuiHref, portHref, firstWebPort, bookmarkFor, containersFor, bookmarkHealth, bookmarkKey,
+        hostAddress, webuiHref, portHref, firstWebPort, bookmarkFor, containersFor, bookmarkHealth, bookmarkKey, linkKey, onActiveHost,
     };
 })();

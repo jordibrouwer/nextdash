@@ -29,8 +29,13 @@ function loadIndex(hosts) {
 }
 
 // The Go shape is flat ports; the browser's is {public, type}.
-function browserContainer(c) {
+function browserContainer(c, hosts) {
+    const hostsFor = () => (hosts || [])[0];
+    const remote = c.host && c.host !== 'local';
     return {
+        hostId: remote ? c.host : undefined,
+        // Go passes the remote host's address as hosts[0]; the browser reads it off the container.
+        hostAddress: remote ? hostsFor(c) : undefined,
         name: c.name,
         webui: c.webui,
         lanIP: c.lanIP,
@@ -43,7 +48,7 @@ if (require.main === module) {
     for (const tc of cases) {
         try {
             const index = loadIndex(tc.hosts);
-            const got = index.bookmarkFor(browserContainer(tc.container), tc.bookmarks, tc.links);
+            const got = index.bookmarkFor(browserContainer(tc.container, tc.hosts), tc.bookmarks, tc.links);
             const gotOut = got ? { key: index.bookmarkKey(got.bookmark), via: got.via } : null;
             assert.deepStrictEqual(gotOut, tc.want);
             console.log(`  ok   ${tc.name}`);
