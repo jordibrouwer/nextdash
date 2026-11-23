@@ -27,9 +27,6 @@ test('a health write reaches the bell through the live channel', async ({ page }
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.LiveChannel.connected === true, null, { timeout: 10_000 });
-    // The channel refreshes once on connecting; let that settle so the outage
-    // below cannot be picked up by it.
-    await page.waitForTimeout(2000);
     await expect(page.locator(HEALTH_ROW)).toHaveCount(0);
 
     // The outage starts; only the server knows until something tells the page.
@@ -64,4 +61,28 @@ test('the stream closes while the tab is hidden and opens again on return', asyn
         document.dispatchEvent(new Event('visibilitychange'));
     });
     await page.waitForFunction(() => window.LiveChannel.connected === true, null, { timeout: 10_000 });
+});
+
+test('the slow tick leaves out only the sources the channel keeps current', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.NotificationBell && window.HealthBellSource, null, { timeout: 15_000 });
+    const looked = await page.evaluate(async () => {
+        const seen = [];
+        const probe = (id, live) => window.NotificationBell.register({
+            id, live, group: 'health', kind: 'quiet', icon: 'x', no: 'state',
+            state: () => { seen.push(id); return null; }, actions: [],
+        });
+        probe('probe-live', true);
+        probe('probe-plain', false);
+        seen.length = 0;
+        await window.NotificationBell.refreshAll({ skipLive: true });
+        const skipping = [...seen];
+        seen.length = 0;
+        await window.NotificationBell.refreshAll();
+        return { skipping, full: [...seen] };
+    });
+    expect(looked.skipping).toContain('probe-plain');
+    expect(looked.skipping).not.toContain('probe-live');
+    expect(looked.full).toEqual(expect.arrayContaining(['probe-plain', 'probe-live']));
 });

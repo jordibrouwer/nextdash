@@ -541,6 +541,9 @@ func Run(files assetFS) {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+	// Shutdown waits for handlers but never cancels their requests: end the
+	// live streams, or an open dashboard tab holds every restart for 15 seconds.
+	srv.RegisterOnShutdown(handlers.live.Close)
 
 	// Weekly automatic local backups (keeps the latest few, respects the setting).
 	schedulerStop := make(chan struct{})

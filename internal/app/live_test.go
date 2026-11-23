@@ -182,3 +182,60 @@ func TestLiveStreamRefusesAtCapAndInDemo(t *testing.T) {
 		t.Fatalf("demo: %d", rec.Code)
 	}
 }
+
+// Net-check rounds write samples and never invalidate the health report, so
+// appendHealthSamples is the only thing that pings for them.
+func TestAppendHealthSamplesPings(t *testing.T) {
+	shortLive(t)
+	h := newTestHandlers(t)
+	h.live = newLiveBroker()
+	ch, cancel, ok := h.live.Subscribe()
+	if !ok {
+		t.Fatal("subscribe refused")
+	}
+	defer cancel()
+	err := h.appendHealthSamples(map[string][]HealthSample{
+		"https://example.test/": {{T: time.Now().UnixMilli(), Up: true}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case ev := <-ch:
+		if ev != "health" {
+			t.Fatalf("event %q", ev)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("no ping after the samples were written")
+	}
+}
+
+// srv.Shutdown never cancels a request, so Close has to end the stream.
+func TestLiveStreamEndsOnClose(t *testing.T) {
+	shortLive(t)
+	t.Setenv("NEXTDASH_DEMO", "")
+	h := &Handlers{live: newLiveBroker()}
+	srv := httptest.NewServer(http.HandlerFunc(h.LiveStream))
+	defer srv.Close()
+	resp, err := http.Get(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	done := make(chan struct{})
+	go func() {
+		bufio.NewReader(resp.Body).ReadString('!') // blocks until the stream ends
+		close(done)
+	}()
+	time.Sleep(100 * time.Millisecond)
+	h.live.Close()
+	h.live.Close() // twice is fine
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("stream still open after Close")
+	}
+	if _, _, ok := h.live.Subscribe(); ok {
+		t.Fatal("a closed broker must refuse new streams")
+	}
+}

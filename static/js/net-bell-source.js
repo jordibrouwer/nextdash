@@ -176,13 +176,13 @@
             { label: () => t('bell.netMute', 'Mute'), onClick: (row) => { void mute(row); } },
         ];
         handles.push(global.NotificationBell.register({
-            id: 'net-down', group: 'health', kind: 'health', icon: '\u{1F534}', no: 'state', state: downState, actions: actions(),
+            id: 'net-down', live: true, group: 'health', kind: 'health', icon: '\u{1F534}', no: 'state', state: downState, actions: actions(),
         }));
         handles.push(global.NotificationBell.register({
-            id: 'net-up', group: 'health', kind: 'health', icon: '\u{1F7E2}', no: 'state', state: recoveredState, actions: actions(),
+            id: 'net-up', live: true, group: 'health', kind: 'health', icon: '\u{1F7E2}', no: 'state', state: recoveredState, actions: actions(),
         }));
         handles.push(global.NotificationBell.register({
-            id: 'net-dns', group: 'health', kind: 'quiet', icon: '\u{1F504}', no: 'state', state: driftState,
+            id: 'net-dns', live: true, group: 'health', kind: 'quiet', icon: '\u{1F504}', no: 'state', state: driftState,
             actions: [
                 { label: () => t('bell.netTests', 'Tests'), primary: true, onClick: openTests },
                 { label: () => t('bell.netAccept', 'Accept'), onClick: (row) => { void accept(row); } },

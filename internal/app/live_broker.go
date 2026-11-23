@@ -33,13 +33,34 @@ type liveBroker struct {
 	subs    map[chan string]struct{}
 	pending map[string]bool
 	timer   *time.Timer
+	done    chan struct{}
+	once    sync.Once
 }
 
 func newLiveBroker() *liveBroker {
 	return &liveBroker{
 		subs:    map[chan string]struct{}{},
 		pending: map[string]bool{},
+		done:    make(chan struct{}),
 	}
+}
+
+// Close ends every open stream: srv.Shutdown waits for handlers but does not
+// cancel their requests, so a stream that never ends would hold a restart for
+// the whole grace period. Safe on nil and to call twice.
+func (b *liveBroker) Close() {
+	if b == nil {
+		return
+	}
+	b.once.Do(func() { close(b.done) })
+}
+
+// Done is closed by Close.
+func (b *liveBroker) Done() <-chan struct{} {
+	if b == nil {
+		return nil
+	}
+	return b.done
 }
 
 // Subscribe returns a channel of event names and a cancel func that must be
@@ -47,6 +68,11 @@ func newLiveBroker() *liveBroker {
 func (b *liveBroker) Subscribe() (ch <-chan string, cancel func(), ok bool) {
 	if b == nil {
 		return nil, func() {}, false
+	}
+	select {
+	case <-b.done:
+		return nil, func() {}, false
+	default:
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()

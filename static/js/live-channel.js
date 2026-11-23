@@ -15,8 +15,12 @@
  * The stream is open only while the tab is visible: a hidden tab neither needs
  * a ping (dashboard.js refreshes the badge on return) nor should hold one of the
  * browser's few connections per origin. A refusal (503 at the cap, 404 in the
- * demo) closes the stream for good this page load, except one retry after five
- * minutes.
+ * demo) gets one retry after five minutes; a second refusal closes the stream
+ * for good this page load.
+ *
+ * `hello` refreshes only when it follows a drop while the tab was visible. On
+ * page load and on returning to the tab the dashboard and the bell already
+ * refresh, and doing it here too fetched everything twice.
  */
 (function initLiveChannel(global) {
     'use strict';
@@ -29,6 +33,8 @@
     let connected = false;
     let debounce = null;
     let retryTimer = null;
+    let refusals = 0;
+    let catchUp = false;
 
     function setConnected(next) {
         if (connected === next) return;
@@ -47,6 +53,8 @@
     }
 
     function close() {
+        // A close we chose is not a drop: the return to the tab refreshes anyway.
+        catchUp = false;
         if (source) {
             source.close();
             source = null;
@@ -60,17 +68,24 @@
         const es = new global.EventSource(URL);
         source = es;
         es.addEventListener('hello', () => {
+            refusals = 0;
             setConnected(true);
             // Something may have changed while the stream was down.
-            onHealth();
+            if (catchUp) {
+                catchUp = false;
+                onHealth();
+            }
         });
         es.addEventListener('health', onHealth);
         es.addEventListener('error', () => {
             setConnected(false);
+            catchUp = true;
             // CLOSED means the browser gave up (a non-200 answer); anything else
             // it reconnects by itself, using the server's retry hint.
             if (es.readyState === global.EventSource.CLOSED) {
                 source = null;
+                refusals += 1;
+                if (refusals > 1) return;
                 retryTimer = setTimeout(() => { retryTimer = null; open(); }, RETRY_AFTER_REFUSAL_MS);
             }
         });

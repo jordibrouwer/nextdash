@@ -65,6 +65,8 @@ func (h *Handlers) LiveStream(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
+		case <-h.live.Done():
+			return // the server is shutting down
 		case ev := <-events:
 			if !write("event: %s\ndata: {}\n\n", ev) {
 				return

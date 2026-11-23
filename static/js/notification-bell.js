@@ -660,8 +660,16 @@
         entry.at = at;
     }
 
-    async function refreshAll() {
-        await Promise.all([...sources.values()].map(refreshOne));
+    /**
+     * Look at every source. With `skipLive`, leave out the sources the live
+     * channel keeps current (`live: true`): the health row and the net rows. The
+     * rest have no ping and no timer of their own, so they still need this one.
+     */
+    async function refreshAll(opts) {
+        const skipLive = opts?.skipLive === true;
+        await Promise.all([...sources.values()]
+            .filter((rec) => !(skipLive && rec.source.live))
+            .map(refreshOne));
         changed();
         const { red, grey } = counts();
         noticeUnread(red + grey);
@@ -806,10 +814,14 @@
             lastAt = Date.now();
             refreshAll();
         };
-        // While the live channel is connected a ping brings the news; the
-        // timer only has to run now and then as the safety net.
+        // While the live channel is connected a ping brings the health and net
+        // news, so those two only get looked at every LIVE_FALLBACK_MS as the
+        // safety net. Everything else keeps the five-minute pace.
         const slowTick = () => {
-            if (global.LiveChannel?.connected && Date.now() - lastAt < LIVE_FALLBACK_MS - 1000) return;
+            if (global.LiveChannel?.connected && Date.now() - lastAt < LIVE_FALLBACK_MS - 1000) {
+                if (document.visibilityState === 'visible') refreshAll({ skipLive: true });
+                return;
+            }
             tick();
         };
         timer = setInterval(slowTick, REFRESH_EVERY_MS);
