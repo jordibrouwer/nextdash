@@ -247,7 +247,13 @@ func (h *Handlers) appendHealthSamples(updates map[string][]HealthSample) error 
 	}
 	history = pruneHealthHistory(history, nil, time.Now())
 	history.GeneratedAt = time.Now().UnixMilli()
-	return writeHealthHistoryFile(history)
+	if err := writeHealthHistoryFile(history); err != nil {
+		return err
+	}
+	// Net-check rounds write here and never invalidate the health report, so
+	// they ping from here; the others coalesce with the invalidation's ping.
+	h.live.Publish("health")
+	return nil
 }
 
 // sweepHealthHistory drops history for URLs that are no longer bookmarked and

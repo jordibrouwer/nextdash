@@ -408,8 +408,11 @@ class DashboardVisual {
         // setTimeout rather than setInterval: the delay is not constant, and a
         // re-armed timeout also cannot stack ticks if a poll outlives its own
         // interval.
-        const schedule = (delay) => {
+        const schedule = (requested) => {
             stop();
+            // While the live channel is connected a ping brings the news, so
+            // the poll only has to be the safety net.
+            const delay = window.LiveChannel?.connected ? Math.max(requested, max) : requested;
             // Recorded so the current backoff level is inspectable — from a
             // console while diagnosing a quiet badge, and by the tests, which
             // assert on the delay rather than waiting minutes for it.
@@ -456,12 +459,25 @@ class DashboardVisual {
             }
         };
         document.addEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
+        // The channel connecting or dropping changes how often the safety net
+        // needs to run; re-arm at the right pace from now.
+        this._healthBadgeLiveHandler = () => {
+            if (this._healthBadgePollTimer) {
+                this._healthBadgePollDelay = base;
+                schedule(base);
+            }
+        };
+        window.addEventListener('livechannel:state', this._healthBadgeLiveHandler);
         if (document.visibilityState === 'visible') {
             start();
         }
     }
 
     stopHealthBadgePolling() {
+        if (this._healthBadgeLiveHandler) {
+            window.removeEventListener('livechannel:state', this._healthBadgeLiveHandler);
+            this._healthBadgeLiveHandler = null;
+        }
         if (this._healthBadgePollTimer) {
             clearTimeout(this._healthBadgePollTimer);
             this._healthBadgePollTimer = null;

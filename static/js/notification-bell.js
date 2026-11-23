@@ -44,6 +44,8 @@
 
     const FIRST_REFRESH_MS = 3000;
     const REFRESH_EVERY_MS = 5 * 60 * 1000;
+    // The longest the bell waits between looks while the live channel is up.
+    const LIVE_FALLBACK_MS = 15 * 60 * 1000;
     // While something is unread the badges pulse every 20 seconds and the bell
     // shakes every 90 seconds, until the row is read or answered.
     const REMINDER_EVERY_MS = 20 * 1000;
@@ -798,8 +800,19 @@
 
     function startTimers() {
         setTimeout(refreshAll, FIRST_REFRESH_MS);
-        const tick = () => { if (document.visibilityState === 'visible') refreshAll(); };
-        timer = setInterval(tick, REFRESH_EVERY_MS);
+        let lastAt = Date.now();
+        const tick = () => {
+            if (document.visibilityState !== 'visible') return;
+            lastAt = Date.now();
+            refreshAll();
+        };
+        // While the live channel is connected a ping brings the news; the
+        // timer only has to run now and then as the safety net.
+        const slowTick = () => {
+            if (global.LiveChannel?.connected && Date.now() - lastAt < LIVE_FALLBACK_MS - 1000) return;
+            tick();
+        };
+        timer = setInterval(slowTick, REFRESH_EVERY_MS);
         document.addEventListener('visibilitychange', tick);
         setInterval(remind, REMINDER_EVERY_MS);
         setInterval(nag, NAG_EVERY_MS);

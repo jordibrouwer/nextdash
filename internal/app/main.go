@@ -239,6 +239,7 @@ func Run(files assetFS) {
 	// New feature endpoints
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
+	r.HandleFunc("/api/live", handlers.LiveStream).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
 	r.HandleFunc("/api/net/capabilities", handlers.GetNetCapabilities).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.GetNetChecks).Methods("GET")

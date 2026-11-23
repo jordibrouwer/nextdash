@@ -18,8 +18,11 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  * next, which it records on the instance.
  */
 
-async function openWithBadge(page, { failRequests = false } = {}) {
+async function openWithBadge(page, { failRequests = false, live = false } = {}) {
     await page.addInitScript(() => { window.__healthRequests = 0; });
+    // These specs are about the poll's own pace. With the live channel open the
+    // poll only runs as a safety net (see the last test), so it stays closed.
+    if (!live) await page.addInitScript(() => { window.EventSource = undefined; });
 
     await page.route('**/api/bookmark-health**', async (route) => {
         await page.evaluate(() => { window.__healthRequests += 1; }).catch(() => {});
@@ -203,5 +206,17 @@ test.describe('health badge polling', () => {
         // And the backoff is reset, so the next poll comes at the base delay
         // rather than whatever the outage had crept up to.
         expect(await armedFor(page)).toBe(base);
+    });
+
+    test('while the live channel is connected the poll is only the safety net', async ({ page }) => {
+        await openWithBadge(page, { live: true });
+        await page.waitForFunction(() => window.LiveChannel?.connected === true, null, { timeout: 10_000 });
+        const { max } = await constants(page);
+        await expect.poll(() => armedFor(page)).toBe(max);
+
+        // The stream dropping puts the poll back on its normal pace.
+        await page.evaluate(() => window.LiveChannel.close());
+        const { base } = await constants(page);
+        await expect.poll(() => armedFor(page)).toBe(base);
     });
 });
