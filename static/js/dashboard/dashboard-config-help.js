@@ -97,74 +97,7 @@
         }
     },
 
-    /**
-     * The Tips tab's own filter.
-     *
-     * Hides rows rather than re-rendering: the tips carry markup we wrote, the
-     * list is short enough to filter in the DOM, and keeping the nodes means the
-     * field never loses focus mid-word. A group with nothing left goes with its
-     * rows, so the page does not fill with empty headings.
-     */
-    bindTipsFilter(container) {
-        const field = container.querySelector('#config-tips-filter');
-        if (!field || field.dataset.tipsFilterBound === '1') return;
-        field.dataset.tipsFilterBound = '1';
-
-        const apply = () => {
-            const query = String(field.value || '').trim().toLowerCase();
-            this.tipsQuery = field.value;
-            let shown = 0;
-            let total = 0;
-            container.querySelectorAll('[data-tip-group]').forEach((group) => {
-                let visible = 0;
-                group.querySelectorAll('[data-tip-row]').forEach((row) => {
-                    total += 1;
-                    const hit = !query || row.textContent.toLowerCase().includes(query);
-                    row.hidden = !hit;
-                    if (hit) visible += 1;
-                });
-                group.hidden = visible === 0;
-                shown += visible;
-            });
-            const count = container.querySelector('[data-tips-count]');
-            if (count) {
-                count.textContent = query
-                    ? this.t('config.helpTipsFilterCount', '{shown} of {total}')
-                        .replace('{shown}', String(shown)).replace('{total}', String(total))
-                    : '';
-            }
-            const empty = container.querySelector('[data-tips-empty]');
-            if (empty) empty.hidden = !(query && shown === 0);
-        };
-
-        field.addEventListener('input', apply);
-        field.addEventListener('search', apply);
-        if (this.tipsQuery) apply();
-    },
-
     /** "Open this tab" on a search result. */
-    /**
-     * Copy a link that reopens this one topic.
-     *
-     * The address is the config hash with the panel appended, so it survives a
-     * paste into a chat window and lands on the panel rather than on the tab it
-     * happens to live in this month.
-     */
-    async copyHelpPanelLink(panelId) {
-        if (!panelId) return;
-        const url = `${window.location.origin}${window.location.pathname}#config/help/${this.helpTab}/${panelId}`;
-        try {
-            await navigator.clipboard.writeText(url);
-            this.notify(this.t('config.helpLinkCopied', 'Link to this topic copied.'), 'success');
-        } catch {
-            // Clipboard access is refused outside a secure context, which is
-            // every plain-http install — so the address goes in the bar instead,
-            // where it can be copied by hand.
-            window.location.hash = `config/help/${this.helpTab}/${panelId}`;
-            this.notify(this.t('config.helpLinkInAddressBar', 'The link is in the address bar.'), 'info');
-        }
-    },
-
     /**
      * The topics past Basics, as a menu under "More topics".
      *
