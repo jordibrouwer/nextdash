@@ -123,7 +123,7 @@ func mcpToolGroup(name string) string {
 	switch name {
 	case "update_bookmark", "move_bookmark", "delete_bookmark", "create_category", "rename_category":
 		return mcpGroupBookmarksWrite
-	case "get_health_summary", "list_health_issues", "list_inbox", "query_bookmarks", "get_stats", "get_bookmark_history":
+	case "get_health_summary", "list_health_issues", "list_inbox", "query_bookmarks", "get_stats", "get_bookmark_history", "service_get":
 		return mcpGroupHealthInbox
 	case "list_containers", "get_container", "get_container_logs", "query_containers":
 		return mcpGroupContainersRead
@@ -319,6 +319,7 @@ func mcpAllToolDefinitions() []map[string]any {
 	all = append(all, mcpHistoryDefinitions()...)
 	all = append(all, mcpContainersReadDefinitions()...)
 	all = append(all, mcpQueryContainersDefinitions()...)
+	all = append(all, mcpServiceDefinitions()...)
 	all = append(all, mcpSettingsOverviewDefinitions()...)
 	all = append(all, mcpAppStatusDefinitions()...)
 	all = append(all, mcpNetToolsDefinitions()...)
@@ -576,6 +577,8 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpBookmarkHistory(r, body.Arguments)), nil
 	case "query_containers":
 		return mcpToolResult(h.mcpQueryContainers(r, body.Arguments)), nil
+	case "service_get":
+		return mcpToolResult(h.mcpServiceGet(r, body.Arguments)), nil
 	case "get_app_status":
 		return mcpToolResult(h.mcpAppStatus()), nil
 	case "get_settings_overview":

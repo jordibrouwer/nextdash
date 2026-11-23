@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"sort"
+	"sync/atomic"
 	"time"
 )
 
@@ -47,7 +48,12 @@ func emptyHealthHistory() HealthHistoryFile {
 // readHealthHistoryFile loads the sample history. A missing or corrupt file is not
 // an error: history is derived, disposable data, and losing it must never block a
 // monitor run — it just restarts the record from now.
+// healthHistoryFileReads counts reads of the history file, so a test can prove
+// that a request parses it once and not once per map.
+var healthHistoryFileReads atomic.Int64
+
 func readHealthHistoryFile() HealthHistoryFile {
+	healthHistoryFileReads.Add(1)
 	data, err := os.ReadFile(healthHistoryFilePath())
 	if err != nil {
 		return emptyHealthHistory()
@@ -295,6 +301,16 @@ func (h *Handlers) readAllHealthDays() map[string][]HealthDay {
 	defer h.healthHistoryMu.Unlock()
 
 	return readHealthHistoryFile().Days
+}
+
+// readAllHealthHistoryAndDays returns the samples and the daily summaries from
+// one read of the history file, for callers that need both.
+func (h *Handlers) readAllHealthHistoryAndDays() (map[string][]HealthSample, map[string][]HealthDay) {
+	h.healthHistoryMu.Lock()
+	defer h.healthHistoryMu.Unlock()
+
+	file := readHealthHistoryFile()
+	return file.Samples, file.Days
 }
 
 // readAllHealthHistory returns the whole history keyed by canonical URL. Used when

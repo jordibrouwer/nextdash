@@ -242,6 +242,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/live", handlers.LiveStream).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
 	r.HandleFunc("/api/net/capabilities", handlers.GetNetCapabilities).Methods("GET")
+	r.HandleFunc("/api/service", handlers.ServiceViewHandler).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.GetNetChecks).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.PutNetChecks).Methods("PUT")
 	r.HandleFunc("/api/net/history", handlers.GetNetHistory).Methods("GET")
