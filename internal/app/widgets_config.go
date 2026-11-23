@@ -160,6 +160,23 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "time", Kind: "clock"},
 		{Key: "showTime", Kind: "bool"},
 	},
+	WidgetTypeTimer: {
+		// "timer" is one countdown with preset minutes, "pomodoro" cycles
+		// focus and breaks. "look" only changes how it is drawn.
+		{Key: "mode", Kind: "string", Allowed: []string{"timer", "pomodoro"}},
+		{Key: "look", Kind: "string", Allowed: []string{"ring", "bar", "row"}},
+		// Preset minutes for the kitchen timer; the browser keeps whole
+		// numbers from 1 to 600 and at most six of them.
+		{Key: "presets", Kind: "list"},
+		{Key: "focusMinutes", Kind: "int", Min: 1, Max: 180},
+		{Key: "shortBreakMinutes", Kind: "int", Min: 1, Max: 60},
+		{Key: "longBreakMinutes", Kind: "int", Min: 1, Max: 90},
+		// A long break after this many focus rounds.
+		{Key: "rounds", Kind: "int", Min: 2, Max: 8},
+		{Key: "autoNext", Kind: "bool"},
+		{Key: "sound", Kind: "bool"},
+		{Key: "notify", Kind: "bool"},
+	},
 	WidgetTypeStack: {
 		// Ids of other widgets on the page, in tab order; pruneStackMembers
 		// decides which of them are real.
@@ -856,7 +873,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown, WidgetTypeTimer,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,

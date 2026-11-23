@@ -39,3 +39,34 @@ func TestClockKeepsItsZonesAndFlags(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestTimerKeepsItsModeLookAndLimits(t *testing.T) {
+	got := sanitizeWidgetConfig(WidgetTypeTimer, map[string]any{
+		"mode": "pomodoro", "look": "row", "presets": []any{"5", "10"},
+		"focusMinutes": 50, "shortBreakMinutes": 10, "longBreakMinutes": 20, "rounds": 3,
+		"autoNext": true, "sound": false, "notify": true,
+	})
+	if got["mode"] != "pomodoro" || got["look"] != "row" || got["rounds"] != 3 ||
+		got["autoNext"] != true || got["sound"] != false || got["notify"] != true {
+		t.Errorf("got %v", got)
+	}
+	for _, key := range []string{"focusMinutes", "shortBreakMinutes", "longBreakMinutes"} {
+		if _, kept := got[key]; !kept {
+			t.Errorf("%s was dropped: %v", key, got)
+		}
+	}
+}
+
+func TestTimerDropsUnknownWordsAndClampsNumbers(t *testing.T) {
+	got := sanitizeWidgetConfig(WidgetTypeTimer, map[string]any{
+		"mode": "stopwatch", "look": "sundial", "focusMinutes": 9999, "rounds": 1,
+	})
+	for _, key := range []string{"mode", "look"} {
+		if _, kept := got[key]; kept {
+			t.Errorf("%s survived: %v", key, got)
+		}
+	}
+	if got["focusMinutes"] != 180 || got["rounds"] != 2 {
+		t.Errorf("numbers were not clamped: %v", got)
+	}
+}
