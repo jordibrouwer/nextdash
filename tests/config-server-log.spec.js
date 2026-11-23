@@ -424,6 +424,9 @@ test('a new log epoch replaces the lines this tab holds', async ({ page }) => {
     }));
     const lines = await page.evaluate(async () => {
         const cfg = window.dashboardInstance.config;
+        // loadServerLog lives in the Logs file, which arrives with the section.
+        await cfg.load?.();
+        await (cfg._module || cfg).ensureSection?.('logs');
         await cfg.loadServerLog({ reset: true });
         await cfg.loadServerLog();
         return cfg._logLines.map((l) => l.msg);

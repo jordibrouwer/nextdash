@@ -17,6 +17,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert';
@@ -185,6 +186,8 @@ console.log('planner (ground truth: the logs split)');
  */
 const PRE_SPLIT_COMMIT = '1416a838';
 let preSplit = null;
+// Where the pre-split file was written, for the cases below that ask the planner about it.
+let presplitPath = null;
 try {
     preSplit = execFileSync('git', ['show', `${PRE_SPLIT_COMMIT}:${CORE}`],
         { encoding: 'utf8', maxBuffer: 1 << 28 });
@@ -196,6 +199,7 @@ if (preSplit) {
     const dir = mkdtempSync(join(tmpdir(), 'config-plan-'));
     const path = join(dir, 'presplit.js');
     writeFileSync(path, preSplit);
+    presplitPath = path;
 
     // The list the implementation plan gave for Logs, wrong names and all.
     const PLANNED = ['logsTabLabel', 'renderLogsSection', 'renderLogsTab', 'renderActivityTrail',
@@ -264,7 +268,7 @@ if (preSplit) {
         assert.ok(kept.includes('ACTIVITY_CHANNEL_DEFAULTS'), 'the section\'s own static was dropped');
     });
 
-    rmSync(dir, { recursive: true, force: true });
+    // The directory stays until the last case that reads presplitPath has run.
 }
 
 // ─── The second thing the tool found, against the live file ─────────────────
@@ -281,7 +285,10 @@ console.log('planner (ground truth: the help split)');
 {
     let report;
     try {
+        // Against the pre-split file: once Help and About left the core, renderHelp
+        // is no longer in the live one and the case would measure nothing.
         report = execFileSync('node', ['scripts/config-section-plan.mjs',
+            ...(presplitPath ? ['--file', presplitPath] : []),
             '--section', 'help', '--members', 'bindHelpActions,renderHelp', '--json'],
         { encoding: 'utf8' });
     } catch (err) {
@@ -326,7 +333,9 @@ console.log('planner (ground truth: the appearance split)');
     test('catches clearThemePreview, which an outside caller reaches through the core', () => {
         const hit = audit('clearThemePreview').wrong.find((w) => w.name === 'clearThemePreview');
         assert.ok(hit, 'clearThemePreview was let through');
-        assert.match(hit.why, /core before any module loads/, `flagged for the wrong reason: ${hit.why}`);
+        // Named for the core while only outside callers reached it; since About and
+        // Behavior call it too, the planner names them instead. Either way it stays.
+        assert.match(hit.why, /core before any module loads|also reached from/, `flagged for the wrong reason: ${hit.why}`);
     });
 
     test('catches backupFailureReason, which the Data & backups file calls', () => {
@@ -411,3 +420,5 @@ if (failures) {
     process.exit(1);
 }
 console.log('all checks passed');
+
+if (presplitPath) rmSync(dirname(presplitPath), { recursive: true, force: true });
