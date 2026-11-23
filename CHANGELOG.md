@@ -208,10 +208,16 @@ A Service overview for every service, one Timeline with a likely cause for each 
 
 - **new — A domain date typed by hand.** A domain whose registry publishes no date (`.nl`, and `.de`, `.io`, `.be`, `.eu` and others that have no RDAP service) gets a date field in the bookmark's Expectations panel: **Registration of {domain} expires on**. The date is kept per registered domain in `domainExpiryManual` (`YYYY-MM-DD`), so every bookmark on that domain shares it, and it warns at the same marks as a looked-up date. A date from the registry always wins, so a domain that has one gets no field; emptying the field removes the date (`health_domain.go`, `dashboard-health.js`).
 
+### Appearance
+
+- **fix — A colours save keeps the Classic collection.** The sanitiser for a theme's colours kept the collection names `neutrals` and `looks` and dropped `classic`, so one colours save emptied the Classic chip for good. It keeps all three now (`security.go`, `theme_save_keeps_character_test.go`).
+
 ### Docs
 
 - **docs — Refreshed UI texts.** Clearer wording across the six languages and the extension's locales.
 - **docs — `README.md` and Config → Help.** The README counts sixty-four widget kinds, names the Timer, the Service overview and the Timeline. Seven Help bodies gain a paragraph in all six languages (Service overview, certificate and domain dates, `:service` and the typo suggestion, the bell and the tab title, labels, the Timeline, the Timer and actions in tiles), and the widget count reads sixty-four. The five certificate strings are part of that. 
+- **docs — What's new.** `v1.33.0.json`, first in `index.json`, with four highlights (the Service overview, the timeline, the Timer and actions in tiles) and three pictures from `tests/fixtures/whats-new-media/v1.33.0.js`. Both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE`, `whats-new-v382`) and the constants spec with them.
+- **docs — Config → Overview and About → News & features.** Four entries with `since: "v1.33.0"` in `overview-features.json`: the Service overview, the timeline, the Timer, and labels with a domain date typed by hand. Five keys each, in all six languages.
 - **docs — Translations for the new screens.** 276 strings that existed only as English fallbacks are now in all six languages: the whole `service` group (the Service overview, 132 keys), the Timeline, the Timer widget and its settings, actions in tiles, label rows, the domain date, the certificate rules, the *Did you mean* line and the timer's bell rows. Help names them as the screens do. `validate:locale-parity` is green again.
 - **docs — `MANUAL.md`.** New §15.13 (the Service overview) and §12.8 (the timeline); acting from a tile in §16.1; the `l` key, `:service` and the typo suggestion in §7.3 and §8.5; the bell, the tab badge and certificate rules in §4 and §12.4; Timeline in the §18.1 table. §9.2 (labels) and §12.4 (the date typed by hand). The Timer widget in §16.1 and the bell paragraph. Six new screenshots from `tests/manual-screenshots-v1-33.spec.js`: `15-service-overview.jpg`, `18-timeline.jpg`, `08-command-typo.jpg`, `09-label-rows.jpg`, `12-domain-date.jpg` and `16-timer-widget.jpg`.
 

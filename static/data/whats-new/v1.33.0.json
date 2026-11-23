@@ -1,0 +1,112 @@
+{
+  "tag": "v1.33.0",
+  "date": "23 November 2026",
+  "releasedAt": "2026-11-23",
+  "modalLead": "<strong>The Service overview</strong> puts a service on one screen, the <strong>Timeline</strong> shows why it went down, and a <strong>Timer</strong> widget joins the dashboard.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "One screen for each service",
+          "text": "<strong>One screen for each service.</strong> The Service overview shows a service's status, uptime, container and a timeline of what happened. Press l on a bookmark, type :service, or choose Service overview in a panel.",
+          "link": "#docker",
+          "linkLabel": "Open Containers",
+          "media": {
+            "image": "media/v1.33.0-service-overview.jpg",
+            "alt": "The Service overview of Sonarr: All good, 30-day uptime, response time, the container with its image and version, and a timeline with an update, an outage of 14 minutes and a new release"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Monitoring",
+      "items": [
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "A timeline with a likely cause",
+          "text": "<strong>A timeline with a likely cause.</strong> Config, Timeline lists container events, updates, outages, Glances incidents and Unraid alerts in one stream. An outage shows what came shortly before it, such as an update of the same container.",
+          "link": "#config/timeline",
+          "linkLabel": "Open Timeline",
+          "media": {
+            "image": "media/v1.33.0-timeline.jpg",
+            "alt": "Config, Timeline: an outage of Sonarr for 14 minutes, with the line Likely cause, 1 min after sonarr auto-updated 4.0.9 to 4.0.10"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Outages reach the bell at once.</strong> The bell rings as soon as a check finishes. The tab title starts with a red dot and the number, and an installed app shows it on its icon."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Certificate warnings only when expired.</strong> Short-lived certificates renew themselves, so Warn about certificates also offers Only when expired, and a bookmark can set its own rule for its host.",
+          "link": "#config/monitoring",
+          "linkLabel": "Open Monitoring"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A domain date by hand.</strong> For a domain whose registry publishes no date, type it in the bookmark's Expectations panel and nextDash warns like it does for any other."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>TLS checks on mail and FTP ports.</strong> A TLS check on a port such as 25, 587, 143 or 21 now asks for STARTTLS first, so these servers no longer fail with a handshake error."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "A kitchen timer and a pomodoro",
+          "text": "<strong>A kitchen timer and a pomodoro.</strong> The Timer widget counts down in the browser. It rings when time is up, puts a ⏰ in the tab title and keeps a row in the bell until you stop it.",
+          "link": "#config/widgets",
+          "linkLabel": "Add a Timer",
+          "media": {
+            "image": "media/v1.33.0-timer.jpg",
+            "alt": "A Timer tile: a ring around 01:00, four presets, a box for your own and a Start button"
+          }
+        },
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "Act from a tile",
+          "text": "<strong>Act from a tile.</strong> Approve or decline a Seerr request, start a search in Sonarr or Radarr, pause a download in qBittorrent or SABnzbd, or pause blocking in Pi-hole and AdGuard Home without leaving the dashboard. Turn it on in the widget's settings.",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets"
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Labels between bookmarks.</strong> Right-click a category header and choose Add label to split a long category into groups, or choose Add label above on a bookmark."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A typo in a command still finds it.</strong> Type :dokcer and the palette offers :docker."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Saving colours keeps the Classic group.</strong> A colours save used to empty the Classic chip in the theme picker for good."
+        }
+      ]
+    }
+  ]
+}
