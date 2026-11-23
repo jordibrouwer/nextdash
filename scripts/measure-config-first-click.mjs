@@ -51,6 +51,13 @@ async function once(browser) {
     await browser.startTracing(page, {
         categories: ['devtools.timeline', 'v8', 'disabled-by-default-v8.compile'],
     });
+    // The resource timing buffer holds 250 entries and then drops the rest: a
+    // dashboard with many icons can fill it before the click and read as zero
+    // files. Empty it and make room, so only what the click fetches is in it.
+    await page.evaluate(() => {
+        performance.clearResourceTimings();
+        performance.setResourceTimingBufferSize(2000);
+    });
     const mark = await page.evaluate(() => performance.now());
     const link = page.locator('.config-link-anchor').first();
     if (MODE === 'hover') {
