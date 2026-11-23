@@ -144,6 +144,24 @@ func TestAssetFingerprintTracksTranslations(t *testing.T) {
 	}
 }
 
+// Data files are fetched at runtime with the app version appended and served
+// immutable, so an edit to one has to move the fingerprint: the help drawings
+// are only JSON, and a release that changed nothing else shipped them stale.
+func TestAssetFingerprintTracksDataFiles(t *testing.T) {
+	withDiskAssets(t, map[string]string{
+		"js/a.js":                  "a",
+		"data/help-panel-art.json": `{"a":1}`,
+	})
+
+	before := assetFingerprint()
+	if err := os.WriteFile(filepath.Join("static", "data", "help-panel-art.json"), []byte(`{"a":2}`), 0644); err != nil {
+		t.Fatalf("rewrite data file: %v", err)
+	}
+	if after := assetFingerprint(); after == before {
+		t.Fatal("fingerprint unchanged after a data file edit; a browser would keep the old file for a year")
+	}
+}
+
 // Every lazily-loaded script must exist, or its loader silently falls back to an
 // unversioned URL — the exact staleness this system removes.
 func TestLazyLoadedAssetsExist(t *testing.T) {

@@ -310,6 +310,12 @@ func assetFingerprint() string {
 		io.WriteString(h, assetHash(p))
 		io.WriteString(h, "\n")
 	}
+	for _, p := range dataAssetPaths() {
+		io.WriteString(h, p)
+		io.WriteString(h, ":")
+		io.WriteString(h, assetHash(p))
+		io.WriteString(h, "\n")
+	}
 	for _, name := range localeFingerprintFiles() {
 		io.WriteString(h, name)
 		io.WriteString(h, ":")
@@ -359,9 +365,27 @@ func localeFileHash(name string) string {
 // hashedAssetPaths lists every css/js asset under static/, sorted so the
 // fingerprint is stable across runs and filesystems.
 func hashedAssetPaths() []string {
+	return staticPathsWhere(func(p string) bool {
+		return strings.HasSuffix(p, ".css") || strings.HasSuffix(p, ".js")
+	})
+}
+
+// dataAssetPaths lists the JSON files under static/data, sorted. They are
+// fetched at runtime with ?v=<app version> and served immutable, so a change
+// to one of them has to move the fingerprint or a browser keeps the old file
+// for a year: the help drawings and the overview catalogue are of this kind.
+func dataAssetPaths() []string {
+	return staticPathsWhere(func(p string) bool {
+		return strings.HasPrefix(p, "data/") && strings.HasSuffix(p, ".json")
+	})
+}
+
+// staticPathsWhere lists the static/-relative paths a predicate accepts, from
+// disk when it is there and from the embed otherwise, sorted.
+func staticPathsWhere(match func(rel string) bool) []string {
 	var paths []string
 	add := func(p string) {
-		if strings.HasSuffix(p, ".css") || strings.HasSuffix(p, ".js") {
+		if match(p) {
 			paths = append(paths, p)
 		}
 	}
