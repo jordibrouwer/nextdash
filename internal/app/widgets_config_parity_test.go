@@ -25,7 +25,7 @@ import (
  */
 
 var (
-	widgetSettingsBlock = regexp.MustCompile(`(?m)^\s*static WIDGET_SETTINGS = \{$`)
+	widgetSettingsBlock = regexp.MustCompile(`(?m)^\s*DashboardConfig\.WIDGET_SETTINGS = \{$`)
 	// A hyphenated type is quoted ('feed-news'), and is read like any other.
 	widgetSettingsType = regexp.MustCompile(`^\s{8}'?([A-Za-z_][A-Za-z0-9_-]*)'?:\s*\[`)
 	widgetSettingsKey  = regexp.MustCompile(`\{\s*key:\s*'([^']+)'`)
@@ -36,7 +36,7 @@ var (
 func widgetSettingsFromConfigPanel(t *testing.T) map[string][]string {
 	t.Helper()
 
-	source, err := os.ReadFile("../../static/js/dashboard/dashboard-config.js")
+	source, err := os.ReadFile("../../static/js/dashboard/dashboard-config-widgets.js")
 	if err != nil {
 		t.Fatalf("read the config panel: %v", err)
 	}
@@ -50,14 +50,14 @@ func widgetSettingsFromConfigPanel(t *testing.T) map[string][]string {
 		}
 	}
 	if start < 0 {
-		t.Fatal("WIDGET_SETTINGS is not in dashboard-config.js under the name this test looks for")
+		t.Fatal("WIDGET_SETTINGS is not in dashboard-config-widgets.js under the name this test looks for")
 	}
 
 	found := map[string][]string{}
 	current := ""
 	for _, line := range lines[start:] {
-		// The table's own closing brace, at the indentation a class field ends
-		// on. Anything deeper belongs to a type inside it.
+		// The table's own closing brace, at the indentation the section file
+		// writes it on. Anything deeper belongs to a type inside it.
 		if line == "    };" {
 			break
 		}
