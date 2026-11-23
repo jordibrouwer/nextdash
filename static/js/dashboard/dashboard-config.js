@@ -21545,6 +21545,9 @@ class DashboardConfig {
             case 'health-large':
                 void this.openBmHealthLarge?.(key);
                 break;
+            case 'service':
+                void this.dash.service?.openServiceView?.({ url: bookmark.url, page: bookmark.pageId });
+                break;
             case 'promote':
                 void this.openBookmarkEditModal(key, { promote: true });
                 break;

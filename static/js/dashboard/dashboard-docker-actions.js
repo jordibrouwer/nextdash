@@ -814,6 +814,7 @@
                     ? { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔', key: 'M' }
                     : { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕', key: 'M' });
             }
+            list.push({ id: 'service', label: this.view.t('service.menuOpen', 'Service overview'), icon: '◈' });
             list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+C` });
             list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉', key: 'Y' });
             // A running one too: removing it stops it first, after asking.
@@ -953,6 +954,8 @@
                 view.selectContainer(c.name, { openDrawer: true });
             } else if (id === 'logs') {
                 view.selectContainer(c.name, { openDrawer: true, section: 'logs' });
+            } else if (id === 'service') {
+                void view.dash?.service?.openServiceView?.({ container: c.name, host: window.dockerActiveHost?.() || '' });
             } else if (id === 'webui') {
                 window.open(this.webuiFor(c), '_blank', 'noopener');
             } else if (id === 'mute') {

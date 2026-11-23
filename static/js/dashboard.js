@@ -16,6 +16,10 @@
             window.__nextdashBootSearchWeb = params.has('web');
             window.__nextdashBootSearch = params.get('web') || params.get('q') || '';
         }
+        // A Service popover address is rewritten away by the page restore too.
+        if (hash === 'service' || hash.startsWith('service?')) {
+            window.__nextdashBootService = window.location.hash;
+        }
     } catch (_error) {
         // An address that cannot be parsed is not a search.
     }
@@ -291,6 +295,10 @@ class Dashboard {
         this.tagView = typeof window.createDashboardTagViewLoader === 'function'
             ? window.createDashboardTagViewLoader(this)
             : null;
+        // One screen per service (#service); the page itself loads on first open.
+        this.service = typeof window.createDashboardServiceLoader === 'function'
+            ? window.createDashboardServiceLoader(this)
+            : null;
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -437,6 +445,8 @@ class Dashboard {
                  */
                 if (!window.DashboardHistory?.isOwnEntry?.(event.state)) return;
                 claimRoute();
+                // The Service popover closes on Back, and swallows the route its own close caused.
+                if (this.service?.handleRoute?.(window.location.hash.substring(1))) return;
                 void window.DashboardHistory.runRestore(() => this.routeFromHash());
             });
 
@@ -533,6 +543,16 @@ class Dashboard {
             } else if (bootHash === 'unsorted') {
                 // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
                 await this.openUnsortedBookmarks({ replace: true });
+            } else if (window.__nextdashBootService || bootHash === 'service' || bootHash.startsWith('service?')) {
+                const raw = String(window.__nextdashBootService || window.location.hash).replace(/^#service\??/, '');
+                delete window.__nextdashBootService;
+                const q = new URLSearchParams(raw);
+                // fromHash: the address was rewritten by the restore, so put it back first.
+                const ref = { url: q.get('url') || '', page: Number(q.get('page')) || 0, container: q.get('container') || '', host: q.get('host') || '' };
+                const q2 = new URLSearchParams();
+                if (ref.url) { q2.set('url', ref.url); if (ref.page) q2.set('page', String(ref.page)); } else if (ref.container) { q2.set('container', ref.container); if (ref.host) q2.set('host', ref.host); }
+                history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}#service?${q2.toString()}`);
+                await this.service?.openServiceView?.({ ...ref, fromHash: true });
             } else if (bootHash === 'tags' && this.activeView !== 'tags') {
                 await this.tagView?.openAllTags?.({ fromHash: true });
             } else if (bootHash.startsWith('tag/') && this.activeView !== 'tags') {
@@ -1146,6 +1166,14 @@ class Dashboard {
                 if (select) this.docker?.selectContainer?.(select, { openDrawer: true });
                 if (filter) this.docker?.applyFilter?.(filter);
                 return;
+            }
+            // One service: #service?url=…&page=… or #service?container=…
+            if (hash === 'service' || hash.startsWith('service?')) {
+                const q = new URLSearchParams(hash.slice('service'.length).replace(/^\?/, ''));
+                return this.service?.openServiceView?.({
+                    url: q.get('url') || '', page: q.get('page') || '',
+                    container: q.get('container') || '', host: q.get('host') || '', fromHash: true,
+                });
             }
             // The Glances view: a new section or widget while it is open is
             // followed in place; the view parses its own address.

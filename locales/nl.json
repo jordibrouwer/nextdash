@@ -576,6 +576,7 @@
       "bmQrCode": "Toon de gerichte bookmark als QR-code, om hem op een telefoon te openen",
       "bmIconPicker": "In de app-icoonkiezer: van het zoekveld naar het raster, over de iconen bewegen, dan de variant van het icoon waar je op staat; Enter kiest",
       "bmRevealHealth": "De geselecteerde bookmark openen in de weergave Bookmarks, op het tabblad Health",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "De feed van de geselecteerde bookmark volgen, of het volgen aanpassen of stoppen",
       "bmFilterTag": "Het raster filteren op de tag van de gerichte bookmark; bij meerdere tags opent de kiezer",
       "bmOpenNewTab": "Open de gefocuste bookmark, of de gemarkeerde zoektreffer, in een nieuw tabblad, wat de instelling ook zegt",

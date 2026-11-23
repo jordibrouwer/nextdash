@@ -466,8 +466,31 @@
                 <span class="status-page-chip-meta">${title}</span>${boxes}</div>`;
         };
 
+        /*
+         * What the Service overview needs to open this row: the bookmark (by its
+         * address; the page id is looked up here, the sources list names the
+         * page only by its title) and/or the container. A row whose bookmark
+         * is gone and that has no container has nothing to open.
+         */
+        const servicePageRef = (svc) => {
+            const key = svc.monitorUrl ? urlKey(svc.monitorUrl) : '';
+            const bm = key ? (d.allBookmarks || []).find((b) => urlKey(b.url) === key) : null;
+            const web = svc.monitorUrl && /^https?:\/\//i.test(svc.monitorUrl) && (bm || monitorFor(svc.monitorUrl));
+            const ref = {};
+            if (web) {
+                ref.url = bm?.url || svc.monitorUrl;
+                if (bm?.pageId) ref.page = bm.pageId;
+            }
+            if (svc.container) ref.container = svc.container;
+            return ref.url || ref.container ? ref : null;
+        };
+
         const serviceRow = (svc) => {
             const sources = (svc.monitorUrl ? 1 : 0) + (svc.container ? 1 : 0);
+            const pageRef = servicePageRef(svc);
+            const pageLabel = t('statusPageOpenServicePage', 'Service overview');
+            const pageTitle = pageRef ? t('statusPageOpenServicePageTitle', 'Open the Service overview of this service')
+                : t('statusPageServicePageNone', 'Nothing to open: its monitored bookmark is gone and it has no container');
             return `
                 <div class="status-page-service" data-sp-service="${esc(svc.id)}" tabindex="0">
                     <span class="config-structure-grip status-page-grip" data-sp-grip draggable="true" tabindex="0" role="button"
@@ -478,6 +501,8 @@
                     <span class="status-page-chips">${chip(svc, 'monitor', sources)}${chip(svc, 'container', sources)}</span>
                     <label class="status-page-check"><input type="checkbox" data-sp-show-link${svc.showLink ? ' checked' : ''}> ${esc(t('statusPageShowLink', 'Link'))}</label>
                     <label class="status-page-check"><input type="checkbox" data-sp-show-speed${svc.showSpeed ? ' checked' : ''}> ${esc(t('statusPageShowSpeed', 'Speed'))}</label>
+                    <button type="button" class="config-btn config-btn--small status-page-service-page" data-sp-service-page${pageRef ? '' : ' disabled aria-disabled="true"'}
+                            title="${esc(pageTitle)}">${esc(pageLabel)}</button>
                     <button type="button" class="config-btn config-btn--small status-page-remove" data-sp-service-remove
                             aria-label="${esc(t('statusPageRemoveService', 'Remove service'))}" title="${esc(t('statusPageRemoveService', 'Remove service'))}">✕</button>
                     ${netChecksBlock(svc)}
@@ -931,6 +956,12 @@
                 if (kind === 'container') s.container = '';
                 changed();
                 host.querySelector(`[data-sp-service="${CSS.escape(serviceId)}"] [data-sp-add-source="${kind}"]`)?.focus();
+                return;
+            }
+            if (el.hasAttribute('data-sp-service-page')) {
+                const found = serviceOf(serviceId);
+                const ref = found ? servicePageRef(found.service) : null;
+                if (ref) void d.service?.openServiceView?.(ref);
                 return;
             }
             if (el.hasAttribute('data-sp-service-remove')) {

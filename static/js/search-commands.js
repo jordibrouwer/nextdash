@@ -84,7 +84,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'service', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
             },
         ];
         // Which groups the reader has closed. All are open to begin with: a bare
@@ -181,6 +181,7 @@ class SearchCommandsComponent {
             'find': this.handleFindCommand.bind(this),
             'health': this.handleHealthCommand.bind(this),
             'docker': this.handleDockerCommand.bind(this),
+            'service': this.handleServiceCommand.bind(this),
             'glances': this.handleGlancesCommand.bind(this),
             'dark': this.handleDarkCommand.bind(this),
             'title': this.handleTitleCommand.bind(this),
@@ -4371,6 +4372,73 @@ class SearchCommandsComponent {
                     return { navigate: true };
                 },
             }));
+    }
+
+    /**
+     * :service, :service <text>: the Service overview of a bookmark (any http or
+     * https one) or of a container, found by name. The page works out the
+     * rest -- the container of a bookmark, the bookmark of a container.
+     */
+    handleServiceCommand(args) {
+        const dash = window.dashboardInstance;
+        if (!dash?.service) return [];
+        const text = args.join(' ').trim().toLowerCase();
+        const seen = new Set();
+        const pool = [...(dash.bookmarks || []).map((b) => ({ ...b, pageId: b.pageId ?? dash.currentPageId })), ...(dash.allBookmarks || [])]
+            .filter((b) => b && /^https?:\/\//i.test(String(b.url || '')))
+            .filter((b) => {
+                const key = String(b.url);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        const context = this.contextBookmark && /^https?:\/\//i.test(String(this.contextBookmark.url || '')) ? this.contextBookmark : null;
+        const open = (opts) => () => {
+            this._closeCommandPalette();
+            void dash.service.openServiceView(opts);
+            return { navigate: true };
+        };
+        const bookmarkRow = (b) => ({
+            name: `${b.name || b.url} — ${this._t('service.paletteOpen', 'Service overview')}`,
+            shortcut: ':SERVICE',
+            type: 'command',
+            action: open({ url: b.url, page: b.pageId }),
+        });
+        let hits;
+        if (!text) {
+            hits = (context ? [context] : []).concat([...pool].sort((a, z) => (z.openCount || 0) - (a.openCount || 0)));
+        } else {
+            hits = pool.filter((b) => String(b.name || '').toLowerCase().includes(text) || String(b.url).toLowerCase().includes(text));
+        }
+        const rows = hits.slice(0, 8).map(bookmarkRow);
+        // A container with no bookmark is a service too.
+        const index = window.DockerSearchIndex;
+        if (text && index && index.enabled?.() !== false && typeof index.match === 'function') {
+            const taken = new Set(rows.map((r) => r.name));
+            index.match(text, 5).forEach((c) => {
+                const linked = index.bookmarkFor?.(c, dash.allBookmarks || []);
+                if (linked && hits.some((b) => b.url === linked.bookmark.url)) return;
+                const name = `${c.name} — ${this._t('service.paletteContainer', 'Service overview (container)')}`;
+                if (!taken.has(name)) rows.push({ name, shortcut: ':SERVICE', type: 'command', action: open({ container: c.name }) });
+            });
+        }
+        // The Containers view is showing another Docker host: its containers
+        // are services too, and the palette is the one place the view's own
+        // list is at hand. They name their host, since "postgres" can be on two.
+        const remoteHost = window.dockerActiveHost?.();
+        const remoteList = remoteHost ? dash.docker?.instance?.containers : null;
+        if (text && Array.isArray(remoteList)) {
+            const hostName = dash.docker.instance.currentHost?.()?.name || remoteHost;
+            remoteList.filter((c) => index?.matches?.(c, text)).slice(0, 5).forEach((c) => {
+                rows.push({
+                    name: `${c.name} — ${this._t('service.paletteContainerOn', 'Service overview (container on {host})').replace('{host}', hostName)}`,
+                    shortcut: ':SERVICE',
+                    type: 'command',
+                    action: open({ container: c.name, host: remoteHost }),
+                });
+            });
+        }
+        return rows.slice(0, 10);
     }
 
     /**

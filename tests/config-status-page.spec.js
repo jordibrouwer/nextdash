@@ -187,6 +187,38 @@ test.describe('Config → Status page groups and services', () => {
         await expect.poll(async () => JSON.stringify((await savedConfig(request)).groups.map((g) => [g.id, g.services.map((s) => s.id)]))).toBe('[["g1",["s2"]]]');
     });
 
+    test('a service row opens the Service overview of its bookmark, or of its container', async ({ page, request }) => {
+        await seedMonitor(request);
+        await request.put('/api/status-page', { headers: H, data: { enabled: true, groups: [
+            { id: 'g1', name: 'A', services: [
+                { id: 's1', name: 'Passwords', monitorUrl: 'https://vault.home.test' },
+                { id: 's2', name: 'Only a container', container: 'one' },
+                { id: 's3', name: 'Gone', monitorUrl: 'https://gone.home.test' },
+            ] },
+        ] } });
+        await openSection(page);
+        const dialog = page.locator('#app-modal.show .modal.service-modal');
+
+        await page.locator('[data-sp-service="s1"] [data-sp-service-page]').click();
+        await expect(dialog).toBeVisible();
+        await expect(page.locator('#modal-title')).toContainText('Vault');
+        await expect(page).toHaveURL(/#service\?url=https%3A%2F%2Fvault\.home\.test/);
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(page).toHaveURL(/#config\/status-page/);
+
+        await page.locator('[data-sp-service="s2"] [data-sp-service-page]').click();
+        await expect(dialog).toBeVisible();
+        await expect(page).toHaveURL(/#service\?container=one/);
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+
+        // Its bookmark is gone and it has no container: nothing to open, and it says why.
+        const gone = page.locator('[data-sp-service="s3"] [data-sp-service-page]');
+        await expect(gone).toBeDisabled();
+        await expect(gone).toHaveAttribute('title', /bookmark is gone/i);
+    });
+
     test('a source that is gone shows as missing', async ({ page, request }) => {
         await request.put('/api/status-page', { headers: H, data: { enabled: true, groups: [
             { id: 'g1', name: 'A', services: [{ id: 's1', name: 'Old', monitorUrl: 'https://gone.home.test' }] },

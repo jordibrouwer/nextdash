@@ -560,6 +560,7 @@
       "bmQrCode": "Afficher le favori ciblé sous forme de code QR, pour l’ouvrir sur un téléphone",
       "bmIconPicker": "Dans le sélecteur d’icônes : de la recherche vers la grille, se déplacer sur les icônes, puis la variante de celle où vous êtes ; Entrée choisit",
       "bmRevealHealth": "Ouvrir le favori sélectionné dans la vue Favoris, sur son onglet Health",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "Suivre le flux du favori sélectionné, ou modifier ou arrêter le suivi",
       "bmFilterTag": "Filtrer la grille sur le tag du favori ciblé ; plusieurs tags ouvrent le sélecteur",
       "bmOpenNewTab": "Ouvrir le favori sélectionné (ou le résultat surligné) dans un nouvel onglet, quel que soit le réglage",

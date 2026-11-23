@@ -560,6 +560,7 @@
       "bmQrCode": "Mostrar el marcador enfocado como código QR, para abrirlo en el móvil",
       "bmIconPicker": "En el selector de iconos: de la búsqueda a la cuadrícula, moverse por los iconos y luego la variante del actual; Intro elige",
       "bmRevealHealth": "Abrir el marcador enfocado en la vista Marcadores, en su pestaña Salud",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "Seguir el feed del marcador enfocado, o cambiar o dejar de seguirlo",
       "bmFilterTag": "Filtrar la cuadrícula por la etiqueta del marcador enfocado; si tiene varias, se abre el selector",
       "bmOpenNewTab": "Abrir el marcador enfocado, o el resultado de búsqueda resaltado, en una pestaña nueva, diga lo que diga el ajuste de abrir en pestaña nueva",

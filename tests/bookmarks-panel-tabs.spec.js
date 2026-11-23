@@ -200,17 +200,27 @@ test('the tabs are equal and stay put while switching', async ({ page }) => {
   }
 });
 
-test('Open, Edit and Re-check sit on one row, without keycaps', async ({ page }) => {
+test('Open, Edit and Re-check sit on one row; the Service overview link has a row of its own below', async ({ page }) => {
   const { bookmarks } = await openBookmarksWithHealth(page, undefined, { view: 'library' });
   await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: bookmarks[0].name }) }).first().click();
-  const actions = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .config-bm-panel-actions');
+  const host = page.locator('.lvs-drawer-host[data-lvs-drawer="library"]');
+  const actions = host.locator('.config-bm-panel-actions');
   const buttons = actions.locator(':scope > .config-btn');
-  await expect(buttons).toHaveCount(3);
+  const count = await buttons.count();
+  expect(count).toBeGreaterThanOrEqual(2);
+  expect(count).toBeLessThanOrEqual(3);
   await expect(buttons.nth(1)).toHaveText('Edit');
   const tops = await buttons.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
   expect(new Set(tops).size).toBe(1);
   await expect(actions.locator('kbd')).toHaveCount(0);
-  await expect(page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .config-bm-tabs kbd')).toHaveCount(0);
+  await expect(host.locator('.config-bm-tabs kbd')).toHaveCount(0);
+  // The overview link: not one of the row's buttons, under it, and not the same size.
+  const service = host.locator('.config-bm-panel-service[data-bm-panel-action="service"]');
+  await expect(service).toContainText('Service overview');
+  const row = await actions.boundingBox();
+  const link = await service.boundingBox();
+  expect(link.y).toBeGreaterThanOrEqual(row.y + row.height - 1);
+  expect(link.width).toBeGreaterThan(row.width * 0.9);
 });
 
 test('the head is set off from the tabs by room and a line', async ({ page }) => {

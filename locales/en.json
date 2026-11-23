@@ -661,6 +661,7 @@
       "bmQrCode": "Show the focused bookmark as a QR code, to open it on a phone",
       "bmIconPicker": "In the app icon picker: from the search into the grid, move over the icons, then the variant of the one you are on; Enter chooses",
       "bmRevealHealth": "Open the focused bookmark in the Bookmarks view, on its Health tab",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "Watch the focused bookmark’s feed, or change or stop watching it",
       "bmFilterTag": "Filter the grid to the focused bookmark’s tag; several tags open the picker",
       "bmOpenNewTab": "Open the focused bookmark (or the highlighted search result) in a new tab, whatever the open-in-new-tab setting says",

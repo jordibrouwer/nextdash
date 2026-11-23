@@ -560,6 +560,7 @@
       "bmQrCode": "Das fokussierte Lesezeichen als QR-Code anzeigen, um es auf dem Handy zu öffnen",
       "bmIconPicker": "In der App-Icon-Auswahl: von der Suche ins Raster, über die Icons bewegen, dann die Variante des aktuellen; Enter wählt",
       "bmRevealHealth": "Das markierte Lesezeichen in der Lesezeichen-Ansicht öffnen, im Tab Health",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "Den Feed des fokussierten Lesezeichens beobachten oder das Beobachten ändern oder beenden",
       "bmFilterTag": "Das Raster nach dem Tag des fokussierten Lesezeichens filtern; bei mehreren Tags öffnet sich die Auswahl",
       "bmOpenNewTab": "Fokussiertes Lesezeichen (oder den markierten Treffer) in neuem Tab öffnen, unabhängig von der Einstellung",

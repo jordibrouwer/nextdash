@@ -82,6 +82,8 @@ test('the row menu shows a key beside every action', async ({ page }) => {
   const menu = page.locator('#docker-row-menu');
   await expect(menu).toBeVisible();
   const missing = await menu.locator('[data-docker-menu-action]').evaluateAll((els) => els
+    // The Service overview has no letter here: l is the logs in this view.
+    .filter((el) => el.getAttribute('data-docker-menu-action') !== 'service')
     .filter((el) => !el.querySelector('.move-popover-item-key')).map((el) => el.getAttribute('data-docker-menu-action')));
   expect(missing, 'menu entries without a key').toEqual([]);
 });

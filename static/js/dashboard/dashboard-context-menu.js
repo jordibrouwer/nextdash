@@ -349,6 +349,10 @@ class DashboardContextMenu {
             ...(d.netBadges?.hasChecks?.(bookmarkRef.bookmark)
                 ? [{ id: 'net-checks', label: this.t('nettools.menuChecks', 'Network checks'), icon: '◉', key: 'N' }]
                 : []),
+            // Only for what is a service: a container, a monitor or a network check.
+            ...(window.DashboardServiceLoader?.isService?.(d, bookmarkRef.bookmark)
+                ? [{ id: 'service', label: window.DashboardServiceLoader.text(d, 'menuOpen', 'Service overview'), icon: '◈', key: 'L' }]
+                : []),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ]);
 
@@ -1044,6 +1048,9 @@ class DashboardContextMenu {
             }
             case 'health':
                 void this.revealInHealth(bookmarkRef);
+                break;
+            case 'service':
+                void d.service?.openServiceView?.({ url: bookmark.url, page: Number(bookmarkRef.pageId) || Number(d.currentPageId) });
                 break;
             case 'net-checks':
                 d.netBadges?.openTests(Number(bookmarkRef.pageId) || Number(d.currentPageId), bookmark.url);

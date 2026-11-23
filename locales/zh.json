@@ -560,6 +560,7 @@
       "bmQrCode": "把当前书签显示为二维码，用手机打开",
       "bmIconPicker": "在应用图标选择器中：从搜索框进入网格，在图标间移动，然后切换当前图标的变体；按 Enter 选定",
       "bmRevealHealth": "在书签视图中打开当前书签的健康标签页",
+      "bmService": "Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover",
       "bmWatchFeed": "关注所选书签的订阅源，或更改或停止关注",
       "bmFilterTag": "把网格筛选为当前书签的标签；有多个标签时会打开选择器",
       "bmOpenNewTab": "在新标签页中打开当前书签，或高亮的搜索结果，无论「在新标签页打开」设置如何",

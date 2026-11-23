@@ -636,6 +636,8 @@
                     ${issue ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
                             title="${esc(this.t('config.bmRecheckTitle', 'Check this bookmark now (p)'))}">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>` : ''}
                 </div>
+                ${/^https?:\/\//i.test(String(b.url || '')) ? `<button type="button" class="config-bm-panel-service" data-bm-panel-action="service"
+                        title="${esc(this.t('service.openPageTitle', 'One screen for this service: health, container, timeline'))}"><span class="config-bm-panel-service-icon" aria-hidden="true">◈</span><span class="config-bm-panel-service-label">${esc(this.t('service.openPage', 'Service overview'))}</span><span class="config-bm-panel-service-chevron" aria-hidden="true">›</span></button>${global.DashboardServiceLoader?.isService?.(this.dash, b) ? `<p class="config-bm-panel-service-hint">${esc(this.t('service.openPageHint', 'Health, container and timeline in one place'))}</p>` : ''}` : ''}
             </header>
             <div class="config-bm-tabs" role="tablist" aria-label="${esc(this.t('config.bmDetails', 'Details'))}">
                 ${tabButton('details', this.t('config.bmTabDetails', 'Details'), 1)}
@@ -1432,7 +1434,10 @@
             // The menu has closed by now, so the picker hangs off the pencil.
             else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-icon-toggle]'));
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
-            else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
+            else if (action === 'service') {
+                const target = this.findBookmarkByKey(key);
+                if (target) void this.dash.service?.openServiceView?.({ url: target.url, page: target.pageId });
+            } else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
             else this.handleBookmarkMenuAction(action, key);
         });

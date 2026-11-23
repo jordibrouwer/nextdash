@@ -601,7 +601,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -863,6 +863,8 @@ class KeyboardNavigation {
             case 'p': this.togglePinForCurrent(); break;
             case 'r': this.revealCurrentInHealth(); break;
             case 'v': this.togglePreviewCardForCurrent(); break;
+            // The Service overview: health, container, timeline and logs of this bookmark in one popover.
+            case 'l': void this.dashboard.service?.openForSelection({ bookmark: this.getSelectedBookmark() }); break;
             case 's': this.shareCurrent(); break;
             case 'q': this.qrCurrent(); break;
             // Remind me of this link: the Inbox's Z (snooze), for a bookmark.
