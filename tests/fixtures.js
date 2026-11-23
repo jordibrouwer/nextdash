@@ -81,6 +81,15 @@ async function resetStore(request) {
 
 const test = base.test.extend({
     /**
+     * The live channel (GET /api/live) is one stream that never ends. Playwright
+     * counts it as a request in flight, so a spec that waits for 'networkidle'
+     * after a reload would wait for ever. Every page therefore gets a stream that
+     * says nothing and ends, unless the spec is about the live channel itself:
+     * test.use({ realLiveChannel: true }).
+     */
+    realLiveChannel: [false, { option: true }],
+
+    /**
      * The server this worker talks to. Worker-scoped: started once when the
      * worker begins and stopped when it ends, not per test.
      */
@@ -128,7 +137,14 @@ const test = base.test.extend({
      * a fixture is only built when a test asks for it, so a spec that never
      * opens a page does not get one just to be watched.
      */
-    page: async ({ page }, use, testInfo) => {
+    page: async ({ page, realLiveChannel }, use, testInfo) => {
+        if (!realLiveChannel) {
+            await page.route('**/api/live', (route) => route.fulfill({
+                status: 200,
+                headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+                body: 'retry: 3600000\n\n',
+            }));
+        }
         // The Bookmarks, Containers and dashboard tours open by themselves on a first
         // visit, and a spec that cold-loads #bookmarks meets it before dismissBlockingOverlays()
         // can mark it seen: the tour wins the race and eats the first click.

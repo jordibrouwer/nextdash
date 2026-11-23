@@ -228,6 +228,7 @@ test.describe('config lazy load', () => {
         await page.locator('.config-link-anchor').first().hover();
         await page.locator('.config-link-anchor').first().click();
         await page.waitForSelector('.config-view-body', { timeout: 15_000 });
+        // Asserting that nothing happens: no Bookmarks scripts may load on this click, so wait before reading the list.
         await page.waitForTimeout(1000);
         expect(bookmarkFiles).toEqual([]);
 
@@ -250,6 +251,7 @@ test.describe('config lazy load', () => {
         await page.goto('/#config/overview');
         await waitReady(page);
         await page.waitForSelector('.config-view-body', { timeout: 15_000 });
+        // Asserting that nothing happens: no request for the art files may follow, so wait before reading the list.
         await page.waitForTimeout(800);
         expect(art).toEqual([]);
 

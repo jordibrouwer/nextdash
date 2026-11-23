@@ -204,6 +204,7 @@ test.describe('one topic can be linked to', () => {
         // Already in the first draw, not put in afterwards.
         const handle = await panel.elementHandle();
         expect(await page.evaluate(() => document.querySelectorAll('#config-help-body .config-help-art').length)).toBeGreaterThan(0);
+        // Asserting that nothing happens: the drawings must not be swapped in later, so the handle stays attached for this long.
         await page.waitForTimeout(1500);
         expect(await handle.evaluate((el) => el.isConnected)).toBe(true);
     });

@@ -74,7 +74,8 @@ test.describe('docker view actions', () => {
     const state = await openView(page);
     await page.locator('[data-docker-row="nextdash"]').click();
     await expect(page.locator('[data-docker-drawer]')).toContainText(/runs nextDash/i);
-    await expect(page.locator('[data-docker-drawer-actions] button')).toHaveCount(0);
+    // The Service overview button is a way to look, not an action on the container.
+    await expect(page.locator('[data-docker-drawer-actions] button[data-docker-action]')).toHaveCount(0);
     await page.keyboard.press('s');
     // No request should be sent, so give one time to go out if it were going to.
     await page.waitForTimeout(300);
@@ -84,7 +85,8 @@ test.describe('docker view actions', () => {
   test('read-only offers no actions and keys do nothing', async ({ page }) => {
     const state = await openView(page, { control: false });
     await page.locator('[data-docker-row="jellyfin"]').click();
-    await expect(page.locator('[data-docker-drawer-actions] button')).toHaveCount(0);
+    // The Service overview button is a way to look, not an action on the container.
+    await expect(page.locator('[data-docker-drawer-actions] button[data-docker-action]')).toHaveCount(0);
     await page.keyboard.press('s');
     // No request should be sent, so give one time to go out if it were going to.
     await page.waitForTimeout(300);

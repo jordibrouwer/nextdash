@@ -22,7 +22,10 @@ const railClearsBand = (page) => page.evaluate(() => {
 
 for (const width of [1440, 800]) {
     test(`the rail stays below the sticky band when Behavior is scrolled at ${width}px`, async ({ page }) => {
-        await page.setViewportSize({ width, height: 900 });
+        // Tall enough for the whole rail under the band: with Timeline in it the rail is
+        // longer than 900px minus the band, and a rail longer than the window is
+        // carried up by the end of its column, which this test is not about.
+        await page.setViewportSize({ width, height: 1100 });
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });

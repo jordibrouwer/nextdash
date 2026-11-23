@@ -60,6 +60,7 @@ test.describe('category dividers', () => {
             window.DashboardCategorySort.setCategorySortMode(d, cid, 'order');
             await d.renderCore.saveCategoryOrder();
         }, usedCategory);
+        // Time itself: the category order saves behind a debounce, and the next test must not start before it has landed.
         await page.waitForTimeout(1200);
         usedCategory = null;
     });

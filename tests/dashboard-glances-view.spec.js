@@ -1764,7 +1764,7 @@ test.describe(':glances in the command palette', () => {
     test('a section opens; record and pause change the settings', async ({ page }) => {
         const state = await mockGlances(page);
         await openPalette(page, ':glances proc');
-        await page.locator('.search-match', { hasText: /Glances — Processes/ }).click();
+        await page.locator('.search-match', { hasText: /Glances: Processes/ }).click();
         await expect(page).toHaveURL(/#glances\/processes/);
 
         await openPalette(page, ':glances record 15m');

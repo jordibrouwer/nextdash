@@ -1,5 +1,8 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
+
+// This spec is about the live channel: it needs the real stream, not the quiet one the fixture gives.
+test.use({ realLiveChannel: true });
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**

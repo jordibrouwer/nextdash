@@ -1,5 +1,8 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
+
+// One test here is about the live channel's own stream (a health write reaches the page), so the real one stays.
+test.use({ realLiveChannel: true });
 const { mockDocker } = require('./helpers/docker-mock');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, WRITE_TOKEN } = require('./e2e-helpers');
 

@@ -373,7 +373,7 @@ test('the row entry names which figure it opens', async ({ page }) => {
     await row.click({ button: 'right' });
     const menu = page.locator('#widget-context-menu');
     await expect(menu).toBeVisible({ timeout: 10_000 });
-    await expect(menu.locator('[data-action="row-open"]')).toContainText('—');
+    await expect(menu.locator('[data-action="row-open"]')).toContainText(':');
 });
 
 /*

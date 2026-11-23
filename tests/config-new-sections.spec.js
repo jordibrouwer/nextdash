@@ -40,8 +40,8 @@ test.describe('config: sections restored from the old config', () => {
         // Bookmarks is the collection it shows. Appearance opens that group
         // rather than sitting under the collection, which is where an ordering
         // by how often a section is opened had put it.
-        // Watch feeds sits right after Bookmarks, then Structure and Behavior; Finders, the search shortcuts, sit under Behavior, and Inbox comes after them.
-        expect(order.slice(0, 8)).toEqual(['overview', 'appearance', 'bookmarks', 'feed-watch', 'structure', 'behavior', 'finders', 'inbox']);
+        // Watch feeds sits right after Bookmarks, then Structure and Behavior; Timeline follows Behavior, Finders, the search shortcuts, come next, and Inbox comes after them.
+        expect(order.slice(0, 9)).toEqual(['overview', 'appearance', 'bookmarks', 'feed-watch', 'structure', 'behavior', 'timeline', 'finders', 'inbox']);
     });
 
     test('the Bookmarks view lists bookmarks and filters by search', async ({ page }) => {

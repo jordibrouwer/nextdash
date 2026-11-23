@@ -98,6 +98,7 @@ test('18 Config → Timeline', async ({ page }) => {
     await page.locator('.config-link-anchor').click();
     await page.locator('[data-config-section="timeline"]').click();
     await page.locator('.tl-item').first().waitFor();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     await settle(page);
     await shot(page, '18-timeline.jpg');
@@ -148,6 +149,7 @@ test('09 label rows split a long category', async ({ page }) => {
     await category.locator('.bookmark-link').nth(1).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Add label above' }).click();
     await nameLabel('Tools');
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await snap(page, category, '09-label-rows.jpg', { pad: 14 });
 });
@@ -158,6 +160,7 @@ async function openBookmarksView(page) {
     await page.locator('.library-link-anchor').click();
     await page.locator('#config-bm-list .config-bm-row').first().waitFor();
     await settle(page);
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
 }
 
@@ -179,6 +182,7 @@ test('12 a domain date typed by hand', async ({ page }) => {
     const panel = page.locator('[data-lvs-drawer-panel]').first();
     await panel.waitFor({ state: 'visible' });
     await page.keyboard.press('2');
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(1_200);
     const section = panel.locator('details.config-bm-acc', { hasText: 'Expectations' }).first();
     await section.locator('summary').click();
@@ -186,6 +190,7 @@ test('12 a domain date typed by hand', async ({ page }) => {
     await input.waitFor();
     await input.fill('2027-03-14');
     await section.scrollIntoViewIfNeeded();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(400);
     await snap(page, section, '12-domain-date.jpg', { pad: 8 });
 });
@@ -201,11 +206,13 @@ test('16 the Timer widget', async ({ page }) => {
     await page.locator('#app-modal.show [data-widget-add="timer"]').click();
     const finish = page.locator('[data-widget-wizard-finish]');
     if (await finish.count()) await finish.click();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     await page.keyboard.press('Escape');
     await openDashboard(page);
     const tile = page.locator('[data-widget-id]', { has: page.locator('.dashboard-timer') }).first();
     await tile.scrollIntoViewIfNeeded();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await snap(page, tile, '16-timer-widget.jpg', { pad: 14 });
 });
