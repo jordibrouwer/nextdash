@@ -478,7 +478,37 @@ func (h *Handlers) watchDockerEventsOnce(ctx context.Context, api *dockerAPI, n 
 	}
 	return api.streamEvents(ctx, func(ev dockerEvent) {
 		h.dispatchContainerNotices(ctx, n.event(ev, time.Now(), h.dockerNotifyAllowed))
+		h.publishDockerChange(ev)
 	})
+}
+
+// dockerEventChangesState is whether a daemon event is a container's state
+// moving: it appeared, started, stopped, died, paused, went away, was renamed,
+// or its healthcheck changed its mind. exec, attach, resize and the like are
+// not, and neither are nextDash's own throwaway helpers.
+func dockerEventChangesState(ev dockerEvent) bool {
+	if ev.Type != "" && ev.Type != "container" {
+		return false
+	}
+	if ev.Actor.Attributes["name"] == "" || dockerIsOwnHelper(ev.Actor.Attributes) {
+		return false
+	}
+	switch ev.Action {
+	case "create", "start", "stop", "die", "pause", "unpause", "destroy", "rename", "oom", "restart":
+		return true
+	}
+	return strings.HasPrefix(ev.Action, "health_status")
+}
+
+// publishDockerChange pings the live channel's "docker" event for a state
+// change. Like "health" it carries nothing and folds into one delivery per
+// window, so a stack coming up is one refetch. This is the local daemon's
+// stream; another host's containers are polled.
+func (h *Handlers) publishDockerChange(ev dockerEvent) {
+	if h == nil || !dockerEventChangesState(ev) {
+		return
+	}
+	h.live.Publish("docker")
 }
 
 // StartDockerNotifier keeps one event stream open while there is a socket,

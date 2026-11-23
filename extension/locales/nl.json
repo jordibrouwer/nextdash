@@ -63,7 +63,7 @@
   "previewLinkLabel": "Linkvoorbeeld",
   "previewRefresh": "Verversen",
   "previewClear": "Wissen",
-  "previewEmpty": "Nog geen preview — ververs om titel, beschrijving en afbeelding op te halen.",
+  "previewEmpty": "Nog geen preview. Ververs om titel, beschrijving en afbeelding op te halen.",
   "previewNoUrl": "Voer eerst een URL in.",
   "previewRefreshed": "Link preview bijgewerkt.",
   "previewRefreshFailed": "Kon link preview niet ophalen.",

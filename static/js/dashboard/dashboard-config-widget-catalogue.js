@@ -59,6 +59,7 @@
         stack: { rows: [['Disks  ·  CPU  ·  Memory', ''], ['one tile, three tabs', '']] },
         clock: { rows: [['Here', '14:05'], ['Tokyo', '22:05 · tomorrow']] },
         countdown: { big: '12', rows: [['days left', '']] },
+        timer: { big: '12:30', rows: [['Focus', ''], ['round 2 of 4', '']] },
         jellyfin: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         emby: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         plex: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },

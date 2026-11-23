@@ -1,0 +1,40 @@
+/* Label row between the bookmarks of a category: small muted text with a
+   hairline running to the right edge. Tokens only, so every look carries it. */
+.category-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    grid-column: 1 / -1;
+    flex-basis: 100%;
+    padding: 10px 4px 2px;
+    font-size: 0.78em;
+    color: var(--text-tertiary);
+    cursor: default;
+    outline-offset: 2px;
+}
+.category-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid color-mix(in srgb, var(--text-tertiary) 45%, transparent);
+}
+.category-divider:has(input)::after { display: none; }
+.category-divider-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 70%;
+}
+.category-divider-input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    color: var(--text-primary);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border-secondary);
+    padding: 0 0 2px;
+}
+.category-divider:focus-visible { outline: 2px solid var(--accent-primary); border-radius: 4px; }
+.category-divider.is-overflow-hidden { display: none; }
+/* A spread category sets every child to one column; a label spans them all. */
+.dashboard-grid .category--wide .bookmarks-list > .category-divider { grid-column: 1 / -1; }

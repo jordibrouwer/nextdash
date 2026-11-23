@@ -411,7 +411,7 @@
             return {
                 cls: 'tls', tone: 'err',
                 title: t('nettools.errTlsHandshakeTitle', 'No TLS handshake'),
-                body: r.error || fmt(t('nettools.errTlsHandshakeBody', '{host} port {port} did not complete a TLS handshake. The port may not speak TLS; STARTTLS ports are not supported.'), { host, port: r.port || '?' }),
+                body: r.error || fmt(t('nettools.errTlsHandshakeBody', '{host} port {port} did not complete a TLS handshake. The port may not speak TLS, or not offer STARTTLS.'), { host, port: r.port || '?' }),
                 actions: [],
             };
         case 'content':
@@ -730,7 +730,7 @@
         }
         if (res.type === 'tls') {
             const tl = res.tls || {};
-            return [tlsDaysText(tl.daysLeft, t), tl.version || ''].filter(Boolean).join(' \u00b7 ');
+            return [tlsDaysText(tl.daysLeft, t), tl.version || '', tl.starttls ? `${tl.starttls} STARTTLS` : ''].filter(Boolean).join(' \u00b7 ');
         }
         if (res.type === 'http') {
             const h = res.http || {};

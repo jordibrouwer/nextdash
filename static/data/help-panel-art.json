@@ -1,0 +1,1390 @@
+{
+ "config.helpVersionTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtLifeCapture",
+     "d": "Capture"
+    },
+    {
+     "k": "config.helpArtLifeCheck",
+     "d": "Check"
+    },
+    {
+     "k": "config.helpArtLifeTidy",
+     "d": "Tidy"
+    },
+    {
+     "k": "config.feedsTitle",
+     "d": "Watch feeds"
+    }
+   ],
+   "captionKey": "config.helpArtLifeOfLink",
+   "caption": "The life of a link"
+  }
+ ],
+ "config.helpStartTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.page",
+     "d": "Page"
+    },
+    {
+     "k": "config.category",
+     "d": "Category"
+    },
+    {
+     "k": "config.detailBookmarkFallback",
+     "d": "Bookmark"
+    }
+   ],
+   "captionKey": "config.helpArtStack",
+   "caption": "How it is stacked"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    ">",
+    "+",
+    "/"
+   ],
+   "captionKey": "config.helpArtStartKeys",
+   "caption": "Search, add, tags"
+  }
+ ],
+ "config.helpFirstHourTitle": [
+  {
+   "kind": "steps",
+   "value": [
+    {
+     "k": "config.helpArtStepImport",
+     "d": "Import"
+    },
+    {
+     "k": "config.helpArtStepPages",
+     "d": "Split across pages"
+    },
+    {
+     "k": "config.helpArtStepShortcuts",
+     "d": "Give shortcuts"
+    },
+    {
+     "k": "config.helpArtStepChecks",
+     "d": "Turn on checks"
+    }
+   ]
+  }
+ ],
+ "config.helpBellTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    "Shift + N",
+    "Enter",
+    "?"
+   ],
+   "captionKey": "config.helpArtBellKeys",
+   "caption": "Open, act, keys and help"
+  }
+ ],
+ "config.helpStartDailyTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    ">",
+    "Ctrl + V",
+    "!",
+    "e"
+   ],
+   "captionKey": "config.helpArtDailyKeys",
+   "caption": "A day in four keys"
+  }
+ ],
+ "config.helpStatsTitle": [
+  {
+   "kind": "bars",
+   "value": {
+    "values": [
+     0.5,
+     0.95,
+     0.4,
+     0.7,
+     0.3,
+     0.55
+    ],
+    "mark": 1
+   },
+   "captionKey": "config.helpArtStatsBars",
+   "caption": "What you open, ranked"
+  }
+ ],
+ "config.helpStatsReadingTitle": [
+  {
+   "kind": "meter",
+   "value": {
+    "fill": 0.78
+   },
+   "captionKey": "config.helpArtConcentration",
+   "caption": "Concentration"
+  },
+  {
+   "kind": "spark",
+   "value": [
+    0.3,
+    0.42,
+    0.35,
+    0.6,
+    0.55,
+    0.8
+   ],
+   "captionKey": "config.helpArtTrend",
+   "caption": "The direction it moved"
+  }
+ ],
+ "config.helpStatsUsageTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtOpenBookmark",
+     "d": "Open a bookmark"
+    },
+    "+1",
+    {
+     "k": "config.helpArtTimestamp",
+     "d": "Time stamped"
+    }
+   ],
+   "captionKey": "config.helpArtCountMechanism",
+   "caption": "The whole mechanism"
+  }
+ ],
+ "config.helpStatsPrivacyTitle": [
+  {
+   "kind": "boundary",
+   "value": {
+    "label": {
+     "k": "config.helpArtYourServer",
+     "d": "Your server"
+    },
+    "inside": [
+     {
+      "k": "config.statsBookmarks",
+      "d": "Bookmarks"
+     },
+     {
+      "k": "config.helpArtCounts",
+      "d": "Counts"
+     }
+    ],
+    "out": null
+   },
+   "captionKey": "config.helpArtNothingLeaves",
+   "caption": "None of it is sent anywhere"
+  }
+ ],
+ "config.helpConfigTitle": [
+  {
+   "kind": "panelMap",
+   "value": "rail",
+   "captionKey": "config.helpArtConfigRail",
+   "caption": "Sections down the left"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    ",",
+    "Esc"
+   ],
+   "captionKey": "config.helpArtConfigKeys",
+   "caption": "In and out"
+  }
+ ],
+ "config.helpBehaviorTitle": [
+  {
+   "kind": "panelMap",
+   "value": "tabs",
+   "captionKey": "config.helpArtBehaviorTabs",
+   "caption": "Four tabs"
+  },
+  {
+   "kind": "toggles",
+   "value": [
+    true,
+    false,
+    true
+   ],
+   "captionKey": "config.helpArtSavesInstantly",
+   "caption": "Saved the moment you change it"
+  }
+ ],
+ "config.helpAppearanceTitle": [
+  {
+   "kind": "spacing",
+   "value": "snug",
+   "captionKey": "config.categorySpacingSnug",
+   "caption": "Snug"
+  },
+  {
+   "kind": "spacing",
+   "value": "airy",
+   "captionKey": "config.categorySpacingAiry",
+   "caption": "Airy"
+  },
+  {
+   "kind": "margins",
+   "value": "balanced",
+   "captionKey": "config.sideMarginLabel",
+   "caption": "Page margins"
+  },
+  {
+   "kind": "density",
+   "value": "dense",
+   "captionKey": "config.densityDense",
+   "caption": "Dense"
+  }
+ ],
+ "config.helpWidgetsTitle": [
+  {
+   "kind": "widgetSpan",
+   "value": 2,
+   "captionKey": "config.helpArtWidgetWide",
+   "caption": "A block beside your categories"
+  },
+  {
+   "kind": "bars",
+   "value": {
+    "values": [
+     0.9,
+     0.7,
+     0.95,
+     0.4,
+     0.8
+    ],
+    "mark": 3,
+    "tone": "bad"
+   },
+   "captionKey": "config.helpArtWidgetFigures",
+   "caption": "Figures it already keeps"
+  }
+ ],
+ "config.helpWidgetKindsTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "ok",
+     {
+      "k": "config.statsHealthy",
+      "d": "Healthy"
+     }
+    ],
+    [
+     "bad",
+     {
+      "k": "config.statsBroken",
+      "d": "Broken"
+     }
+    ],
+    [
+     "idle",
+     {
+      "k": "config.statsStale",
+      "d": "Stale"
+     }
+    ]
+   ],
+   "captionKey": "config.helpArtWidgetKinds",
+   "caption": "What each one answers"
+  },
+  {
+   "kind": "spark",
+   "value": [
+    0.2,
+    0.35,
+    0.3,
+    0.5,
+    0.65,
+    0.6,
+    0.8
+   ],
+   "captionKey": "config.helpArtWidgetTrend",
+   "caption": "Or the direction it is going"
+  }
+ ],
+ "config.helpWidgetAddingTitle": [
+  {
+   "kind": "steps",
+   "value": [
+    {
+     "k": "config.helpArtWidgetStepChoose",
+     "d": "Choose a kind"
+    },
+    {
+     "k": "config.helpArtWidgetStepName",
+     "d": "Name it"
+    },
+    {
+     "k": "config.helpArtWidgetStepPlace",
+     "d": "Drag it into place"
+    }
+   ]
+  },
+  {
+   "kind": "widgetSpan",
+   "value": 1,
+   "captionKey": "config.helpArtWidgetNarrow",
+   "caption": "One column, or two"
+  }
+ ],
+ "config.helpWidgetCustomTitle": [
+  {
+   "kind": "boundary",
+   "value": {
+    "label": {
+     "k": "config.helpArtYourServer",
+     "d": "Your server"
+    },
+    "inside": [
+     {
+      "k": "config.helpArtWidgetAddress",
+      "d": "The address"
+     },
+     {
+      "k": "config.helpArtWidgetKey",
+      "d": "The key"
+     }
+    ],
+    "out": {
+     "k": "config.helpArtWidgetTile",
+     "d": "The tile"
+    }
+   },
+   "captionKey": "config.helpArtWidgetFetched",
+   "caption": "Fetched here, never by your browser"
+  },
+  {
+   "kind": "query",
+   "value": [
+    [
+     "token",
+     "server.disk"
+    ],
+    [
+     "text",
+     "[0].used"
+    ]
+   ],
+   "captionKey": "config.helpArtWidgetPath",
+   "caption": "A path into the answer"
+  }
+ ],
+ "config.helpWidgetServicesTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtWidgetPreset",
+     "d": "Pick a service"
+    },
+    {
+     "k": "config.helpArtWidgetFilled",
+     "d": "Address and figures filled in"
+    },
+    {
+     "k": "config.helpArtWidgetYours",
+     "d": "Edit anything"
+    }
+   ],
+   "captionKey": "config.helpArtWidgetPresets",
+   "caption": "Forty-one already known"
+  }
+ ],
+ "config.helpSourcesTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtSourceService",
+     "d": "A service"
+    },
+    {
+     "k": "config.helpArtSourcePreview",
+     "d": "Preview"
+    },
+    {
+     "k": "config.helpArtSourcePage",
+     "d": "Your page"
+    }
+   ],
+   "captionKey": "config.helpArtSourceFlow",
+   "caption": "Nothing is written unseen"
+  }
+ ],
+ "config.helpArchiveTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtArchiveSave",
+     "d": "You save it"
+    },
+    {
+     "k": "config.helpArtArchiveCopy",
+     "d": "A copy is kept"
+    },
+    {
+     "k": "config.helpArtArchiveGone",
+     "d": "The page dies"
+    }
+   ],
+   "captionKey": "config.helpArtArchiveFlow",
+   "caption": "The copy is made first"
+  }
+ ],
+ "config.helpIntegrationsTitle": [
+  {
+   "kind": "boundary",
+   "value": {
+    "label": {
+     "k": "config.helpArtOutLabel",
+     "d": "nextDash"
+    },
+    "inside": [
+     {
+      "k": "config.helpArtOutAdded",
+      "d": "Added"
+     },
+     {
+      "k": "config.helpArtOutDown",
+      "d": "Down"
+     }
+    ],
+    "out": {
+     "k": "config.helpArtOutReceiver",
+     "d": "Your receiver"
+    }
+   },
+   "captionKey": "config.helpArtOutFlow",
+   "caption": "Pushed, and signed"
+  }
+ ],
+ "config.helpHeaderTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    "1–9",
+    "'",
+    "Shift + A"
+   ]
+  }
+ ],
+ "config.helpThemesTitle": [
+  {
+   "kind": "themeGrid",
+   "value": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f"
+   ],
+   "captionKey": "config.helpArtThemeBrowser",
+   "caption": "A grid, not a list of names"
+  },
+  {
+   "kind": "depth",
+   "value": "rich",
+   "captionKey": "config.helpArtThemeDepth",
+   "caption": "A card on a surface"
+  },
+  {
+   "kind": "pattern",
+   "value": "grid",
+   "captionKey": "config.helpArtThemePattern",
+   "caption": "Dots, grid, lines or hatch"
+  },
+  {
+   "kind": "swatches",
+   "value": [
+    "light",
+    "dark"
+   ],
+   "captionKey": "config.helpArtThemePair",
+   "caption": "A light and a dark half"
+  },
+  {
+   "kind": "swatches",
+   "value": [
+    "accent",
+    "light",
+    "dark"
+   ],
+   "captionKey": "config.helpArtThemeEditor",
+   "caption": "Or recolour any of them"
+  }
+ ],
+ "config.helpWorkspaceTitle": [
+  {
+   "kind": "grid",
+   "value": 2,
+   "captionKey": "config.helpArtColumns2",
+   "caption": "2 columns"
+  },
+  {
+   "kind": "grid",
+   "value": 3,
+   "captionKey": "config.helpArtColumns3",
+   "caption": "3 columns"
+  },
+  {
+   "kind": "grid",
+   "value": 5,
+   "captionKey": "config.helpArtColumns5",
+   "caption": "5 columns"
+  }
+ ],
+ "config.helpMoveTitle": [
+  {
+   "kind": "blockMove",
+   "value": "place",
+   "captionKey": "config.helpArtMovePlace",
+   "caption": "The box shows where it lands"
+  },
+  {
+   "kind": "blockMove",
+   "value": "wide",
+   "captionKey": "config.helpArtMoveWide",
+   "caption": "On the column line: wide"
+  },
+  {
+   "kind": "blockMove",
+   "value": "page",
+   "captionKey": "config.helpArtMovePage",
+   "caption": "To another page"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "↑",
+    "Tab",
+    "Space",
+    "← → ↑ ↓",
+    "W",
+    "Enter"
+   ],
+   "captionKey": "config.helpArtMoveKeys",
+   "caption": "From a bookmark, without the mouse"
+  }
+ ],
+ "config.helpBookmarksTitle": [
+  {
+   "kind": "bookmarkRow",
+   "value": [
+    "icon",
+    "tag",
+    "key",
+    "dot"
+   ],
+   "captionKey": "config.helpArtRowCarries",
+   "caption": "Icon, name, tags, shortcut, availability"
+  }
+ ],
+ "config.helpTagsTitle": [
+  {
+   "kind": "query",
+   "value": [
+    [
+     "token",
+     "tag:"
+    ],
+    [
+     "text",
+     "work"
+    ]
+   ],
+   "captionKey": "config.helpArtTagFilter",
+   "caption": "Filters without rearranging the grid"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "/"
+   ],
+   "captionKey": "config.helpArtTagCloud",
+   "caption": "The tag cloud"
+  }
+ ],
+ "config.helpLibraryTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "bad",
+     {
+      "k": "config.statsBroken",
+      "d": "Broken"
+     }
+    ],
+    [
+     "warn",
+     {
+      "k": "config.statsDuplicates",
+      "d": "Duplicates"
+     }
+    ],
+    [
+     "idle",
+     {
+      "k": "config.statsStale",
+      "d": "Stale"
+     }
+    ],
+    [
+     "off",
+     {
+      "k": "config.statsUnchecked",
+      "d": "Unchecked"
+     }
+    ]
+   ],
+   "captionKey": "config.helpArtHealthTiles",
+   "caption": "The filters, in the rail"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "Shift + B"
+   ]
+  }
+ ],
+ "config.helpBmPanelTitle": [
+  {
+   "kind": "steps",
+   "value": [
+    {
+     "k": "config.bmTabDetails",
+     "d": "Details"
+    },
+    {
+     "k": "config.bmHealth",
+     "d": "Health"
+    },
+    {
+     "k": "config.bmUsage",
+     "d": "Usage"
+    }
+   ],
+   "captionKey": "config.helpArtBmPanelTabs",
+   "caption": "Three tabs, or 1 / 2 / 3"
+  }
+ ],
+ "config.helpBmWorkThroughTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    "f",
+    "p",
+    "d",
+    "z"
+   ],
+   "captionKey": "config.helpArtBmWorkKeys",
+   "caption": "One bookmark at a time"
+  }
+ ],
+ "config.helpContainersTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "ok",
+     {
+      "k": "dashboard.dockerFilterRunning",
+      "d": "Running"
+     }
+    ],
+    [
+     "off",
+     {
+      "k": "dashboard.dockerFilterStopped",
+      "d": "Stopped"
+     }
+    ],
+    [
+     "warn",
+     {
+      "k": "dashboard.dockerFilterUpdates",
+      "d": "Updates"
+     }
+    ]
+   ],
+   "captionKey": "config.helpArtContainerFilters",
+   "caption": "What the filters ask"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "s",
+    "r",
+    "p",
+    "u"
+   ],
+   "captionKey": "config.helpArtContainerKeys",
+   "caption": "Start/stop, restart, pause, update"
+  }
+ ],
+ "config.helpSearchTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    ">",
+    ":",
+    "!"
+   ],
+   "captionKey": "config.helpArtThreeModes",
+   "caption": "Three modes, one overlay"
+  },
+  {
+   "kind": "query",
+   "value": [
+    [
+     "prefix",
+     ">"
+    ],
+    [
+     "text",
+     {
+      "k": "config.helpArtSearchQuery",
+      "d": "status page"
+     }
+    ]
+   ]
+  }
+ ],
+ "config.helpFindersTitle": [
+  {
+   "kind": "query",
+   "value": [
+    [
+     "prefix",
+     "!"
+    ],
+    [
+     "token",
+     "g"
+    ],
+    [
+     "text",
+     "nextdash"
+    ]
+   ],
+   "captionKey": "config.helpArtFinderExample",
+   "caption": "Google, without opening Google first"
+  }
+ ],
+ "config.helpCommandsTitle": [
+  {
+   "kind": "query",
+   "value": [
+    [
+     "prefix",
+     ":"
+    ],
+    [
+     "text",
+     "density compact"
+    ]
+   ],
+   "captionKey": "config.helpArtCommandExample",
+   "caption": "Actions, not destinations"
+  }
+ ],
+ "config.helpKeyboardTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    ">",
+    "?",
+    ":",
+    "+",
+    "!",
+    "/"
+   ],
+   "captionKey": "config.helpArtOverlayKeys",
+   "caption": "The overlays"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "Shift + B",
+    "Shift + U",
+    "Shift + I",
+    ","
+   ],
+   "captionKey": "config.helpArtViewKeys",
+   "caption": "The views"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "j",
+    "k",
+    "g",
+    "End"
+   ],
+   "captionKey": "config.helpArtMoveKeys",
+   "caption": "Moving around"
+  }
+ ],
+ "config.helpConfigKeyboardTitle": [
+  {
+   "kind": "panelMap",
+   "value": "body",
+   "captionKey": "config.helpArtConfigLayer",
+   "caption": "Its own keyboard layer"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "j",
+    "k",
+    "g",
+    "End",
+    "?"
+   ]
+  }
+ ],
+ "config.helpHealthTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "off",
+     {
+      "k": "config.checkModeOff",
+      "d": "Off"
+     }
+    ],
+    [
+     "idle",
+     {
+      "k": "config.checkModePeriodic",
+      "d": "Periodic"
+     }
+    ],
+    [
+     "ok",
+     {
+      "k": "config.checkModeMonitor",
+      "d": "Monitor"
+     }
+    ]
+   ],
+   "captionKey": "config.helpArtCheckModes",
+   "caption": "Three availability modes"
+  }
+ ],
+ "config.helpHealthWalkthroughTitle": [
+  {
+   "kind": "steps",
+   "value": [
+    {
+     "k": "config.checkModeMonitor",
+     "d": "Monitor"
+    },
+    {
+     "k": "config.monitorInterval",
+     "d": "Check every"
+    },
+    {
+     "k": "config.helpArtStepExpected",
+     "d": "Expected response"
+    },
+    {
+     "k": "config.maintenanceTitle",
+     "d": "Maintenance windows"
+    }
+   ]
+  }
+ ],
+ "config.helpHealthStatsTitle": [
+  {
+   "kind": "bars",
+   "value": {
+    "values": [
+     1,
+     1,
+     1,
+     0.25,
+     1,
+     1,
+     1
+    ],
+    "mark": 3,
+    "tone": "bad"
+   },
+   "captionKey": "config.helpArtHeartbeat",
+   "caption": "The last checks, one bar each"
+  },
+  {
+   "kind": "spark",
+   "value": [
+    0.35,
+    0.4,
+    0.38,
+    0.5,
+    0.45,
+    0.42
+   ],
+   "captionKey": "config.helpArtResponseTime",
+   "caption": "Response time"
+  },
+  {
+   "kind": "meter",
+   "value": {
+    "fill": 0.99,
+    "tone": "ok"
+   },
+   "captionKey": "config.helpArtUptime",
+   "caption": "Uptime over 24 hours"
+  }
+ ],
+ "config.helpHealthExpectTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    "200 OK",
+    {
+     "k": "config.helpArtExpectText",
+     "d": "Contains “Login”"
+    },
+    {
+     "k": "config.statsHealthy",
+     "d": "Healthy"
+    }
+   ],
+   "captionKey": "config.helpArtExpectTwoTests",
+   "caption": "Answering is not the same as working"
+  }
+ ],
+ "config.helpHealthCertTitle": [
+  {
+   "kind": "meter",
+   "value": {
+    "fill": 0.86,
+    "mark": 0.72,
+    "tone": "warn"
+   },
+   "captionKey": "config.helpArtCertMeter",
+   "caption": "Warned before it expires, not after"
+  }
+ ],
+ "config.helpHealthDriftTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    "200 OK",
+    {
+     "k": "config.helpArtDriftChanged",
+     "d": "Title changed"
+    },
+    {
+     "k": "config.helpArtDriftFlagged",
+     "d": "Flagged"
+    }
+   ],
+   "captionKey": "config.helpArtDrift",
+   "caption": "Answering fine, no longer your page"
+  }
+ ],
+ "config.helpFreshTitle": [
+  {
+   "kind": "bookmarkRow",
+   "value": [
+    "icon",
+    "key"
+   ],
+   "captionKey": "config.helpArtFreshRow",
+   "caption": "A count on the row"
+  }
+ ],
+ "config.helpHealthMaintenanceTitle": [
+  {
+   "kind": "dayWindow",
+   "value": {
+    "from": 3,
+    "to": 4
+   },
+   "captionKey": "config.helpArtWindowNightly",
+   "caption": "A nightly window is not an incident"
+  }
+ ],
+ "config.helpNotificationsTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtDown",
+     "d": "Down"
+    },
+    {
+     "k": "config.helpArtAlert",
+     "d": "Push or webhook"
+    },
+    {
+     "k": "config.helpArtYourDevices",
+     "d": "Your devices"
+    }
+   ]
+  }
+ ],
+ "config.helpMonitoringConfigTitle": [
+  {
+   "kind": "panelMap",
+   "value": "tabs",
+   "captionKey": "config.helpArtMonitoringTabs",
+   "caption": "Three tabs"
+  }
+ ],
+ "config.helpDigestTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtDigestWeek",
+     "d": "A week"
+    },
+    {
+     "k": "config.helpArtDigestOne",
+     "d": "One message"
+    },
+    {
+     "k": "config.helpArtYourDevices",
+     "d": "Your devices"
+    }
+   ]
+  }
+ ],
+ "config.helpStatusPageTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "ok",
+     {
+      "k": "config.statsHealthy",
+      "d": "Healthy"
+     }
+    ],
+    [
+     "off",
+     {
+      "k": "config.helpArtDown",
+      "d": "Down"
+     }
+    ]
+   ]
+  }
+ ],
+ "config.helpStatusPageShareTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    "/s/*",
+    "/static/status/*",
+    "nextDash"
+   ]
+  }
+ ],
+ "config.helpInboxTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    "Ctrl + V",
+    {
+     "k": "config.helpTabInbox",
+     "d": "Inbox"
+    },
+    {
+     "k": "config.detailBookmarkFallback",
+     "d": "Bookmark"
+    }
+   ],
+   "captionKey": "config.helpArtInboxRoute",
+   "caption": "Where a pasted link goes"
+  },
+  {
+   "kind": "keys",
+   "value": [
+    "Shift + I"
+   ]
+  }
+ ],
+ "config.helpInboxWorkTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "idle",
+     {
+      "k": "config.statsInboxUnread",
+      "d": "Unread"
+     }
+    ],
+    [
+     "off",
+     {
+      "k": "config.helpArtSnoozed",
+      "d": "Snoozed"
+     }
+    ],
+    [
+     "ok",
+     {
+      "k": "config.statsInboxWithNote",
+      "d": "With note"
+     }
+    ]
+   ],
+   "captionKey": "config.helpArtInboxFilters",
+   "caption": "The filters, each with its count"
+  }
+ ],
+ "config.helpInboxTriageTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    "j",
+    "k",
+    "t",
+    "z"
+   ],
+   "captionKey": "config.helpArtTriageKeys",
+   "caption": "One link at a time, no mouse"
+  },
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtTriageOne",
+     "d": "One link"
+    },
+    {
+     "k": "config.helpArtTriageDecide",
+     "d": "Keep or drop"
+    },
+    {
+     "k": "config.helpArtTriageNext",
+     "d": "Next"
+    }
+   ]
+  }
+ ],
+ "config.helpInboxUnsortedTitle": [
+  {
+   "kind": "keys",
+   "value": [
+    "m"
+   ],
+   "captionKey": "config.helpArtKeptKey",
+   "caption": "Out of the queue, not off the list"
+  },
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtKeptQueue",
+     "d": "In the queue"
+    },
+    [
+     {
+      "k": "config.helpArtKeptFiled",
+      "d": "Filed on a page"
+     },
+     {
+      "k": "config.helpArtKeptUnsorted",
+      "d": "Bookmarks › Unsorted"
+     }
+    ]
+   ]
+  }
+ ],
+ "config.helpInboxSettingsTitle": [
+  {
+   "kind": "toggles",
+   "value": [
+    true,
+    false
+   ],
+   "captionKey": "config.helpArtInboxSwitch",
+   "caption": "Two of the Collecting switches, as they start"
+  }
+ ],
+ "config.helpInboxTourTitle": [
+  {
+   "kind": "steps",
+   "value": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "captionKey": "config.helpArtTourSteps",
+   "caption": "Four steps, shown once"
+  }
+ ],
+ "config.helpCaptureTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtShareSheet",
+     "d": "Share sheet"
+    },
+    "/add",
+    {
+     "k": "config.helpTabInbox",
+     "d": "Inbox"
+    }
+   ],
+   "captionKey": "config.helpArtCaptureRoute",
+   "caption": "From a phone, with nothing installed"
+  }
+ ],
+ "config.helpDataTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtBackup",
+     "d": "Backup"
+    },
+    "ZIP",
+    {
+     "k": "config.trashRestore",
+     "d": "Restore"
+    }
+   ],
+   "captionKey": "config.helpArtRestoreSafety",
+   "caption": "A restore copies what is there first"
+  }
+ ],
+ "config.helpServerLogTitle": [
+  {
+   "kind": "states",
+   "value": [
+    [
+     "off",
+     {
+      "k": "config.helpArtLogOff",
+      "d": "Off by default"
+     }
+    ],
+    [
+     "idle",
+     {
+      "k": "config.helpArtLogInfo",
+      "d": "Info"
+     }
+    ],
+    [
+     "warn",
+     {
+      "k": "config.helpArtLogWarn",
+      "d": "Warning"
+     }
+    ],
+    [
+     "bad",
+     {
+      "k": "config.helpArtLogError",
+      "d": "Error"
+     }
+    ]
+   ]
+  }
+ ],
+ "config.helpActivityTrailTitle": [
+  {
+   "kind": "flow",
+   "value": [
+    {
+     "k": "config.helpArtOutLabel",
+     "d": "nextDash"
+    },
+    "JSON",
+    "activity.log"
+   ]
+  }
+ ],
+ "config.helpGlancesInsightsTitle": [
+  {
+   "kind": "bars",
+   "value": {
+    "values": [
+     0.38,
+     0.32,
+     0.26,
+     0.2,
+     0.16,
+     0.12,
+     0.1,
+     0.1,
+     0.1,
+     0.12,
+     0.16,
+     0.2,
+     0.26,
+     0.34,
+     0.42,
+     0.5,
+     0.58,
+     0.68,
+     0.8,
+     0.9,
+     0.86,
+     0.74,
+     0.58,
+     0.44
+    ],
+    "mark": 19
+   },
+   "captionKey": "config.helpArtInsDay",
+   "caption": "A typical day"
+  },
+  {
+   "kind": "meter",
+   "value": {
+    "fill": 0.3,
+    "mark": 0.8
+   },
+   "captionKey": "config.helpArtInsLoad",
+   "caption": "Load against the cores"
+  }
+ ],
+ "config.helpSelfHostingTitle": [
+  {
+   "kind": "boundary",
+   "value": {
+    "label": {
+     "k": "config.helpArtYourServer",
+     "d": "Your server"
+    },
+    "inside": [
+     {
+      "k": "config.helpArtSingleBinary",
+      "d": "One binary"
+     },
+     "data/*.json"
+    ],
+    "out": null
+   },
+   "captionKey": "config.helpArtNoDatabase",
+   "caption": "Plain files, no database"
+  }
+ ]
+}

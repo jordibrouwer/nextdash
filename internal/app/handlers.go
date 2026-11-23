@@ -94,8 +94,11 @@ type Handlers struct {
 	// healthReportInvalidations counts invalidateHealthReportCache calls. A
 	// build that saw it change while running does not mark its report fresh.
 	healthReportInvalidations uint64
-	healthReportBuildMu       sync.Mutex
-	healthReportBuildCond     *sync.Cond
+	// live tells open dashboards that something changed (live_broker.go). Nil in
+	// a Handlers assembled by hand; Publish is safe on nil.
+	live                  *liveBroker
+	healthReportBuildMu   sync.Mutex
+	healthReportBuildCond *sync.Cond
 	// Built once, whoever gets there first. NewHandlers sets it, and a Handlers
 	// assembled by hand -- which several tests do -- would otherwise reach
 	// loadBookmarkHealthReport with a nil Cond and race two goroutines into
@@ -410,6 +413,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 		netToolLimiter:    newSlidingWindowLimiter(6, time.Minute),
+		live:              newLiveBroker(),
 	}
 	// The startup grace for bookmark health; "0" in the environment turns it off.
 	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {
@@ -619,6 +623,10 @@ func (h *Handlers) invalidateHealthReportCache() {
 	// same reasons, so they ride along with the report rather than growing a
 	// second set of call sites to keep in step.
 	invalidateAnalyticsContentCache()
+	// Open dashboards refresh their badge and bell now, not at the next poll.
+	// Here rather than where the samples are written: the report is stale until
+	// this runs, and a client that asked earlier would read the old one.
+	h.live.Publish("health")
 }
 
 func healthReasonLegacyLabel(r HealthReason) string {
@@ -1261,10 +1269,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Only the ones worth showing. A certificate with three months left is true
 	// but not news, and sending every host would grow the report by an entry per
 	// domain for something the UI would immediately filter out again.
-	report.Certificates = expiringCertificatesWith(h.hostCertificates(), monitorNow, certThresholdsFor(h.store.GetSettings()))
+	certSettings := h.store.GetSettings()
+	report.Certificates = expiringCertificatesFor(h.hostCertificates(), monitorNow, func(host string) []int {
+		return certThresholdsForHost(certSettings, host)
+	})
 	domainSettings := h.store.GetSettings()
 	if domainSettings.DomainExpiry {
-		storedDomains := h.hostDomains()
+		storedDomains := overlayManualDomains(h.hostDomains(), manualDomainDates(domainSettings), h.domainsOfCheckedBookmarks())
 		report.Domains = datedDomains(storedDomains)
 		report.DomainSummary = summarizeDomains(storedDomains, true)
 	} else {
@@ -2839,6 +2850,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.NotifyPausedUntil = h.store.GetSettings().NotifyPausedUntil
 
 	settings.TagColors = sanitizeTagColors(settings.TagColors)
+	settings.DomainExpiryManual = sanitizeDomainExpiryManual(settings.DomainExpiryManual)
 
 	// Validate and sanitize collections.
 	//

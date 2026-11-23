@@ -100,7 +100,8 @@
         });
         // A reminder falls due while the page is open: look again once a minute,
         // which is as fine as a time can be chosen.
-        if (!timer) timer = setInterval(refresh, 60000);
+        // A hidden tab waits: the bell looks again itself when the tab returns.
+        if (!timer) timer = setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 60000);
     }
 
     /** Ask the bell to look again, after a reminder was set, moved or cleared. */

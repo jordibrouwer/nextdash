@@ -443,7 +443,10 @@ class DockerDrawer {
                 title: this.t('dockerWebUILabel', 'Web UI address'),
             } : null,
             where,
-            actions: webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : [],
+            actions: [
+                ...(webui ? [{ action: 'webui', label: this.t('dockerLinkWebUI', 'Open web UI'), primary: true }] : []),
+                { action: 'service', label: this.view.t('service.openPage', 'Service overview') },
+            ],
         });
         // The reference as the container was made from it, tag included.
         const image = String(summary.image || '');
@@ -533,6 +536,10 @@ class DockerDrawer {
         }
         if (action === 'open-stack') {
             if (summary.composeProject) this.openStack(summary.composeProject, { backName: summary.name });
+            return;
+        }
+        if (action === 'service') {
+            void this.view.dash?.service?.openServiceView?.({ container: summary.name, host: window.dockerActiveHost?.() || '' });
             return;
         }
         if (action === 'webui') {
@@ -751,7 +758,7 @@ class DockerDrawer {
         body.replaceChildren();
         const index = window.DockerSearchIndex;
         const d = this.view.dash;
-        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const summary = index?.onActiveHost?.((this.view.containers || []).find((c) => c.name === detail.name) || detail) || detail;
         const linked = index?.bookmarkFor?.(summary, d?.allBookmarks || []);
         const card = document.createElement('div');
         card.className = 'docker-bm-card';
@@ -799,10 +806,12 @@ class DockerDrawer {
         const select = document.createElement('select');
         select.className = 'config-select';
         select.setAttribute('data-docker-bm-link', '');
-        const summary = (this.view.containers || []).find((c) => c.name === detail.name) || detail;
+        const summary = index?.onActiveHost?.((this.view.containers || []).find((c) => c.name === detail.name) || detail) || detail;
+        // The key this container is stored under: bare on this host, "<hostId>::<name>" on another.
+        const linkKey = index?.linkKey?.(summary) || detail.name;
         const bookmarks = (d?.allBookmarks || []).filter((b) => b?.url);
         const links = d?.settings?.dockerBookmarkLinks || {};
-        const auto = index?.bookmarkFor?.(summary, bookmarks, { ...links, [detail.name]: undefined });
+        const auto = index?.bookmarkFor?.(summary, bookmarks, { ...links, [linkKey]: undefined });
         const option = (value, text) => {
             const o = document.createElement('option');
             o.value = value;
@@ -828,8 +837,8 @@ class DockerDrawer {
             o.title = b.url;
             select.append(o);
         });
-        select.value = links[detail.name] && [...select.options].some((o) => o.value === links[detail.name]) ? links[detail.name] : '';
-        select.addEventListener('change', () => void this._saveBookmarkLink(detail.name, select.value));
+        select.value = links[linkKey] && [...select.options].some((o) => o.value === links[linkKey]) ? links[linkKey] : '';
+        select.addEventListener('change', () => void this._saveBookmarkLink(linkKey, select.value));
         wrap.appendChild(select);
         return wrap;
     }
@@ -1695,6 +1704,14 @@ class DockerDrawer {
     }
 
     _renderChanges(list, data) {
+        DockerDrawer.renderChanges(list, data, { t: (key, fallback) => this.t(key, fallback), summary: this._summary });
+    }
+
+    /**
+     * The Changes list, drawn into `list`: the one renderer the drawer and the
+     * Service overview share. `t(key, fallback)` answers the dashboard.* labels.
+     */
+    static renderChanges(list, data, { t, summary } = {}) {
         list.replaceChildren();
         const releases = Array.isArray(data?.releases) ? data.releases : [];
 
@@ -1706,7 +1723,7 @@ class DockerDrawer {
                 'auth-failed': ['dockerChangesAuthFailed', 'GitHub turned down the token set under Config → Containers; check or remove it there.'],
             };
             const [key, fallback] = reasons[data?.reason] || ['dockerNoChanges', 'No release notes found — the links below go to the project.'];
-            msg.textContent = this.t(key, fallback);
+            msg.textContent = t(key, fallback);
             list.appendChild(msg);
         }
 
@@ -1735,14 +1752,14 @@ class DockerDrawer {
         (Array.isArray(data?.links) ? data.links : []).forEach((link) => {
             const a = document.createElement('a');
             let href = link.url || '';
-            if (link.kind === 'webui') href = window.DockerSearchIndex.webuiHref(href, this._summary);
+            if (link.kind === 'webui') href = window.DockerSearchIndex.webuiHref(href, summary);
             a.href = href;
             a.target = '_blank';
             a.rel = 'noopener noreferrer';
             a.setAttribute('data-docker-link', link.kind);
             a.className = 'docker-changes-link';
             const labelKey = DOCKER_LINK_KEYS[link.kind] || 'dockerLinkSource';
-            a.textContent = this.t(labelKey, link.kind);
+            a.textContent = t(labelKey, link.kind);
             links.appendChild(a);
         });
         list.appendChild(links);

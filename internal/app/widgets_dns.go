@@ -41,6 +41,9 @@ type MediaDns struct {
 	AvgMs      *float64 `json:"avgMs,omitempty"`
 	// Protection is nil when the service did not say.
 	Protection *bool `json:"protection,omitempty"`
+	// PausedUntil is when a timed pause ends (ms since the epoch), for a
+	// service that says how long is left. Absent for "until resumed".
+	PausedUntil int64 `json:"pausedUntil,omitempty"`
 	// Hourly is the last day, oldest first. Empty when the service sent none.
 	Hourly     []MediaDnsHour     `json:"hourly,omitempty"`
 	TopBlocked []MediaDnsTop      `json:"topBlocked,omitempty"`
@@ -118,6 +121,8 @@ func dnsFields(withExtras bool) []widgetField {
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: dnsMinTTL, Max: 3600},
+		// Pausing blocking from the tile; absent means off (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	}
 }
 

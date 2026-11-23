@@ -63,7 +63,7 @@
   "previewLinkLabel": "Link-Vorschau",
   "previewRefresh": "Aktualisieren",
   "previewClear": "Löschen",
-  "previewEmpty": "Noch keine Vorschau — aktualisieren, um Titel, Beschreibung und Bild abzurufen.",
+  "previewEmpty": "Noch keine Vorschau. Aktualisieren, um Titel, Beschreibung und Bild abzurufen.",
   "previewNoUrl": "Zuerst eine URL eingeben.",
   "previewRefreshed": "Link-Vorschau aktualisiert.",
   "previewRefreshFailed": "Link-Vorschau konnte nicht abgerufen werden.",

@@ -562,7 +562,7 @@
         if (ticker) return;
         // Shortly after load, then whenever the page is looked at again.
         setTimeout(tick, FIRST_TICK_MS);
-        ticker = setInterval(tick, TICK_EVERY_MS);
+        ticker = setInterval(() => { if (document.visibilityState === 'visible') tick(); }, TICK_EVERY_MS);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
     }
 

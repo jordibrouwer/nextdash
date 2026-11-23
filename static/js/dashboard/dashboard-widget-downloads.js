@@ -20,6 +20,20 @@
             ? { refused: ['dashboard.widgetMediaRefusedSignIn', '{name} refused the sign-in.'] } : {};
         const render = window.DashboardMediaTile?.register({
             id, name, words, emptyGroup, art: false, keepOrder: true, minTtl: 15, ttl: 30,
+            lineActions: (item, result) => {
+                // A finished line has nothing to pause; a queue SABnzbd paused
+                // as a whole is resumed as a whole, from the totals line.
+                if (item.libraryId === 'done' || result.totals?.clientPaused) return [];
+                return item.libraryId === 'paused'
+                    ? [{ action: 'resume', glyph: '▶', label: 'resume' }]
+                    : [{ action: 'pause', glyph: '⏸', label: 'pause' }];
+            },
+            clientAction: (totals) => {
+                if (totals.clientPaused || (!Number(totals.active) && Number(totals.paused) > 0)) {
+                    return { action: 'resume', glyph: '▶', label: 'resumeAll' };
+                }
+                return Number(totals.active) > 0 ? { action: 'pause', glyph: '⏸', label: 'pauseAll' } : null;
+            },
         });
         if (render) window.DashboardWidgets[id] = render;
     });

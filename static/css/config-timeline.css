@@ -1,0 +1,68 @@
+/*
+ * Config -> Timeline: one stream, grouped by day. An outage row carries its
+ * likely cause underneath, set off by a rule on the left; a row with no cause
+ * says so in the same place, so "none found" is as visible as a finding.
+ */
+.tl-toolbar { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 8px; }
+.tl-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tl-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tl-controls .tl-days { margin-left: auto; }
+.tl-views { display: flex; gap: 12px; border: 0; margin: 0; padding: 0; }
+.tl-radio { display: inline-flex; gap: 4px; align-items: center; color: var(--text-secondary); cursor: pointer; }
+.tl-chip {
+    padding: 3px 11px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.tl-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-primary); color: var(--text-primary); }
+.tl-chip:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.tl-count { margin: 4px 0; color: var(--text-muted); font-size: 0.9em; min-height: 1.2em; }
+.tl-notes { margin: 0 0 8px; padding-left: 18px; color: var(--text-muted); font-size: 0.9em; }
+.tl-day { margin-top: 16px; }
+.tl-day-title { margin: 0 0 4px; font-size: 0.9em; font-weight: 500; color: var(--text-muted); }
+.tl-items { list-style: none; margin: 0; padding: 0; }
+.tl-item { padding: 6px 8px; border-radius: 8px; }
+.tl-item:hover { background: var(--hover-bg); }
+.tl-row { display: grid; grid-template-columns: 3.2em 10px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+.tl-time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-color); align-self: center; }
+.tl-item--warn .tl-dot { background: var(--status-offline); }
+.tl-item--ok .tl-dot { background: var(--status-online); }
+.tl-item--info .tl-dot { background: var(--accent-primary); }
+.tl-text { color: var(--text-primary); text-decoration: none; }
+.tl-text:hover { text-decoration: underline; }
+.tl-tail { color: var(--text-muted); }
+.tl-src {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+.tl-cause {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0 2px calc(3.2em + 20px);
+    padding: 4px 10px;
+    border-left: 2px solid var(--accent-primary);
+    border-radius: 0;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+.tl-cause--none { border-left-color: var(--border-color); color: var(--text-muted); }
+.tl-cause-link { margin-left: 8px; color: var(--accent-color); }
+.tl-also { color: var(--text-muted); }
+.tl-empty { padding: 28px 12px; text-align: center; color: var(--text-muted); }
+.tl-more { margin-top: 12px; color: var(--text-muted); font-size: 0.9em; }
+@media (max-width: 640px) {
+    .tl-row { grid-template-columns: 3.2em 10px minmax(0, 1fr); }
+    .tl-src { grid-column: 3; justify-self: start; }
+    .tl-cause { margin-left: 0; }
+}

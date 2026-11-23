@@ -38,6 +38,8 @@ type dockerTimelineEntry struct {
 	Kind   string `json:"kind"` // start stop exit crash unhealthy healthy pause unpause update rollback restart-loop
 	Detail string `json:"detail,omitempty"`
 	Count  int    `json:"count,omitempty"` // restart-loop: how many cycles
+	// First is when a restart loop began (its first crash); At is its last.
+	First int64 `json:"first,omitempty"`
 }
 
 type dockerTimeline struct {
@@ -103,6 +105,17 @@ func (t *dockerTimeline) add(name string, e dockerTimelineEntry) {
 	t.data[name] = append(t.data[name], e)
 	t.pruneLocked(time.Now())
 	t.dirty = true
+}
+
+// replace swaps the whole record, for the demo's reset: what is on disk is not
+// read back, so the old record cannot be merged into the new one.
+func (t *dockerTimeline) replace(data map[string][]dockerTimelineEntry) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.loaded = true
+	t.data = data
+	t.dirty = true
+	t.pruneLocked(time.Now())
 }
 
 // relabel changes the kind of name's entry at the given time, when it still
@@ -210,7 +223,7 @@ func foldDockerRestartLoops(in []dockerTimelineEntry) []dockerTimelineEntry {
 			if last.Detail != "" {
 				detail += ", last " + last.Detail
 			}
-			out = append(out, dockerTimelineEntry{At: last.At, Kind: "restart-loop", Detail: detail, Count: len(cycles)})
+			out = append(out, dockerTimelineEntry{At: last.At, Kind: "restart-loop", Detail: detail, Count: len(cycles), First: first.At})
 			i = j
 			continue
 		}

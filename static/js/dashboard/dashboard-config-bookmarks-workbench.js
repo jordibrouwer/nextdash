@@ -315,6 +315,9 @@
         // Check type: the network checks of the install, once its index is in.
         const checkEntries = this.renderBmNetRailEntries?.(entry, counts) || '';
 
+        // Hosts with their own certificate warning, beating the global setting.
+        const certRules = this.renderBmCertRules();
+
         // View can leave blocks out; Pages takes its categories with it.
         const show = (name) => this.bmViewRailBlock(name);
         return `
@@ -325,7 +328,52 @@
             ${show('checks') ? group(this.t('nettools.railTitle', 'Check type'), checkEntries) : ''}
             ${show('pages') ? group(this.t('config.bmPages', 'Pages'), pages, manage('pages')) : ''}
             ${show('pages') ? group(this.t('config.bmCategories', 'Categories'), categories, manage('categories')) : ''}
-            ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}`;
+            ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}
+            ${show('health') ? group(this.t('config.bmCertRules', 'Certificate rules'), certRules) : ''}`;
+    },
+
+    /**
+     * One row per host that has its own certificate warning (Settings.certWarnByHost).
+     * Empty while there are none, so the group stays out of the rail. The select
+     * changes the rule, the cross hands the host back to the global setting.
+     */
+    renderBmCertRules() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const map = this.dash.settings?.certWarnByHost || {};
+        const hosts = Object.keys(map).filter((h) => Number(map[h]) !== 0).sort();
+        if (!hosts.length) return '';
+        const ahead = (n) => this.t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', String(n));
+        const choices = [[-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired')],
+            ...[7, 14, 30, 60, 90].map((n) => [n, ahead(n)])];
+        return hosts.map((host) => {
+            const current = Number(map[host]);
+            const known = choices.some(([v]) => v === current);
+            const options = (known ? choices : [[current, ahead(current)], ...choices])
+                .map(([v, label]) => `<option value="${v}"${v === current ? ' selected' : ''}>${esc(label)}</option>`).join('');
+            return `
+            <div class="config-bm-rail-cert" data-bm-cert-host="${esc(host)}">
+                <span class="config-bm-rail-label config-bm-rail-cert-host" title="${esc(host)}">${esc(host)}</span>
+                <select class="config-select config-bm-rail-cert-select" data-bm-cert-rule="${esc(host)}"
+                        aria-label="${esc(this.t('dashboard.healthCertWarnLabel', 'Certificate warning for {host}').replace('{host}', host))}">${options}</select>
+                <button type="button" class="config-bm-rail-cert-reset" data-bm-cert-reset="${esc(host)}"
+                        title="${esc(this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}"
+                        aria-label="${esc(this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}">&times;</button>
+            </div>`;
+        }).join('');
+    },
+
+    /** Stores one host's rule (0 removes it) and redraws what shows it. */
+    async setBmCertRule(host, value) {
+        const key = String(host || '').toLowerCase();
+        if (!key) return;
+        const map = { ...(this.dash.settings.certWarnByHost || {}) };
+        if (value) map[key] = value; else delete map[key];
+        // {} rather than a missing key: the server keeps what an omitted key held.
+        this.dash.settings.certWarnByHost = map;
+        await this.saveSettingsWithFeedback();
+        this.repaintWorkbenchRail();
+        // The report only lists certificates the new rule still counts as due.
+        try { await this._bmHealthModule?.fetchReport?.({ refresh: true }); } catch { /* the rail is right either way */ }
     },
 
     railHealthLabel(key) {
@@ -369,7 +417,16 @@
     bindWorkbenchRail(rail) {
         if (!rail || rail.dataset.bmRailWired === '1') return;
         rail.dataset.bmRailWired = '1';
+        rail.addEventListener('change', (e) => {
+            const sel = e.target.closest('[data-bm-cert-rule]');
+            if (sel) void this.setBmCertRule(sel.getAttribute('data-bm-cert-rule'), Number(sel.value) || 0);
+        });
         rail.addEventListener('click', (e) => {
+            const certReset = e.target.closest('[data-bm-cert-reset]');
+            if (certReset) {
+                void this.setBmCertRule(certReset.getAttribute('data-bm-cert-reset'), 0);
+                return;
+            }
             const summary = e.target.closest('[data-bm-health-summary]');
             if (summary) {
                 this.openBmHealthModal?.();
@@ -579,6 +636,8 @@
                     ${issue ? `<button type="button" class="config-btn config-btn--small" data-bm-health-action="recheck"
                             title="${esc(this.t('config.bmRecheckTitle', 'Check this bookmark now (p)'))}">${esc(this.t('config.bmKeyRecheck', 're-check').replace(/^./, (c) => c.toUpperCase()))}</button>` : ''}
                 </div>
+                ${/^https?:\/\//i.test(String(b.url || '')) ? `<button type="button" class="config-bm-panel-service" data-bm-panel-action="service"
+                        title="${esc(this.t('service.openPageTitle', 'One screen for this service: health, container, timeline'))}"><span class="config-bm-panel-service-icon" aria-hidden="true">◈</span><span class="config-bm-panel-service-label">${esc(this.t('service.openPage', 'Service overview'))}</span><span class="config-bm-panel-service-chevron" aria-hidden="true">›</span></button>${global.DashboardServiceLoader?.isService?.(this.dash, b) ? `<p class="config-bm-panel-service-hint">${esc(this.t('service.openPageHint', 'Health, container and timeline in one place'))}</p>` : ''}` : ''}
             </header>
             <div class="config-bm-tabs" role="tablist" aria-label="${esc(this.t('config.bmDetails', 'Details'))}">
                 ${tabButton('details', this.t('config.bmTabDetails', 'Details'), 1)}
@@ -1375,7 +1434,10 @@
             // The menu has closed by now, so the picker hangs off the pencil.
             else if (action === 'icon-choose') void this.chooseBookmarkAppIcon(key, panel.querySelector('[data-bm-icon-toggle]'));
             else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
-            else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
+            else if (action === 'service') {
+                const target = this.findBookmarkByKey(key);
+                if (target) void this.dash.service?.openServiceView?.({ url: target.url, page: target.pageId });
+            } else if (action === 'promote') void this.openBookmarkEditModal(key, { promote: true });
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
             else this.handleBookmarkMenuAction(action, key);
         });

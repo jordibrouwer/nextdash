@@ -18,6 +18,11 @@ runs the browser's function over the same fixture as the Go test.
 // discoveryContainer is the browser's container shape, reduced to what
 // matching reads. Ports are the published, non-UDP ones.
 type discoveryContainer struct {
+	// Host is the Docker host's id for a container on another machine ("d_..."),
+	// empty or "local" for this one. Manual links of a remote container are
+	// keyed "<host>::<name>", and the machine it runs on is the host address,
+	// never this server (hosts[0] is then that address).
+	Host  string `json:"host,omitempty"`
 	Name  string `json:"name"`
 	WebUI string `json:"webui"`
 	LanIP string `json:"lanIP"`
@@ -70,6 +75,16 @@ func oneMatchAddress(list []Bookmark) []Bookmark {
 	return out
 }
 
+// dockerBookmarkLinkKey is the key of a container in settings.dockerBookmarkLinks:
+// the bare name on this host (so nothing stored needs to change), and
+// "<hostId>::<name>" on another.
+func dockerBookmarkLinkKey(host, name string) string {
+	if host == "" || host == dockerLocalHostID {
+		return name
+	}
+	return host + "::" + name
+}
+
 // matchContainerBookmark returns the key (pageId::url) of the container's
 // bookmark and why: "manual", else "port", else "subdomain", else "title". The
 // first step that finds exactly one address wins; two at one step is no guess.
@@ -82,7 +97,8 @@ func matchContainerBookmark(c discoveryContainer, bookmarks []Bookmark, links ma
 			all = append(all, b)
 		}
 	}
-	manual := links[c.Name]
+	remote := c.Host != "" && c.Host != dockerLocalHostID
+	manual := links[dockerBookmarkLinkKey(c.Host, c.Name)]
 	if manual == "-" {
 		return "", "", false
 	}
@@ -105,8 +121,11 @@ func matchContainerBookmark(c discoveryContainer, bookmarks []Bookmark, links ma
 		addHost(h)
 	}
 	addHost(c.LanIP)
-	addHost("localhost")
-	addHost("127.0.0.1")
+	if !remote {
+		// localhost is this machine: it says nothing about another one.
+		addHost("localhost")
+		addHost("127.0.0.1")
+	}
 
 	portSet := map[string]bool{}
 	hostAddr := ""

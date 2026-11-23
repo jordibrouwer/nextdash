@@ -94,6 +94,28 @@
 
         t(key, fallback, params) { return this.view.t(`dashboard.${key}`, fallback, params); }
 
+        /**
+         * The reader inline, in any host: builds it into `host` and connects.
+         * opts: { name, view: { t(key, fallback, params) }, url(since, tail), compact?, services?, onNeedsToken? }.
+         * Nothing here belongs to the drawer or the logs window; the stack panel
+         * and the Service overview both mount it this way. Call destroy() to leave.
+         */
+        static mount(host, opts) {
+            const reader = new DockerLogView(opts.view, opts);
+            const { bar, main, foot, chips, head } = reader.build({ followInBar: !reader.compact });
+            const wrap = document.createElement('div');
+            wrap.className = 'docker-logs-view';
+            wrap.setAttribute('data-logs-view', '');
+            wrap.setAttribute('role', 'group');
+            wrap.setAttribute('aria-label', reader.t('dockerLogsTitle', 'Logs of {name}', { name: opts.name }));
+            wrap.append(...(head ? [head] : []), ...(chips ? [chips] : []), bar, main, foot);
+            wrap.addEventListener('keydown', (e) => { reader.onKey(e); });
+            host.replaceChildren(wrap);
+            reader.wrap = wrap;
+            reader.connect();
+            return reader;
+        }
+
         savePrefs() { try { localStorage.setItem(this.compact ? INLINE_KEY : PREFS_KEY, JSON.stringify(this.prefs)); } catch { /* window only */ } }
 
         destroy() {
@@ -421,6 +443,8 @@
             if (abort.signal.aborted || this.abort !== abort) return;
             if (!res || !res.ok || !res.body) {
                 const status = res?.status;
+                // A host that is not the drawer can answer a missing token its own way.
+                if (status === 401 && this.opts.onNeedsToken) { this.opts.onNeedsToken(); return; }
                 if (this.stack && status !== 401 && status !== 404) { this.retry(attempt); return; }
                 this.onEnded(status === 401
                     ? this.t('dockerLogsNeedsToken', 'Reading logs needs the write token.')

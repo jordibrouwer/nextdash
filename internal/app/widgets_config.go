@@ -97,6 +97,8 @@ func arrWidgetFields() []widgetField {
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+		// Searching from the tile; absent means off (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	}
 }
 
@@ -157,6 +159,23 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "date", Kind: "date"},
 		{Key: "time", Kind: "clock"},
 		{Key: "showTime", Kind: "bool"},
+	},
+	WidgetTypeTimer: {
+		// "timer" is one countdown with preset minutes, "pomodoro" cycles
+		// focus and breaks. "look" only changes how it is drawn.
+		{Key: "mode", Kind: "string", Allowed: []string{"timer", "pomodoro"}},
+		{Key: "look", Kind: "string", Allowed: []string{"ring", "bar", "row"}},
+		// Preset minutes for the kitchen timer; the browser keeps whole
+		// numbers from 1 to 600 and at most six of them.
+		{Key: "presets", Kind: "list"},
+		{Key: "focusMinutes", Kind: "int", Min: 1, Max: 180},
+		{Key: "shortBreakMinutes", Kind: "int", Min: 1, Max: 60},
+		{Key: "longBreakMinutes", Kind: "int", Min: 1, Max: 90},
+		// A long break after this many focus rounds.
+		{Key: "rounds", Kind: "int", Min: 2, Max: 8},
+		{Key: "autoNext", Kind: "bool"},
+		{Key: "sound", Kind: "bool"},
+		{Key: "notify", Kind: "bool"},
 	},
 	WidgetTypeStack: {
 		// Ids of other widgets on the page, in tab order; pruneStackMembers
@@ -391,6 +410,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: homeAssistantMinTTL, Max: 3600},
+		// Switching from the tile; absent means on (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	},
 	WidgetTypeSeerr: {
 		{Key: "server", Kind: "url"},
@@ -404,6 +425,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+		// Approving and declining from the tile; absent means off.
+		{Key: "actions", Kind: "bool"},
 	},
 	WidgetTypeJellyfin: {
 		{Key: "server", Kind: "url"},
@@ -850,7 +873,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown, WidgetTypeTimer,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,

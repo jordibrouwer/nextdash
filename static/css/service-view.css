@@ -1,0 +1,753 @@
+/* The Service popover (dashboard-service.js): a large dialog in the app modal
+   (#app-modal), so the scrim, the material, the focus trap and the scroll lock
+   are the ones every modal has. This is what the popover adds: its size (as
+   tall as its content, up to 90vh), one compact title bar that carries the
+   name, the address and the actions, and one scrolling body. */
+
+.modal.service-modal {
+    --modal-enter-from: translateY(10px) scale(0.97);
+    display: flex;
+    flex-direction: column;
+    width: min(1100px, 94vw);
+    max-width: none;
+    height: auto;
+    max-height: 90vh;
+    padding: 0;
+    overflow: hidden;
+}
+
+body:not(.no-view-animations) .modal.service-modal {
+    --modal-enter-transition: opacity 160ms ease, transform 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal.service-modal {
+        --modal-enter-transition: none;
+        --modal-enter-from: none;
+    }
+}
+
+.modal.service-modal .modal-header {
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem) var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.modal.service-modal .modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex: 1 1 14rem;
+    min-width: 0;
+    margin: 0;
+    order: 1;
+}
+
+.modal.service-modal .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    display: flex;
+}
+
+.modal.service-modal .modal-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+}
+
+/* Its own close and Esc live in the title bar. */
+.modal.service-modal .modal-actions,
+.modal.service-modal .modal-esc-hint {
+    display: none;
+}
+
+.service-grabber { display: none; }
+
+.service-bar-end {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-left: auto;
+    order: 3;
+}
+
+/* The actions sit in the title bar's row; when it is too narrow they take a row of their own. */
+.service-bar-actions {
+    flex: 0 1 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-1-5, 0.4rem);
+    min-width: 0;
+    order: 2;
+}
+
+.service-bar-actions[hidden] { display: none; }
+
+@media (max-width: 900px) {
+    .service-bar-actions {
+        order: 4;
+        flex: 1 1 100%;
+        justify-content: flex-start;
+    }
+}
+
+.service-esc-hint {
+    padding: 0.05em 0.45em;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 5px);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.service-close {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 8px);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.service-close:hover,
+.service-close:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.service-pop {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    outline: none;
+}
+
+.service-pop-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem) var(--space-4, 1rem);
+    outline: none;
+}
+
+.modal.service-modal .service-icon {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--layout-radius-md, 8px);
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    overflow: hidden;
+}
+
+.service-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.service-id {
+    display: grid;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.modal.service-modal .service-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.service-sub {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.service-sub .service-url {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-family: var(--font-mono, ui-monospace, Menlo, monospace);
+}
+
+.service-over {
+    flex: none;
+    white-space: nowrap;
+}
+
+/* Phone: a full-screen sheet that rises from the bottom, with a grabber. */
+@media (max-width: 640px) {
+    #app-modal:has(.service-modal) {
+        justify-content: flex-end;
+    }
+
+    .modal.service-modal {
+        --modal-enter-from: translateY(100%);
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 16px 16px 0 0;
+        border-left: 0;
+        border-right: 0;
+        border-bottom: 0;
+    }
+
+    .modal.service-modal .modal-header {
+        position: relative;
+        padding-top: calc(var(--space-3, 0.75rem) + 0.25rem);
+    }
+
+    .service-grabber {
+        display: block;
+        position: absolute;
+        top: 0.4rem;
+        left: 50%;
+        width: 2.5rem;
+        height: 0.25rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--text-secondary, #888) 60%, transparent);
+        transform: translateX(-50%);
+        pointer-events: none;
+    }
+
+    .service-esc-hint { display: none; }
+
+    .service-pop-scroll {
+        padding-left: var(--space-3, 0.75rem);
+        padding-right: var(--space-3, 0.75rem);
+    }
+}
+
+.service-wrap {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+    min-width: 0;
+    container-type: inline-size;
+    container-name: service;
+}
+
+.service-empty,
+.service-muted,
+.service-hint {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    /* A long host or container name, or a long sentence, wraps instead of widening the sheet. */
+    overflow-wrap: anywhere;
+}
+
+.service-hint {
+    margin-top: var(--space-2, 0.5rem);
+    padding-left: var(--space-2, 0.5rem);
+    border-left: 2px solid var(--border-primary);
+}
+
+.service-empty + .config-btn {
+    margin-top: var(--space-2, 0.5rem);
+}
+
+/* ── Pills ─────────────────────────────────────────────────────────────── */
+
+.service-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.service-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.1em 0.65em;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-xs, 0.78rem);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+.service-pill-dot {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.service-pill--ok { color: var(--accent-success); }
+.service-pill--warn { color: var(--accent-warning); }
+.service-pill--bad { color: var(--accent-error); }
+.service-pill--off {
+    color: var(--text-secondary);
+    border-color: var(--border-primary);
+    background: transparent;
+}
+
+.service-chips,
+.service-also {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0;
+    font-size: var(--text-sm, 0.85rem);
+    color: var(--text-secondary);
+}
+
+.service-chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+    padding: 0.1em 0.7em;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.service-chip.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.service-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--text-sm, 0.85rem);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ── Sections in two columns, one when the page is narrow ──────────────── */
+
+.service-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.service-col {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+    min-width: 0;
+}
+
+@container service (max-width: 680px) {
+    .service-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.service-grid.is-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.service-col:empty { display: none; }
+
+/* ── The status hero and the key figures ───────────────────────────────── */
+
+.service-hero {
+    --hero: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.9rem);
+    border: 1px solid color-mix(in srgb, var(--hero) 40%, var(--border-primary));
+    border-radius: var(--layout-radius-md, 8px);
+    background: color-mix(in srgb, var(--hero) 9%, transparent);
+}
+
+.service-hero[data-tone="ok"] { --hero: var(--accent-success); }
+.service-hero[data-tone="warn"] { --hero: var(--accent-warning); }
+.service-hero[data-tone="bad"] { --hero: var(--accent-error); }
+
+.service-hero-dot {
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--hero);
+}
+
+.service-hero-text {
+    display: grid;
+    min-width: 0;
+}
+
+.service-hero-text strong {
+    font-size: 1.05rem;
+}
+
+.service-hero-text span {
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+    overflow-wrap: anywhere;
+}
+
+.service-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.service-kpi {
+    display: grid;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.65rem);
+    border-radius: var(--layout-radius-md, 8px);
+    background: var(--background-secondary);
+    min-width: 0;
+}
+
+.service-kpi span {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.service-kpi strong {
+    font-variant-numeric: tabular-nums;
+    font-size: 1.05rem;
+}
+
+.service-kpi.is-warn strong { color: var(--accent-warning); }
+
+/* ── Everything that is missing, in one card ───────────────────────────── */
+
+.service-setup {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.9rem);
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--layout-radius-md, 8px);
+}
+
+.service-setup-title {
+    margin: 0;
+    font-size: var(--text-sm, 0.9rem);
+}
+
+.service-setup-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.service-setup-row > span {
+    flex: 1 1 12rem;
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+.service-sec {
+    min-width: 0;
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.9rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 8px);
+}
+
+.service-sec-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.78rem);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.service-sec-title .service-link {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+/* ── Health ────────────────────────────────────────────────────────────── */
+
+.service-bars {
+    display: grid;
+    grid-template-columns: repeat(30, 1fr);
+    gap: 2px;
+    height: 1.9rem;
+    align-items: end;
+    margin: var(--space-1-5, 0.4rem) 0 var(--space-1, 0.25rem);
+}
+
+.service-bars b {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-success);
+}
+
+.service-bars b[data-tone="warn"] { background: var(--accent-warning); height: 70%; }
+.service-bars b[data-tone="bad"] { background: var(--accent-error); height: 45%; }
+.service-bars b[data-tone="none"] { background: var(--border-primary); height: 18%; }
+
+.service-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.service-windows {
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.service-checks {
+    display: grid;
+    gap: var(--space-1-5, 0.4rem);
+    margin: var(--space-3, 0.75rem) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.service-checks:empty {
+    display: none;
+}
+
+.service-checks li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    padding-top: var(--space-1-5, 0.4rem);
+    border-top: 1px solid var(--border-primary);
+}
+
+.service-check-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.service-check-left small,
+.service-check-right {
+    color: var(--text-secondary);
+    margin-left: 0.5em;
+}
+
+.service-dot,
+.service-pin {
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--text-secondary);
+}
+
+[data-tone="ok"].service-dot, [data-tone="ok"].service-pin { background: var(--accent-success); }
+[data-tone="warn"].service-dot, [data-tone="warn"].service-pin { background: var(--accent-warning); }
+[data-tone="bad"].service-dot, [data-tone="bad"].service-pin { background: var(--accent-error); }
+[data-tone="info"].service-pin { background: var(--accent-primary); }
+[data-tone="none"].service-dot { background: var(--border-primary); }
+
+/* ── Container ─────────────────────────────────────────────────────────── */
+
+.service-kv {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.9rem);
+    margin: 0;
+}
+
+.service-kv dt {
+    color: var(--text-secondary);
+}
+
+.service-kv dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* ── Timeline ──────────────────────────────────────────────────────────── */
+
+.service-tl {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.service-tl li {
+    display: grid;
+    grid-template-columns: 4.5rem 0.75rem minmax(0, 1fr);
+    gap: var(--space-2, 0.5rem);
+    align-items: start;
+    padding: var(--space-1, 0.3rem) 0;
+}
+
+.service-tl time {
+    padding-top: 0.1rem;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.service-tl .service-pin {
+    margin-top: 0.4rem;
+    justify-self: center;
+}
+
+.service-tl p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.service-src {
+    font-size: var(--text-xs, 0.68rem);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+/* ── Releases, note, logs ──────────────────────────────────────────────── */
+
+.service-rel {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.service-rel li {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.service-rel-tag {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.service-rel small {
+    color: var(--text-secondary);
+}
+
+.service-note {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* The note is edited in place; its status line is the panel's. */
+.service-note-input {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.service-note-status {
+    display: block;
+    margin-top: var(--space-1, 0.25rem);
+    color: var(--text-secondary);
+    font-size: var(--text-xs, 0.78rem);
+}
+
+.service-note-status:empty {
+    display: none;
+}
+
+.service-note-status.is-error {
+    color: var(--accent-error);
+}
+
+/* GitHub releases, asked for with the button. */
+.service-gh {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+    justify-items: start;
+}
+
+.service-gh .service-changes {
+    justify-self: stretch;
+    max-height: 22rem;
+    overflow: auto;
+}
+
+/* Logs: the shared reader, in a strip under the sections. */
+.service-logs-host[hidden] {
+    display: none;
+}
+
+.service-sec--logs {
+    background: transparent;
+}
+
+.service-logs-host .docker-logs-view {
+    height: clamp(18rem, 50vh, 36rem);
+}
+
+/* CPU, as one line. */
+.service-load {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+.service-spark {
+    width: 7.5rem;
+    height: 1.5rem;
+    flex: none;
+}
+
+.service-spark-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+}
+
+.service-load-text {
+    font-variant-numeric: tabular-nums;
+    font-size: var(--text-sm, 0.85rem);
+}
+
+@media (max-width: 720px) {
+    .service-tl li {
+        grid-template-columns: 3.75rem 0.75rem minmax(0, 1fr);
+    }
+}

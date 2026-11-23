@@ -84,6 +84,7 @@ class DashboardDateWeather {
             clearInterval(d.weatherRefreshTimer);
             d.weatherRefreshTimer = null;
         }
+        this._weatherMissed = false;
     }
 
 
@@ -95,9 +96,24 @@ class DashboardDateWeather {
         }
         const minutes = Number(d.settings.weatherRefreshMinutes || 30);
         const intervalMs = (Number.isFinite(minutes) && minutes > 0 ? minutes : 30) * 60 * 1000;
+        // A hidden tab makes no weather call; the first look after it returns
+        // fetches the one it missed.
         d.weatherRefreshTimer = setInterval(() => {
+            if (document.hidden) {
+                this._weatherMissed = true;
+                return;
+            }
+            this._weatherMissed = false;
             this.refreshWeather(true);
         }, intervalMs);
+        if (!this._weatherVisibilityBound) {
+            this._weatherVisibilityBound = true;
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden || !this._weatherMissed) return;
+                this._weatherMissed = false;
+                this.refreshWeather(true);
+            });
+        }
     }
 
 

@@ -14,7 +14,12 @@
 
     window.DashboardWidgets = window.DashboardWidgets || {};
     [['sonarr', 'Sonarr'], ['radarr', 'Radarr']].forEach(([id, name]) => {
-        const render = window.DashboardMediaTile?.register({ id, name, words: {}, emptyGroup });
+        const render = window.DashboardMediaTile?.register({
+            id, name, words: {}, emptyGroup,
+            // What is coming can be searched for now; a queue line is already found.
+            lineActions: (item) => (item.libraryId === 'upcoming'
+                ? [{ action: 'search', glyph: '⌕', label: 'search' }] : []),
+        });
         if (render) window.DashboardWidgets[id] = render;
     });
 })();

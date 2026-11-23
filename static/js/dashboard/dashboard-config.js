@@ -39,15 +39,6 @@ class DashboardConfig {
     static SELECTION_SWEEP_INTERVAL_MS = 1200;
 
     /**
-     * Fallback for the count-mode log cap when settings have not been read yet.
-     *
-     * Must stay equal to serverLogDefaultMaxEntries in log_buffer.go: this is
-     * the number the panel and the tile show, and a value the server would not
-     * apply makes the log look like it keeps more than it does.
-     */
-    static SERVER_LOG_DEFAULT_MAX_ENTRIES = 1000;
-
-    /**
      * The regrouped sections that replace the old config tabs. `overview` is the
      * landing section (a summary of tiles from every other section); the rest map
      * to the reorganised areas agreed for the view.
@@ -61,6 +52,7 @@ class DashboardConfig {
         'feed-watch',
         'structure',
         'behavior',
+        'timeline',
         'finders',
         'inbox',
         'data-backups',
@@ -90,6 +82,11 @@ class DashboardConfig {
     static OLD_WIDGETS_LINKS = ['config/widgets/catalogue', 'config/widgets/types', 'config/widgets/custom'];
 
     static SECTION_MODULES = {
+        timeline: {
+            file: 'js/dashboard/dashboard-config-timeline.js',
+            datasetKey: 'dashboardConfigTimeline',
+            ready: () => window.DashboardConfigTimelineReady === true,
+        },
         inbox: {
             file: 'js/dashboard/dashboard-config-inbox.js',
             datasetKey: 'dashboardConfigInbox',
@@ -129,6 +126,36 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-logs.js',
             datasetKey: 'dashboardConfigLogs',
             ready: () => window.DashboardConfigLogsReady === true,
+        },
+        help: {
+            file: 'js/dashboard/dashboard-config-help.js',
+            datasetKey: 'dashboardConfigHelp',
+            ready: () => window.DashboardConfigHelpReady === true,
+        },
+        about: {
+            file: 'js/dashboard/dashboard-config-about.js',
+            datasetKey: 'dashboardConfigAbout',
+            ready: () => window.DashboardConfigAboutReady === true,
+        },
+        // The figures first: the renderers draw what they return. Not fetched
+        // while the tab is idle (idle: false): 200 KB that only a visit to
+        // Stats uses, and config-stats-lazy.spec.js holds it to that.
+        stats: {
+            idle: false,
+            chain: [
+                {
+                    file: 'js/dashboard/dashboard-config-stats-figures.js',
+                    datasetKey: 'dashboardConfigStatsFigures',
+                    ready: () => window.DashboardConfigStatsFiguresReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-stats.js',
+                    datasetKey: 'dashboardConfigStats',
+                    ready: () => window.DashboardConfigStatsReady === true,
+                },
+            ],
+            ready: () => window.DashboardConfigStatsFiguresReady === true
+                && window.DashboardConfigStatsReady === true,
         },
         /*
          * The widget editor, and the one panel that is more than a table of
@@ -238,7 +265,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch', 'timeline'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -1173,14 +1200,6 @@ class DashboardConfig {
         }
     }
 
-    saveStatsRange(days) {
-        try {
-            localStorage.setItem(DashboardConfig.STATS_RANGE_KEY, String(days));
-        } catch {
-            // localStorage unavailable — the range still applies for this visit
-        }
-    }
-
     /**
      * Remember where the user left config, on every way out.
      *
@@ -1301,6 +1320,9 @@ class DashboardConfig {
         }
         void this.ensureSection(section).then((ok) => {
             if (!ok || this.section !== section || !this.isActiveView()) return;
+            // A file that ran without raising its ready flag would send render()
+            // back here for ever; draw only what can be drawn.
+            if (!mod.ready()) return;
             this.render();
         });
     }
@@ -1414,7 +1436,12 @@ class DashboardConfig {
         // Started here and awaited at the render, not before it: the section's
         // own data load runs in the meantime, and awaiting up here delayed it
         // enough that a refresh could land after the first paint.
-        void this.ensureBookmarkRenderers();
+        // Only for the sections that draw the list. Overview, the landing
+        // page, fetched all sixteen of its scripts on a cold first click and
+        // never ran them; setSection loads them when Bookmarks is picked.
+        if (targetSection === 'bookmarks' || targetSection === 'structure') {
+            void this.ensureBookmarkRenderers();
+        }
         void this.ensureSection(targetSection);
         this.applyBookmarksPageFromHash(window.location.hash);
         // A shared link carries the filters as well as the page, so opening
@@ -2428,6 +2455,7 @@ class DashboardConfig {
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
+            timeline: ['config.sectionTimeline', 'Timeline'],
             about: ['config.sectionAbout', 'About'],
         };
         const [key, fallback] = map[section] || [section, section];
@@ -2674,6 +2702,15 @@ class DashboardConfig {
     render() {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        // A caller outside this file (a data refresh, a language change) can
+        // ask for a draw while the open section's own file is still on its way,
+        // and renderSection would call a method that is not there yet. Wait for
+        // the file, then draw: renderWhenSectionLoaded calls back in once it is.
+        const lazy = DashboardConfig.SECTION_MODULES[this.section];
+        if (lazy && !lazy.ready()) {
+            this.renderWhenSectionLoaded();
+            return;
+        }
         this.closeWorkbenchOverlaysOffList();
         container.classList.remove('inbox-layout');
         container.classList.add('config-layout', 'page-transition');
@@ -2830,6 +2867,8 @@ class DashboardConfig {
             void this.loadBackupData();
         } else if (this.section === 'logs') {
             this.bindLogsActions(container);
+        } else if (this.section === 'timeline') {
+            void this.bindTimelineSection?.(container);
         } else if (this.section === 'containers') {
             this.bindControlPanels(container, 'behavior');
             this.bindContainersSection(container);
@@ -3086,7 +3125,7 @@ class DashboardConfig {
 
     /** Footer hint on every page that is not a list (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs',
+        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs', 'timeline',
             'inbox', 'containers', 'help', 'status-page', 'unraid', 'glances', 'assistant', 'bookmarks']);
         if (!formSections.has(this.section)) return;
         // The Tags tab of Bookmarks is a list and has the list legend.
@@ -5568,6 +5607,9 @@ class DashboardConfig {
         if (this.section === 'logs') {
             return this.renderLogsSection();
         }
+        if (this.section === 'timeline') {
+            return this.renderTimelineSection?.() ?? '';
+        }
         if (this.section === 'about') {
             return this.renderAbout();
         }
@@ -7326,42 +7368,6 @@ class DashboardConfig {
         return this.t('config.backupInDays', 'in {n}d').replace('{n}', String(days));
     }
 
-    /** Wire the Logs section's strip and hand the rest to whichever tab is up. */
-    bindLogsActions(container) {
-        this.bindSubTabStrip(container, 'data-logs-tab', (tab) => {
-            if (tab === this.logsTab) return;
-            // Leaving Server logs must take its timer with it, same as every
-            // other polling view in config.
-            if (this.logsTab === 'server') this.stopServerLogTimer();
-            this.logsTab = tab;
-            this.restoreConfigHash();
-            const body = document.getElementById('config-logs-body');
-            if (body) {
-                body.innerHTML = this.renderLogsTab();
-                this.bindLogsTabContent(body);
-            }
-            this.syncSubTabStrip('data-logs-tab', this.logsTab);
-        });
-        this.bindLogsTabContent(container);
-    }
-
-    /** The binding half of renderLogsTab(): whichever of the two tabs is up. */
-    bindLogsTabContent(container) {
-        // Every call means a fresh #config-log-settings-popover just landed in
-        // the DOM (hidden), so any older popover's close() is stale — holding
-        // onto it would make Escape try to act on a detached element instead
-        // of closing config.
-        this._logSettingsPopoverClose = null;
-        if (this.logsTab === 'trail') {
-            this.bindActivityTrailControls(container);
-            return;
-        }
-        this.bindServerLogControls(container);
-        this.bindLogSettingsPopover(container);
-        void this.loadServerLog({ reset: true });
-        this.updateServerLogTimer();
-    }
-
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
@@ -7388,488 +7394,10 @@ class DashboardConfig {
         return this.t(key, fallback);
     }
 
-    /**
-     * What the server is doing, without shell access to the container.
-     *
-     * Only the shell renders here; the lines themselves are painted by
-     * repaintServerLog() so a refresh does not rebuild the controls under the
-     * user's cursor (and does not lose focus in the search box).
-     */
-    renderDataLogs() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.dash.settings || {};
-
-        const intervalOptions = [
-            [0, this.t('config.logIntervalOff', 'Off')],
-            [2, this.t('config.logInterval2s', 'Every 2 seconds')],
-            [5, this.t('config.logInterval5s', 'Every 5 seconds')],
-            [15, this.t('config.logInterval15s', 'Every 15 seconds')],
-            [30, this.t('config.logInterval30s', 'Every 30 seconds')],
-        ].map(([v, label]) => `<option value="${v}" ${v === this.logRefreshSeconds ? 'selected' : ''}>${esc(label)}</option>`).join('');
-
-        // Exactly one cap applies. The other control stays visible but disabled,
-        // so it is clear the choice exists and equally clear it is not in force.
-        const byCount = s.serverLogRetentionMode === 'count';
-
-        const retention = Number(s.serverLogRetentionHours) || 0;
-        const retentionOptions = [
-            [1, this.t('config.logRetention1h', '1 hour')],
-            [2, this.t('config.logRetention2h', '2 hours')],
-            [4, this.t('config.logRetention4h', '4 hours')],
-            [12, this.t('config.logRetention12h', '12 hours')],
-            [24, this.t('config.logRetention24h', '24 hours')],
-            [168, this.t('config.logRetention7d', '7 days')],
-            [720, this.t('config.logRetention30d', '30 days')],
-            [0, this.t('config.logRetentionForever', 'Until cleared')],
-        ].map(([v, label]) => `<option value="${v}" ${v === retention ? 'selected' : ''}>${esc(label)}</option>`).join('');
-
-        const maxEntries = Number(s.serverLogMaxEntries) || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES;
-        const entryOptions = [100, 500, 1000, 2500, 5000]
-            .map((v) => `<option value="${v}" ${v === maxEntries ? 'selected' : ''}>`
-                + `${esc(this.t('config.logMaxEntriesValue', '{n} entries').replace('{n}', v.toLocaleString()))}</option>`)
-            .join('');
-
-        const modeOptions = [
-            ['time', this.t('config.logRetentionModeTime', 'By age')],
-            ['count', this.t('config.logRetentionModeCount', 'By number of entries')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${(v === 'count') === byCount ? 'selected' : ''}>${esc(label)}</option>`).join('');
-
-        /*
-         * The detail level and the display filter are different questions, and
-         * conflating them is how "why do I see nothing" got two possible
-         * answers. This one decides what the server records at all; the filter
-         * below only searches what was recorded.
-         */
-        const detail = String(s.serverLogLevel || 'info');
-        const detailOptions = [
-            ['warn', this.t('config.logDetailQuiet', 'Quiet — problems only')],
-            ['info', this.t('config.logDetailNormal', 'Normal — what the server did')],
-            ['debug', this.t('config.logDetailVerbose', 'Verbose — every step')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${v === detail ? 'selected' : ''}>${esc(label)}</option>`).join('');
-
-        const levelOptions = [
-            ['', this.t('config.logLevelAll', 'Everything')],
-            ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
-            ['error', this.t('config.logLevelError', 'Errors only')],
-            // Not a severity: activity lines are what someone did — a bookmark
-            // saved, a page added — and they have always been in here, mixed
-            // in with the requests. Finding them meant knowing to type
-            // "activity" into the search box.
-            ['activity', this.t('config.logLevelActivity', 'Activity only')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
-
-        /*
-         * Recording sits in the toolbar, not behind the gear. It decides
-         * whether anything below exists at all — the empty state tells you to
-         * switch it on — so the switch belongs where you are already looking.
-         * Everything behind the gear is a preference about a log that is
-         * already being written.
-         */
-        return `
-            <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
-
-            <div class="config-tiles" role="list" id="config-log-tiles">${this.renderServerLogTiles()}</div>
-
-            <div class="config-panel config-log-main">
-                <h3 class="config-panel-title">${esc(this.t('config.logsPanelTitle', 'Server log'))}</h3>
-
-                <div class="config-log-toolbar">
-                    <label class="config-log-toolbar-item">
-                        <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
-                        <select class="config-select" data-log-select="level">${levelOptions}</select>
-                    </label>
-                    <label class="config-log-toolbar-item config-log-toolbar-search">
-                        <span class="config-field-label sr-only">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
-                        <input type="search" class="config-text" data-log-search
-                            placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
-                            value="${esc(this.logQuery || '')}">
-                    </label>
-                    <label class="config-toggle config-log-toolbar-item">
-                        <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
-                        <span>${esc(this.t('config.logFollowLabel', 'Follow'))}</span>
-                    </label>
-                    <div class="config-log-toolbar-actions">
-                        <button type="button" class="config-btn config-log-record${s.serverLogEnabled ? ' is-active' : ''}"
-                                data-log-toggle="capture" aria-pressed="${s.serverLogEnabled ? 'true' : 'false'}"
-                                aria-label="${esc(this.t('config.logRecordLabel', 'Record server log'))}"
-                                title="${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}">${esc(this.t('config.logRecordLabel', 'Record server log'))}</button>
-                        <button type="button" class="config-btn config-icon-btn" data-log-action="refresh"
-                                title="${esc(this.t('config.logRefreshNow', 'Refresh now'))}" aria-label="${esc(this.t('config.logRefreshNow', 'Refresh now'))}">↻</button>
-                        <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
-                        <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
-                        <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear'))}</button>
-                        <button type="button" class="config-btn config-icon-btn" data-log-settings-toggle
-                                aria-haspopup="true" aria-expanded="false" aria-controls="config-log-settings-popover"
-                                title="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}"
-                                aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}">⚙</button>
-                    </div>
-                </div>
-
-                <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
-                <p class="config-panel-note config-log-manual-note" data-log-refresh-note
-                   ${s.serverLogEnabled && !this.logRefreshSeconds ? '' : 'hidden'}>${esc(this.serverLogManualNote())}</p>
-                <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
-                    'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
-
-                <div class="config-log-view" data-log-output>${this.renderServerLogLines()}</div>
-
-                <div class="move-popover config-log-settings-popover" id="config-log-settings-popover"
-                     role="dialog" aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}" hidden>
-                    <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
-                    <div class="config-log-settings-body">
-                        <div class="config-log-settings-col">
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
-                            <select class="config-select" data-log-select="interval">${intervalOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
-                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
-                        </div>
-                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
-                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
-                        </div>
-                        <div class="config-log-settings-col">
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
-                            <select class="config-select" data-log-select="mode">${modeOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
-                            <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
-                            <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
-                        </div>
-                        <p class="config-panel-note">${esc(byCount
-                            ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
-                            : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    /** Clock time for a log line, on the reader's own clock like every other. */
-    formatLogTime(iso) {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return '';
-        return window.NextDashClock.formatTime(d, this.dash.settings, { seconds: true });
-    }
-
-    /**
-     * Fetch log lines.
-     *
-     * `reset` asks for the whole window again — needed whenever the filter
-     * changes, since lines already skipped by the server would otherwise never
-     * be requested. A plain poll passes the highest sequence seen instead, so
-     * a 2s interval costs one small empty response when nothing happens.
-     */
-    async loadServerLog({ reset = false } = {}) {
-        // A poll while one is on its way would ask from the same position and
-        // append the same lines twice; a reset goes ahead and outranks it.
-        if (!reset && this._logLoading) return;
-        if (reset) {
-            this._logSince = -1;
-            this._logLines = [];
-        }
-        this._logLoading = true;
-        // Only the newest request's answer counts: one that lands after a
-        // filter change was read under the old filter, from an old position.
-        const request = (this._logRequest = (this._logRequest || 0) + 1);
-        const stale = () => request !== this._logRequest;
-
-        const params = new URLSearchParams();
-        if (this._logSince >= 0) params.set('since', String(this._logSince));
-        if (this.logLevelFilter) params.set('level', this.logLevelFilter);
-        if (this.logQuery) params.set('q', this.logQuery);
-
-        try {
-            const res = await this.writeFetch(`/api/logs?${params.toString()}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            if (stale()) return;
-
-            // A clear (in any tab) or a restart starts a new run of sequence
-            // numbers, which the numbers alone cannot show: cleared lines
-            // stayed here, and lines replayed at boot came in twice.
-            if (data.epoch && this._logEpoch && data.epoch !== this._logEpoch) {
-                this._logEpoch = data.epoch;
-                return await this.loadServerLog({ reset: true });
-            }
-            if (data.epoch) this._logEpoch = data.epoch;
-
-            const incoming = Array.isArray(data.entries) ? data.entries : [];
-            this._logLines = this._logLines.concat(incoming);
-            // The buffer is capped server-side; keeping the same cap here stops
-            // a long-running tab from growing without bound.
-            const cap = Number(data.capacity) || 2000;
-            if (this._logLines.length > cap) {
-                this._logLines = this._logLines.slice(-cap);
-            }
-            // A clear from another tab restarts the server's numbering below
-            // where we were, which would leave this view polling for sequences
-            // that will never come. Detect the rewind and drop what we hold, so
-            // the next poll asks for the whole window again.
-            const nextSeq = Number.isFinite(data.nextSeq) ? data.nextSeq : null;
-            if (nextSeq !== null && nextSeq - 1 < this._logSince) {
-                this._logSince = -1;
-                this._logLines = [];
-            } else if (nextSeq !== null) {
-                this._logSince = nextSeq - 1;
-            }
-            this._logStats = data.stats || null;
-            this._logDropped = Number(data.dropped) || 0;
-        } catch (err) {
-            if (stale()) return;
-            this.notify(this.t('config.logLoadFailed', 'Could not read the server log.'), 'error');
-        } finally {
-            if (!stale()) this._logLoading = false;
-        }
-        this.repaintServerLog();
-    }
-
-    /**
-     * Repaint the lines and tiles only.
-     *
-     * Deliberately not a full re-render: the controls must keep their state,
-     * and re-creating the search box on every poll would drop focus mid-typing.
-     */
-    repaintServerLog() {
-        if (this.section !== 'logs' || this.logsTab !== 'server') return;
-
-        const tiles = document.getElementById('config-log-tiles');
-        if (tiles) tiles.innerHTML = this.renderServerLogTiles();
-
-        const out = document.querySelector('[data-log-output]');
-        if (!out) return;
-        // Whether the view was already at the bottom decides if follow applies,
-        // so a user who scrolled up to read something is not yanked away.
-        const atBottom = out.scrollHeight - out.scrollTop - out.clientHeight < 40;
-        out.innerHTML = this.renderServerLogLines();
-        if (this.logFollow && atBottom) {
-            out.scrollTop = out.scrollHeight;
-        }
-    }
-
-    /**
-     * Rebuild the current section's tab body in place, keeping the tab strip.
-     *
-     * Same shape as the tab-switch repaint: only the body is replaced, because
-     * rebuilding the strip would drop the button that was just clicked. Shared
-     * by Data & backups and Logs, the two sections whose panels use it — each
-     * has its own body id and render/bind pair.
-     */
-    repaintDbTabBody() {
-        if (this.inSection('logs')) {
-            const body = document.getElementById('config-logs-body');
-            if (!body) return;
-            body.innerHTML = this.renderLogsTab();
-            this.bindLogsTabContent(body);
-            return;
-        }
-        if (!this.inSection('data-backups')) return;
-        const body = document.getElementById('config-db-body');
-        if (!body) return;
-        body.innerHTML = this.renderDbTab();
-        this.bindDataBackupsActions(body);
-    }
-
-    /** Arm or disarm the refresh interval to match logRefreshSeconds. */
-    updateServerLogTimer() {
-        this.stopServerLogTimer();
-        if (!this.logRefreshSeconds) return;
-        this._logTimer = setInterval(() => {
-            // Belt and braces: if a repaint ever loses the teardown, the timer
-            // stops itself rather than polling behind a closed config view.
-            if (this.section !== 'logs' || this.logsTab !== 'server') {
-                this.stopServerLogTimer();
-                return;
-            }
-            void this.loadServerLog();
-        }, this.logRefreshSeconds * 1000);
-    }
-
     stopServerLogTimer() {
         if (this._logTimer) {
             clearInterval(this._logTimer);
             this._logTimer = null;
-        }
-    }
-
-    /** Wire the log tab's controls. Called with the freshly rendered body. */
-    bindServerLogControls(container) {
-        const selects = container.querySelectorAll('[data-log-select]');
-        selects.forEach((sel) => {
-            sel.addEventListener('change', () => {
-                const kind = sel.getAttribute('data-log-select');
-                const value = sel.value;
-                if (kind === 'interval') {
-                    this.logRefreshSeconds = Number(value) || 0;
-                    this.syncServerLogRefreshNote();
-                    this.updateServerLogTimer();
-                    return;
-                }
-                if (kind === 'retention') {
-                    this.dash.settings.serverLogRetentionHours = Number(value) || 0;
-                    // The server prunes on save, so pull a fresh window rather
-                    // than leaving expired lines on screen -- after the save,
-                    // or the read comes back before the prune.
-                    void this.saveSettingsWithFeedback().then(() => this.loadServerLog({ reset: true }));
-                    return;
-                }
-                if (kind === 'maxEntries') {
-                    this.dash.settings.serverLogMaxEntries = Number(value)
-                        || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES;
-                    void this.saveSettingsWithFeedback().then(() => this.loadServerLog({ reset: true }));
-                    return;
-                }
-                if (kind === 'mode') {
-                    this.dash.settings.serverLogRetentionMode = value === 'count' ? 'count' : 'time';
-                    void this.saveSettingsWithFeedback();
-                    // Which control is live, and the hint under them, both follow
-                    // the mode — so the panel is rebuilt rather than left showing
-                    // the other mode's state. The rebuild re-binds, which reloads
-                    // the lines and re-arms the interval on its own.
-                    this.repaintDbTabBody();
-                    return;
-                }
-                if (kind === 'detail') {
-                    this.dash.settings.serverLogLevel = value;
-                    void this.saveSettingsWithFeedback();
-                    // The note under the display filter reads the floor, so it
-                    // is the one thing that has to follow. Updated in place
-                    // rather than repainted, to keep the focus on the select.
-                    const floorNote = container.querySelector('[data-log-floor-note]');
-                    if (floorNote) floorNote.textContent = this.serverLogFloorNote();
-                    // Says what docker logs is doing differently as of now.
-                    // The point of this control is that it acts at once, and a
-                    // line that changes under your hand shows that better than
-                    // a sentence promising it.
-                    const liveNote = container.querySelector('[data-log-detail-live]');
-                    if (liveNote) liveNote.textContent = this.serverLogLiveNote();
-                    return;
-                }
-                if (kind === 'level') {
-                    this.logLevelFilter = value;
-                    // Toggled rather than repainted: rebuilding the panel to
-                    // show one line of explanation would take the focus off the
-                    // select the user just used.
-                    const note = container.querySelector('[data-log-activity-note]');
-                    if (note) note.hidden = value !== 'activity';
-                    void this.loadServerLog({ reset: true });
-                }
-            });
-        });
-
-        const search = container.querySelector('[data-log-search]');
-        if (search) {
-            let debounce = null;
-            search.addEventListener('input', () => {
-                clearTimeout(debounce);
-                debounce = setTimeout(() => {
-                    this.logQuery = search.value.trim();
-                    void this.loadServerLog({ reset: true });
-                }, 250);
-            });
-        }
-
-        const follow = container.querySelector('[data-log-toggle="follow"]');
-        if (follow) {
-            follow.addEventListener('change', () => {
-                this.logFollow = follow.checked;
-                if (this.logFollow) {
-                    const out = document.querySelector('[data-log-output]');
-                    if (out) out.scrollTop = out.scrollHeight;
-                }
-            });
-        }
-
-        const capture = container.querySelector('[data-log-toggle="capture"]');
-        if (capture) {
-            capture.addEventListener('click', () => {
-                const on = capture.getAttribute('aria-pressed') !== 'true';
-                capture.setAttribute('aria-pressed', on ? 'true' : 'false');
-                capture.classList.toggle('is-active', on);
-                this.dash.settings.serverLogEnabled = on;
-                void this.saveSettingsWithFeedback();
-                this.notify(on
-                    ? this.t('config.logCaptureStarted', 'Collecting the server log.')
-                    : this.t('config.logCaptureStopped', 'Stopped collecting the server log.'), 'success');
-                // Turning it on should show something without waiting for the
-                // interval; turning it off should stop the polling that would
-                // now return nothing new.
-                this.syncServerLogRefreshNote();
-                if (on) {
-                    void this.loadServerLog({ reset: true });
-                } else {
-                    this.stopServerLogTimer();
-                    const sel = container.querySelector('[data-log-select="interval"]');
-                    if (sel) sel.value = '0';
-                    this.logRefreshSeconds = 0;
-                    this.syncServerLogRefreshNote();
-                    // The empty state reads differently when collecting is off,
-                    // and it is chosen at paint time — so repaint now rather
-                    // than leaving the wrong message until the tab is reopened.
-                    this.repaintServerLog();
-                }
-            });
-        }
-
-        container.querySelectorAll('[data-log-action]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.handleServerLogAction(btn.getAttribute('data-log-action'));
-            });
-        });
-    }
-
-    async handleServerLogAction(action) {
-        switch (action) {
-            case 'refresh':
-                await this.loadServerLog({ reset: true });
-                break;
-            case 'copy': {
-                const text = (this._logLines || [])
-                    .map((l) => [l.time, l.level, l.source, l.message].filter(Boolean).join(' '))
-                    .join('\n');
-                try {
-                    await navigator.clipboard.writeText(text);
-                    this.notify(this.t('config.logCopied', 'Log copied.'), 'success');
-                } catch {
-                    this.notify(this.t('config.logCopyFailed', 'Could not copy the log.'), 'error');
-                }
-                break;
-            }
-            case 'download': {
-                // A navigation cannot carry the write token, and the route
-                // wants it: with one set, the whole view became "Unauthorized".
-                const stamp = new Date().toISOString().replace(/\..+/, '').replace(/[:T]/g, '-');
-                void this.downloadViaBlob('/api/logs/download', `nextdash-server-${stamp}.log`,
-                    'config.logDownloadFailed', 'Could not download the log.');
-                break;
-            }
-            case 'clear': {
-                const ok = await this.confirmAction(
-                    this.t('config.logClearConfirm', 'Delete every stored log line? The file on disk goes too, and this cannot be undone.'),
-                    { confirmLabel: this.t('config.logClearOk', 'Clear log') }
-                );
-                if (!ok) break;
-                try {
-                    const res = await this.writeFetch('/api/logs', { method: 'DELETE' });
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    this.notify(this.t('config.logCleared', 'Log cleared.'), 'success');
-                } catch {
-                    this.notify(this.t('config.logClearFailed', 'Could not clear the log.'), 'error');
-                }
-                // Either way, resync: the sequence numbers restart from the
-                // server's side of the clear.
-                await this.loadServerLog({ reset: true });
-                break;
-            }
-            default:
-                break;
         }
     }
 
@@ -11836,6 +11364,7 @@ class DashboardConfig {
                     // the same proportion the built-in ladder uses.
                     { field: 'certWarnDays', type: 'select', label: t('config.certWarnDaysLabel', 'Warn about certificates'), numeric: true, options: [
                         opt(0, t('config.certWarnDaysDefault', 'Default (30 days ahead)')),
+                        opt(-1, t('config.certWarnDaysExpiredOnly', 'Only when expired')),
                         opt(7, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '7')),
                         opt(14, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '14')),
                         opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
@@ -15510,7 +15039,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
+        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'timer']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'jellystat', 'bazarr', 'prowlarr', 'immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
@@ -17858,7 +17387,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'jellystat', 'bazarr', 'prowlarr', 'immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status', 'glances', 'nettests', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'timer', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'jellystat', 'bazarr', 'prowlarr', 'immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status', 'glances', 'nettests', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17870,6 +17399,9 @@ class DashboardConfig {
               ['queue', ['config.widgetArrShowQueue', 'What is downloading']],
           ] },
         { key: 'days', kind: 'int', min: 1, max: 30, label: ['config.widgetArrDays', 'Look ahead (days)'] },
+        // A search button on what is coming; off until the reader turns it on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsArr', 'Search from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['list', ['config.widgetMediaLayoutList', 'List with posters']],
@@ -17912,7 +17444,10 @@ class DashboardConfig {
               ['movie', ['config.widgetSeerrMediaTypeMovie', 'Films']],
               ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
           ] },
-        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
+        // Approve and decline buttons on requests waiting for a decision.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsSeerr', 'Approve and decline from the tile'] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days', 'actions'].includes(field.key)),
     ];
 
     /**
@@ -17939,6 +17474,10 @@ class DashboardConfig {
           ] },
         { key: 'showLastChanged', kind: 'bool',
           label: ['config.widgetHomeAssistantShowLastChanged', 'Show since when'] },
+        // Off draws each line's state without a button; the server refuses
+        // switching too. On by default: the tile switched before this existed.
+        { key: 'actions', kind: 'bool', defaultOn: true,
+          label: ['config.widgetActionsHomeAssistant', 'Switch from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['strip', ['config.widgetHomeAssistantLayoutStrip', 'A tab per group']],
@@ -17971,6 +17510,9 @@ class DashboardConfig {
           label: ['config.widgetDownloadsHideCompleted', 'Leave out what has finished'] },
         { key: 'hideTotals', kind: 'bool',
           label: ['config.widgetDownloadsHideTotals', 'Leave out the speeds on top'] },
+        // Pause and resume buttons; off until the reader turns them on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsDownloads', 'Pause and resume from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['list', ['config.widgetDownloadsLayoutList', 'One list']],
@@ -18061,6 +17603,9 @@ class DashboardConfig {
     }
 
     static DNS_TAIL = [
+        // A pause and resume control for blocking; off until the reader turns it on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsDns', 'Pause blocking from the tile'] },
         { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
           options: [
               ['detail', ['config.widgetDnsClickDetail', 'Shows the top ten first']],
@@ -18285,580 +17830,6 @@ class DashboardConfig {
         ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
         { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
-
-    /*
-     * What each type may be told, mirroring widgetFields in widgets_config.go.
-     *
-     * A table rather than a form per type: the panel is generated from this, and
-     * the server narrows a stored config to the same shape. A field declared in
-     * one and not the other is then a mismatch that shows immediately, instead
-     * of a setting that silently does nothing — which is what happened to the
-     * health widget's own `show`, read since the day it shipped and never
-     * settable until now.
-     *
-     * `rows`, `days` and the other numbers carry the same bounds the server
-     * enforces; the input simply refuses out of range rather than having the
-     * value dropped on save without explanation.
-     */
-    static WIDGET_SETTINGS = {
-        docker: [
-            { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'show', kind: 'checkset', label: ['config.widgetDockerShow', 'Figures to show'],
-              info: ['widgetDockerShowInfoTitle', 'widgetDockerShowInfoBody'],
-              options: [
-                  ['running', ['config.widgetDockerShowRunning', 'Running']],
-                  ['stopped', ['config.widgetDockerShowStopped', 'Stopped']],
-                  ['paused', ['config.widgetDockerShowPaused', 'Paused']],
-                  ['unhealthy', ['config.widgetDockerShowUnhealthy', 'Unhealthy']],
-                  ['total', ['config.widgetDockerShowTotal', 'Total']],
-                  ['images', ['config.widgetDockerShowImages', 'Images']],
-                  ['updates', ['config.widgetDockerShowUpdates', 'Updates waiting']],
-                  ['reclaimable', ['config.widgetDockerShowReclaimable', 'Reclaimable disk space']],
-                  ['incidents', ['config.widgetDockerShowIncidents', 'Incidents in the last 24 hours']],
-              ] },
-            { key: 'showUnhealthyNames', kind: 'bool',
-              label: ['config.widgetDockerNames', 'Name what is failing'],
-              hint: ['config.widgetDockerNamesHint',
-                     'A count sends you looking; a name does not.'] },
-            { key: 'showRestarted', kind: 'bool',
-              label: ['config.widgetDockerRestarted', 'Name what just restarted'],
-              hint: ['config.widgetDockerRestartedHint',
-                     'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
-            { key: 'showTopCpu', kind: 'bool',
-              label: ['config.widgetDockerTopCpu', 'Name the three busiest by CPU'],
-              hint: ['config.widgetDockerTopCpuHint',
-                     'From the reading Containers takes every 30 seconds.'] },
-        ],
-        containers: [
-            { key: 'show', kind: 'choice',
-              label: ['config.widgetContainersShow', 'Show'],
-              options: [
-                  ['running', ['config.widgetContainersShowRunning', 'Running containers']],
-                  ['all', ['config.widgetContainersShowAll', 'All containers']],
-              ] },
-            { key: 'sort', kind: 'choice',
-              label: ['config.widgetContainersSort', 'Order'],
-              options: [
-                  ['problems', ['config.widgetContainersSortProblems', 'What needs you first, then by name']],
-                  ['name', ['config.widgetContainersSortName', 'Name']],
-                  ['uptime-long', ['config.widgetContainersSortUptimeLong', 'Uptime, longest first']],
-                  ['uptime-short', ['config.widgetContainersSortUptimeShort', 'Uptime, shortest first']],
-                  ['cpu', ['config.widgetContainersSortCpu', 'CPU, busiest first']],
-                  ['memory', ['config.widgetContainersSortMemory', 'Memory, most first']],
-              ] },
-            { key: 'detail', kind: 'choice',
-              label: ['config.widgetContainersDetail', 'Beside the name'],
-              hint: ['config.widgetContainersDetailHint',
-                     'Unhealthy, stopped or an update always shows instead.'],
-              options: [
-                  ['uptime', ['config.widgetContainersDetailUptime', 'Uptime']],
-                  ['tag', ['config.widgetContainersDetailTag', 'Image tag']],
-                  ['usage', ['config.widgetContainersDetailUsage', 'CPU and memory']],
-                  ['none', ['config.widgetContainersDetailNone', 'Nothing']],
-              ] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetContainersClick', 'A click opens'],
-              hint: ['config.widgetContainersClickHint',
-                     'The other one stays in the row’s menu. Without a WebUI, a click opens the Containers view.'],
-              options: [
-                  ['view', ['config.widgetContainersClickView', 'The Containers view']],
-                  ['webui', ['config.widgetContainersClickWebUI', 'Its WebUI']],
-              ] },
-            { key: 'rows', kind: 'int', min: 1, max: 20,
-              label: ['config.widgetContainersRows', 'Rows per column'],
-              hint: ['config.widgetContainersRowsHint', 'Two wide, the tile shows two columns of this many.'] },
-            { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-        ],
-        clock: [
-            { key: 'look', kind: 'choice', label: ['config.widgetClockLook', 'Look'],
-              options: [
-                  ['face', ['config.widgetClockLookFace', 'A large clock face, other places below it']],
-                  ['list', ['config.widgetClockLookList', 'Plain lines of time']],
-              ] },
-            { key: 'zones', kind: 'tags',
-              label: ['config.widgetClockZones', 'Other places'],
-              hint: ['config.widgetClockZonesHint',
-                     'Comma separated, as Name=Region/City — for example Tokyo=Asia/Tokyo, New York=America/New_York. Your own time is always shown first. The clock face shows the first three.'] },
-            { key: 'hour12', kind: 'bool', label: ['config.widgetClockHour12', 'Use a 12-hour clock'] },
-            { key: 'showDate', kind: 'bool', label: ['config.widgetClockShowDate', 'Show today’s date'] },
-            { key: 'showSeconds', kind: 'bool', defaultOn: true,
-              label: ['config.widgetClockShowSeconds', 'Show a seconds hand'] },
-            { key: 'showMoon', kind: 'bool', defaultOn: true,
-              label: ['config.widgetClockShowMoon', 'Show the moon and its phase'],
-              hint: ['config.widgetClockSkyHint', 'The moon and the sun appear when the clock is two columns wide.'] },
-            { key: 'showSun', kind: 'bool', defaultOn: true,
-              label: ['config.widgetClockShowSun', 'Show sunrise and sunset'],
-              hint: ['config.widgetClockSunHint', 'For the weather location in Config → Behavior. Without one there is nothing to calculate from.'] },
-        ],
-        countdown: [
-            { key: 'date', kind: 'text', input: 'date', maxlength: 10,
-              label: ['config.widgetCountdownDate', 'Date'],
-              hint: ['config.widgetCountdownDateHint', 'The widget’s title says what it counts to. Past the date it counts the days since.'] },
-            { key: 'time', kind: 'text', input: 'time', maxlength: 5,
-              label: ['config.widgetCountdownTime', 'Time of day (optional)'] },
-            { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
-        ],
-        stack: [
-            // max: widgetMaxStackMembers in widgets.go, which drops the rest unsaid.
-            { key: 'members', kind: 'checkset', optionsFrom: 'siblings', max: 6,
-              label: ['config.widgetStackMembers', 'Widgets in the tabs'],
-              hint: ['config.widgetStackMembersHint',
-                     'Each ticked widget becomes a tab, in page order, and leaves the grid while it is held here. Its settings stay under Widgets.'] },
-        ],
-        memory: [
-            { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'showCache', kind: 'bool',
-              label: ['config.widgetMemoryShowCache', 'Show the file cache'],
-              info: ['widgetMemoryCacheInfoTitle', 'widgetMemoryCacheInfoBody'],
-              hint: ['config.widgetMemoryCacheHint',
-                     'Memory the machine is keeping warm and will hand back the moment anything needs it.'] },
-            { key: 'showSwap', kind: 'bool', label: ['config.widgetMemoryShowSwap', 'Show swap'] },
-            { key: 'warnAt', kind: 'int', min: 1, max: 99,
-              label: ['config.widgetUsageWarnAt', 'Amber from (% used)'],
-              hint: ['config.widgetUsageWarnAtHint', 'Empty means 85. A disk that is meant to run full can be told so here.'] },
-            { key: 'criticalAt', kind: 'int', min: 2, max: 100,
-              label: ['config.widgetUsageCriticalAt', 'Red from (% used)'],
-              hint: ['config.widgetUsageCriticalAtHint', 'Empty means 95. It has to be above the amber limit, or both fall back to the defaults.'] },
-        ],
-        disks: [
-            { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
-              hint: ['config.widgetDisksRefreshHint',
-                     'Free space moves slowly, and reading a sleeping disk can stall.'] },
-            { key: 'mounts', kind: 'tags', suggest: 'mounts',
-              label: ['config.widgetDisksMounts', 'Disks to show'],
-              info: ['widgetDisksMountsInfoTitle', 'widgetDisksMountsInfoBody'],
-              hint: ['config.widgetDisksMountsHint',
-                     'Paths as this machine knows them — on Unraid /mnt/user and /mnt/cache, on a NAS /volume1.'] },
-            { key: 'labels', kind: 'tags',
-              label: ['config.widgetDisksLabels', 'Names for them'],
-              hint: ['config.widgetDisksLabelsHint',
-                     'Written as path=name, so /mnt/user=Files. Without one a disk shows its path.'] },
-            { key: 'showMeter', kind: 'bool', defaultOn: true, label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
-            { key: 'showInodes', kind: 'bool', label: ['config.widgetDisksInodesToggle', 'Show how full the file table is'] },
-            { key: 'warnAt', kind: 'int', min: 1, max: 99,
-              label: ['config.widgetUsageWarnAt', 'Amber from (% used)'],
-              hint: ['config.widgetUsageWarnAtHint', 'Empty means 85. A disk that is meant to run full can be told so here.'] },
-            { key: 'criticalAt', kind: 'int', min: 2, max: 100,
-              label: ['config.widgetUsageCriticalAt', 'Red from (% used)'],
-              hint: ['config.widgetUsageCriticalAtHint', 'Empty means 95. It has to be above the amber limit, or both fall back to the defaults.'] },
-        ],
-        cpu: [
-            { key: 'refreshSeconds', kind: 'int', min: 1, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
-              info: ['widgetRefreshInfoTitle', 'widgetRefreshInfoBody'],
-              hint: ['config.widgetCpuRefreshHint',
-                     'One second is the fastest useful reading: below that the figure is noise.'] },
-            { key: 'showLoad', kind: 'bool', label: ['config.widgetCpuShowLoad', 'Show load average'] },
-            { key: 'showCores', kind: 'bool', label: ['config.widgetCpuShowCores', 'Show core count'] },
-        ],
-        health: [
-            { key: 'show', kind: 'checkset', label: ['config.widgetShow', 'Figures to show'],
-              options: [
-                  ['broken', ['config.widgetShowBroken', 'Broken']],
-                  ['down', ['config.widgetShowDown', 'Down now']],
-                  ['content', ['config.widgetShowContent', 'Content changed']],
-                  ['healthy', ['config.widgetShowHealthy', 'Healthy']],
-              ] },
-        ],
-        nettests: [
-            { key: 'checks', kind: 'netChecks', max: 40, label: ['config.widgetNetChecks', 'What to show (existing scheduled checks only)'] },
-            { key: 'look', kind: 'choice', label: ['config.widgetNetLook', 'Look'],
-              options: [
-                  ['rows', ['config.widgetNetLookRows', 'Rows']],
-                  ['tiles', ['config.widgetNetLookTiles', 'Tiles']],
-                  ['heartbeat', ['config.widgetNetLookHeartbeat', 'Heartbeat']],
-              ] },
-            { key: 'sort', kind: 'choice', label: ['config.widgetNetSort', 'Order'],
-              options: [
-                  ['problems', ['config.widgetNetSortProblems', 'Problems first']],
-                  ['name', ['config.widgetNetSortName', 'Name']],
-              ] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
-        ],
-        uptime: [
-            { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
-            { key: 'sparkline', kind: 'bool', defaultOn: true, label: ['config.widgetSparkline', 'Show a sparkline per row'] },
-            { key: 'latency', kind: 'bool', label: ['config.widgetLatency', 'Show the response time of the last day'],
-              hint: ['config.widgetLatencyHint', 'A small line and the latest figure beside each row that is up. Reads each row’s own history, so it is kept to the rows shown.'] },
-            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        certs: [
-            { key: 'withinDays', kind: 'int', min: 1, max: 730,
-              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'showDomains', kind: 'bool', label: ['config.widgetCertsShowDomains', 'Also list domains that expire in this window'] },
-        ],
-        domains: [
-            { key: 'withinDays', kind: 'int', min: 1, max: 730,
-              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        trend: [
-            { key: 'days', kind: 'int', min: 7, max: 90, label: ['config.widgetTrendDays', 'Days to plot'] },
-        ],
-        inbox: [
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'showSource', kind: 'bool', defaultOn: true, label: ['config.widgetShowSource', 'Show where each link came from'] },
-        ],
-        unsorted: [
-            { key: 'sort', kind: 'choice',
-              label: ['config.widgetKeptSort', 'Order'],
-              options: [
-                  ['recent', ['config.widgetKeptSortRecent', 'Most recent']],
-                  ['random', ['config.widgetKeptSortRandom', 'Random']],
-                  ['tag', ['config.widgetKeptSortByTag', 'By tag']],
-              ] },
-            { key: 'tag', kind: 'tags',
-              label: ['config.widgetKeptTag', 'Tag to show'],
-              hint: ['config.widgetKeptTagHint',
-                     'With Order on By tag: one tag shows only that tag, none groups every tag under its own heading.'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        sources: [
-            { key: 'errorsOnly', kind: 'bool', label: ['config.widgetErrorsOnly', 'Only sources that failed'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        neglected: [
-            { key: 'sinceDays', kind: 'int', min: 7, max: 730,
-              label: ['config.widgetSinceDays', 'Not opened for (days)'] },
-            { key: 'includeNeverOpened', kind: 'bool', defaultOn: true,
-              label: ['config.widgetNeverOpened', 'Count bookmarks never opened'] },
-            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        archive: [
-            { key: 'brokenOnly', kind: 'bool',
-              label: ['config.widgetArchiveBrokenOnly', 'Count only the links that are already broken'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        unchecked: [
-            { key: 'staleDays', kind: 'int', min: 1, max: 730,
-              label: ['config.widgetStaleDays', 'Count as stale after (days)'] },
-            { key: 'includeDisabled', kind: 'bool',
-              label: ['config.widgetIncludeDisabled', 'Count bookmarks with checking switched off'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        duplicates: [
-            { key: 'minCount', kind: 'int', min: 2, max: 20,
-              label: ['config.widgetMinCount', 'Report from this many copies'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        trash: [
-            { key: 'warnDays', kind: 'int', min: 1, max: 30,
-              label: ['config.widgetWarnDays', 'Mark as urgent within (days)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        backups: [
-            { key: 'showList', kind: 'bool', defaultOn: true, label: ['config.widgetShowList', 'List the backups themselves'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        weather: [
-            { key: 'forecastRange', kind: 'choice',
-              label: ['config.widgetForecastRange', 'Forecast range'],
-              hint: ['config.widgetWeatherLocationHint',
-                     'Location, source and unit come from Appearance → Date & weather.'],
-              options: [
-                  ['3day', ['config.widgetForecastRange3Day', '3 days']],
-                  ['5day', ['config.widgetForecastRange5Day', '5 days']],
-                  ['24h', ['config.widgetForecastRange24h', '24 hours']],
-              ] },
-        ],
-        rss: [
-            { key: 'feedUrls', kind: 'urlList',
-              label: ['config.widgetFeedUrls', 'Feed addresses'],
-              hint: ['config.widgetFeedUrlsHint',
-                     'One RSS or Atom address per line, up to ten.'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20,
-              label: ['config.widgetRows', 'Rows to show'],
-              hint: ['config.widgetRssRowsHint',
-                     'What is past this count folds into a “more” row that opens in place.'] },
-            // One block for two stored keys, titleFind and titleReplace.
-            { key: 'titleFind', kind: 'titleRewrite', replaceKey: 'titleReplace',
-              label: ['config.titleRewriteFind', 'Title: remove or find'] },
-        ],
-        'feed-news': [
-            { key: 'layout', kind: 'choice', label: ['config.widgetFeedNewsLayout', 'Layout'],
-              options: [
-                  ['list', ['config.widgetFeedNewsLayoutList', 'Sites, one row each']],
-                  ['headlines', ['config.widgetFeedNewsLayoutHeadlines', 'Headlines with pictures']],
-                  ['chips', ['config.widgetFeedNewsLayoutChips', 'Compact chips']],
-              ] },
-        ],
-        jellyfin: [
-            { key: 'layout', kind: 'choice', label: ['config.widgetJellyfinLayout', 'Layout'],
-              options: [
-                  ['list', ['config.widgetJellyfinLayoutList', 'List with posters']],
-                  ['strip', ['config.widgetJellyfinLayoutStrip', 'Poster strip, a tab per library']],
-                  ['hero', ['config.widgetJellyfinLayoutHero', 'Newest large, the rest as a list']],
-                  ['grid', ['config.widgetJellyfinLayoutGrid', 'Poster grid']],
-              ] },
-            { key: 'click', kind: 'choice', label: ['config.widgetJellyfinClick', 'A click'],
-              options: [
-                  ['open', ['config.widgetJellyfinClickOpen', 'Opens it in Jellyfin']],
-                  ['detail', ['config.widgetJellyfinClickDetail', 'Shows details here first']],
-              ] },
-            { key: 'target', kind: 'choice', label: ['config.widgetJellyfinTarget', 'Open in'],
-              options: [
-                  ['inherit', ['config.widgetJellyfinTargetInherit', 'Same as other links']],
-                  ['_blank', ['config.widgetJellyfinTargetBlank', 'A new tab']],
-                  ['_self', ['config.widgetJellyfinTargetSelf', 'This tab']],
-              ] },
-            { key: 'hideWatched', kind: 'bool', label: ['config.widgetJellyfinHideWatched', 'Hide what was watched'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetJellyfinRows', 'Items to show'],
-              hint: ['config.widgetJellyfinRowsHint', 'In the strip, per library.'] },
-            { key: 'ttl', kind: 'int', min: 60, max: 3600,
-              label: ['config.widgetJellyfinTtl', 'Ask Jellyfin every (seconds)'] },
-        ],
-        // Sonarr and Radarr ask the same questions; one table, two names.
-        sonarr: DashboardConfig.ARR_SETTINGS,
-        radarr: DashboardConfig.ARR_SETTINGS,
-        seerr: DashboardConfig.SEERR_SETTINGS,
-        qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
-        sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
-        homeassistant: DashboardConfig.HA_SETTINGS,
-        'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
-        'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
-        'plex-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
-        beszel: DashboardConfig.BESZEL_SETTINGS,
-        'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
-        'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
-        'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
-        adguard: DashboardConfig.ADGUARD_SETTINGS,
-        pihole: DashboardConfig.PIHOLE_SETTINGS,
-        jellystat: DashboardConfig.JELLYSTAT_SETTINGS,
-        bazarr: DashboardConfig.BAZARR_SETTINGS,
-        prowlarr: DashboardConfig.PROWLARR_SETTINGS,
-        immich: DashboardConfig.IMMICH_SETTINGS,
-        'immich-slideshow': DashboardConfig.IMMICH_SLIDESHOW_SETTINGS,
-        'immich-albums': DashboardConfig.IMMICH_ALBUMS_SETTINGS,
-        'immich-people': DashboardConfig.IMMICH_PEOPLE_SETTINGS,
-        'immich-status': DashboardConfig.IMMICH_STATUS_SETTINGS,
-        calendar: [
-            { key: 'daysAhead', kind: 'int', min: 1, max: 90,
-              label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'],
-              hint: ['config.widgetCalendarFeedHint',
-                     'Feed comes from Appearance → Date & weather → Calendar feed URL.'] },
-        ],
-        /*
-         * The custom widget's scalars. Its fields[] is a list of objects, which
-         * this table cannot describe, so renderCustomWidgetFields draws that
-         * half — rather than teaching the table a nested kind only one type
-         * would ever use.
-         */
-        custom: [
-            { key: 'url', kind: 'text', maxlength: 2000,
-              label: ['config.widgetCustomUrl', 'Address to read'],
-              placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
-            /*
-             * GET or POST, which the server has always accepted and the panel
-             * has never offered: a widget could only be given POST by editing
-             * the file it is stored in. The manual said both were available,
-             * and for anyone using the screen only one was.
-             *
-             * Nothing is sent with a POST. It is here for the services that
-             * answer a statistics endpoint on that method and nothing else,
-             * not so a tile can change something -- which is why these two are
-             * the whole list.
-             */
-            { key: 'method', kind: 'choice',
-              label: ['config.widgetCustomMethod', 'How to ask'],
-              options: [
-                  ['GET', ['config.widgetCustomMethodGet', 'GET']],
-                  ['POST', ['config.widgetCustomMethodPost', 'POST']],
-              ],
-              hint: ['config.widgetCustomMethodHint',
-                     'Most services answer a GET. POST is for the few that only answer one; nothing is sent with it either way.'] },
-            { key: 'ttl', kind: 'int', min: 30, max: 86400,
-              // Renamed: it was called "Ask again after", which described the
-              // cache. Since the tile refreshes itself on this interval it is
-              // the refresh rate, and the old name told half the story.
-              label: ['config.widgetCustomTtl', 'Refresh every (seconds)'],
-              hint: ['config.widgetCustomTtlHint',
-                     'Between 30 seconds and 24 hours. Leave empty for 5 minutes.'],
-              info: ['widgetCustomTtlInfoTitle', 'widgetCustomTtlInfoMessage'] },
-            { key: 'itemsPath', kind: 'text', maxlength: 200,
-              label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
-              placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
-        ],
-        // The server itself is set once, under Config -> Containers; a widget only says how it draws.
-        unraid: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        unraidArray: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        unraidParity: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        unraidShares: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        unraidVms: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        // One host from the Glances page, as meters or as the processor's last hour.
-        glances: [
-            { key: 'host', kind: 'choice',
-              label: ['config.widgetGlancesHost', 'Host'],
-              options: (config) => [
-                  ['', ['config.widgetGlancesFirstHost', 'The first host']],
-                  ...((config.dash.glancesStatus?.hosts || []).map((h) => [h.id, [`config.widgetGlancesHost.${h.id}`, h.name]])),
-              ] },
-            { key: 'style', kind: 'choice',
-              label: ['config.widgetGlancesStyle', 'Look'],
-              options: [
-                  ['meters', ['config.widgetGlancesStyleMeters', 'Three meters']],
-                  ['graph', ['config.widgetGlancesStyleGraph', 'Processor graph']],
-              ] },
-            { key: 'refreshSeconds', kind: 'int', min: 15, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-        ],
-        unraidUps: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-        // The text is written on the tile itself; the panel has only width to offer.
-        notes: [],
-        unraidNotifications: [
-            { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
-              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-            { key: 'click', kind: 'choice',
-              label: ['config.widgetUnraidClick', 'A click'],
-              options: [
-                  ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
-                  ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
-              ] },
-        ],
-    };
-
-    /*
-     * Which of the three sections of a widget's panel a setting sits in.
-     *
-     * One table for every kind, so a key means the same place on all of them:
-     * where to read from is Connection, how often and what a click does is
-     * Advanced, and everything else -- rows, the show* boxes, filters, a look
-     * -- is Display, which is where widgetFieldSection puts a key not listed.
-     */
-    static WIDGET_FIELD_SECTIONS = {
-        connection: ['url', 'method', 'feedUrls', 'host'],
-        advanced: ['refreshSeconds', 'ttl', 'click', 'target', 'showFrom', 'showUntil', 'showDays'],
-    };
-
-    /*
-     * When a widget is on the dashboard, for every type: between two times of
-     * day and on some days of the week. Outside the table of any one type for
-     * the reason Width is -- it belongs to all of them. Both times or neither;
-     * all seven days is the same as none. Mirrors the shared keys in
-     * sanitizeWidgetConfig (widgets_config.go).
-     */
-    static WIDGET_SCHEDULE_FIELDS = [
-        { key: 'showFrom', kind: 'text', input: 'time', maxlength: 5,
-          label: ['config.widgetShowFrom', 'Show from (time of day)'],
-          hint: ['config.widgetShowWindowHint', 'Both times, or neither. The widget is off the dashboard outside them; an end before the start runs past midnight.'] },
-        { key: 'showUntil', kind: 'text', input: 'time', maxlength: 5,
-          label: ['config.widgetShowUntil', 'Show until (time of day)'] },
-        { key: 'showDays', kind: 'checkset',
-          label: ['config.widgetShowDays', 'Show on'],
-          hint: ['config.widgetShowDaysHint', 'With none ticked the widget shows every day.'],
-          options: [
-              ['mon', ['config.widgetDayMon', 'Mon']], ['tue', ['config.widgetDayTue', 'Tue']],
-              ['wed', ['config.widgetDayWed', 'Wed']], ['thu', ['config.widgetDayThu', 'Thu']],
-              ['fri', ['config.widgetDayFri', 'Fri']], ['sat', ['config.widgetDaySat', 'Sat']],
-              ['sun', ['config.widgetDaySun', 'Sun']],
-          ] },
-    ];
-
-    /*
-     * Emby asks the same questions as Jellyfin, under its own name. Only a
-     * text that names Jellyfin gets an Emby key; the rest keep Jellyfin's key,
-     * and with it the translation it already has.
-     */
-    static {
-        const emby = (text) => text.replace('Jellyfin', 'Emby');
-        const walk = (item) => (Array.isArray(item)
-            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
-                ? (item[1].includes('Jellyfin') ? [emby(item[0]), emby(item[1]), ...item.slice(2)] : item)
-                : item.map(walk))
-            : typeof item === 'string' ? emby(item) : item);
-        DashboardConfig.WIDGET_SETTINGS.emby = DashboardConfig.WIDGET_SETTINGS.jellyfin.map((field) => ({
-            ...field,
-            label: walk(field.label),
-            ...(field.hint ? { hint: walk(field.hint) } : {}),
-            ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
-        }));
-    }
-
-    /*
-     * Plex, read through Tautulli: Jellyfin's questions without the user and
-     * without "Hide what was watched" -- Tautulli knows neither.
-     */
-    static {
-        const plex = (text) => text.replace('Jellyfin', 'Plex');
-        const walk = (item) => (Array.isArray(item)
-            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
-                ? (item[1].includes('Jellyfin') ? [plex(item[0]), plex(item[1]), ...item.slice(2)] : item)
-                : item.map(walk))
-            : typeof item === 'string' ? plex(item) : item);
-        DashboardConfig.WIDGET_SETTINGS.plex = DashboardConfig.WIDGET_SETTINGS.jellyfin
-            .filter((field) => field.key !== 'userId' && field.key !== 'hideWatched')
-            .map((field) => ({
-                ...field,
-                label: walk(field.label),
-                ...(field.hint ? { hint: walk(field.hint) } : {}),
-                ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
-            }));
-    }
 
     /** The formats a value may be shown in — the server accepts these and no others. */
     static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'share', 'duration', 'ms', 'relativeDate', 'text'];
@@ -21052,6 +20023,11 @@ class DashboardConfig {
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
         const load = window.LazyScript.loadScriptOnce;
+        // Fetched side by side and run in order below. Without this the sixteen
+        // files are sixteen round trips in a row, which is what opening
+        // Bookmarks from the Config rail became once Overview stopped warming
+        // them. A no-op once the loader's own preload has already asked.
+        window.DashboardConfigLoader?.preloadBookmarkScripts?.();
         // In order: the workbench builds on both of the others.
         this._bookmarkRenderersPromise = load('js/shared/bookmark-workbench-model.js',
             'bookmarkWorkbenchModel', () => Boolean(window.BookmarkWorkbenchModel))
@@ -21358,7 +20334,7 @@ class DashboardConfig {
         if (!this.isActiveView()) return;
         if (this.section === 'bookmarks') {
             this.repaintBookmarksList();
-        } else if (this.section === 'stats') {
+        } else if (this.inSection('stats')) {
             this.repaintStatsBody();
         }
     }
@@ -21456,6 +20432,7 @@ class DashboardConfig {
      */
     certWarnDays() {
         const n = Number(this.dash?.settings?.certWarnDays);
+        if (n === -1) return 0;
         if (!Number.isFinite(n) || n <= 0) return 30;
         return Math.min(120, Math.max(3, Math.round(n)));
     }
@@ -22596,6 +21573,9 @@ class DashboardConfig {
             case 'health-large':
                 void this.openBmHealthLarge?.(key);
                 break;
+            case 'service':
+                void this.dash.service?.openServiceView?.({ url: bookmark.url, page: bookmark.pageId });
+                break;
             case 'promote':
                 void this.openBookmarkEditModal(key, { promote: true });
                 break;
@@ -22640,7 +21620,7 @@ class DashboardConfig {
             ['c', this.t('config.bmKeyChecking', 'checking')],
             ['y / #', this.t('config.bmKeyFindTags', 'find tags: bookmark / category')],
             ['b / w', this.t('config.bmKeyOnlyCategoryPage', 'only this category / page')],
-            ['Ctrl/Cmd+Enter', this.t('dashboardKeyNewTab', 'new tab')],
+            ['Ctrl/Cmd+Enter', this.t('dashboard.inboxKeyNewTab', 'new tab')],
             ['Ctrl/Cmd+C', this.t('config.bmKeyCopyUrl', 'copy URL')],
             ['s', this.t('config.bmKeyShare', 'share')],
             ['q', this.t('config.bmKeyQr', 'QR code')],
@@ -24594,50 +23574,6 @@ class DashboardConfig {
     }
 
     /**
-     * Statistics used to be one long scroll of seven panels, which buried
-     * everything below the fold. The same panels are grouped into four tabs:
-     * the headline numbers and score, what you open over time, what your
-     * collection is made of, and what needs fixing.
-     */
-    renderStats() {
-        this.invalidateStatsCache();
-        // The renderers for this section live in dashboard-config-stats.js and
-        // arrive with the first visit to it; the shell below is drawn either way
-        // and renderStatsBody fills in once they are here.
-        void this.ensureStatsRenderers();
-        const esc = (v) => this.dash.escapeHtml(v);
-        const tabs = DashboardConfig.STATS_TABS.map((tab) => {
-            const active = tab === this.statsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-stats-body" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
-        }).join('');
-
-        const pages = this.dash.pages || [];
-        // Offered only where there is a choice to make: on a single-page
-        // install every figure is that page's already.
-        const scope = pages.length > 1
-            ? `<label class="config-stats-scope">
-                    <span class="config-stats-scope-label">${esc(this.t('config.statsScopeLabel', 'Showing'))}</span>
-                    <select class="config-select" data-stats-scope>
-                        <option value=""${this.statsPageFilter ? '' : ' selected'}>${esc(this.t('config.statsScopeAll', 'All pages'))}</option>
-                        ${pages.map((p) => `<option value="${esc(String(p.id))}"${String(p.id) === String(this.statsPageFilter) ? ' selected' : ''}>${esc(p.name || `#${p.id}`)}</option>`).join('')}
-                    </select>
-                </label>`
-            : '';
-
-        return `
-            <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
-            <div class="config-stats-head">
-                <div class="config-subtabs" role="tablist">${tabs}</div>
-                ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
-                ${scope}
-                ${this.renderStatsTimestampSafe()}
-            </div>
-            ${this.renderSectionTabNote('stats', this.statsTab)}
-            <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
-        `;
-    }
-
-    /**
      * The timestamp foot, or an empty one of the same shape.
      *
      * Empty *markup*, not nothing: repaintStatsBody replaces the foot by finding
@@ -24701,7 +23637,19 @@ class DashboardConfig {
         return (entry.chain || [entry]).every((s) => s.optional || s.ready());
     }
 
+    /**
+     * A section's file, and what it cannot be drawn without. Help's drawings
+     * are data, not code, but a panel linked from the address is scrolled to
+     * once, and strips arriving after that push it away: so they are awaited
+     * here, where the view changes, and not after the first paint.
+     */
     ensureSection(id) {
+        const files = this.ensureSectionFiles(id);
+        if (id !== 'help') return files;
+        return files.then((ok) => (ok ? this.loadHelpArt().then(() => true) : ok));
+    }
+
+    ensureSectionFiles(id) {
         const entry = DashboardConfig.SECTION_MODULES[id];
         if (!entry || entry.ready()) return Promise.resolve(true);
         this._sectionPromises = this._sectionPromises || {};
@@ -24741,12 +23689,14 @@ class DashboardConfig {
      */
     preloadRemainingSections() {
         const ids = Object.keys(DashboardConfig.SECTION_MODULES)
-            .filter((id) => !DashboardConfig.SECTION_MODULES[id].ready());
+            .filter((id) => DashboardConfig.SECTION_MODULES[id].idle !== false
+                && !DashboardConfig.SECTION_MODULES[id].ready());
         if (!ids.length) return;
         const next = () => {
             const id = ids.shift();
             if (!id) return;
-            this.ensureSection(id).then(() => schedule());
+            // The files only: Help's drawings are for Help being opened.
+            this.ensureSectionFiles(id).then(() => schedule());
         };
         const schedule = () => {
             if (!ids.length) return;
@@ -25667,447 +24617,6 @@ class DashboardConfig {
         }
     }
 
-    /**
-     * Per-bar readout on the activity chart.
-     *
-     * On a bar chart the mark is the hit target — no crosshair — so each bar
-     * carries its own tooltip on hover *and* on focus, because a value that
-     * only exists under a pointer is not reachable by keyboard. The screen
-     * reader gets the same numbers from the bar's aria-label and the sr-only
-     * table, so this layer enhances rather than gates.
-     *
-     * Values are written with textContent: the labels are dates we format, but
-     * the rule holds regardless — never build tooltip DOM by string concat.
-     */
-    bindActivityChartTooltip(container) {
-        // Every chart on the page, not just the first: the Inbox tab has its own
-        // trend chart, and binding only container.querySelector('.config-chart')
-        // would leave whichever came second inert.
-        container.querySelectorAll('.config-chart').forEach((chart) => {
-            this.bindOneChartTooltip(chart);
-        });
-    }
-
-    bindOneChartTooltip(chart) {
-        const tip = chart?.querySelector('.config-chart-tip');
-        if (!chart || !tip) return;
-
-        const openLabel = this.t('config.statsActivityUsedLabel', 'bookmarks last used');
-        const hide = () => {
-            tip.hidden = true;
-            chart.querySelectorAll('.config-chart-bar.is-active')
-                .forEach((el) => el.classList.remove('is-active'));
-        };
-
-        const show = (bar) => {
-            const value = bar.getAttribute('data-bar-value') || '0';
-            const value2 = bar.getAttribute('data-bar-value2');
-            const date = bar.getAttribute('data-bar-date') || '';
-            tip.replaceChildren();
-            // Value leads, label follows: the reader already knows which bar
-            // they are pointing at and wants the number.
-            // Each chart names its own series on the bar; the defaults are
-            // what the two charts said before they carried a label.
-            const label1 = bar.getAttribute('data-bar-label') || openLabel;
-            if (value2 === null) {
-                const strong = document.createElement('strong');
-                strong.textContent = `${value} ${label1}`;
-                tip.append(strong);
-            } else {
-                // Two series: both are listed, each keyed by its own colour, so
-                // the pointer never has to land on the right one of the pair.
-                const rows = [
-                    [value, bar.getAttribute('data-bar-label') || this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
-                    [value2, bar.getAttribute('data-bar-label2') || this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
-                ];
-                rows.forEach(([n, label, key]) => {
-                    const row = document.createElement('strong');
-                    row.className = 'config-chart-tip-row';
-                    const swatch = document.createElement('span');
-                    swatch.className = `config-chart-swatch config-chart-swatch--${key}`;
-                    const text = document.createElement('span');
-                    text.textContent = `${n} ${label}`;
-                    row.append(swatch, text);
-                    tip.append(row);
-                });
-            }
-            const when = document.createElement('span');
-            when.textContent = date;
-            tip.append(when);
-            tip.hidden = false;
-
-            chart.querySelectorAll('.config-chart-bar.is-active')
-                .forEach((el) => el.classList.remove('is-active'));
-            bar.classList.add('is-active');
-
-            // Follow the bar horizontally, clamped so the box cannot hang off
-            // either end of the panel.
-            const barBox = bar.getBoundingClientRect();
-            const chartBox = chart.getBoundingClientRect();
-            const centre = barBox.left + barBox.width / 2 - chartBox.left;
-            const half = tip.offsetWidth / 2;
-            const clamped = Math.max(half, Math.min(centre, chartBox.width - half));
-            tip.style.left = `${clamped}px`;
-        };
-
-        chart.querySelectorAll('.config-chart-bar').forEach((bar) => {
-            bar.addEventListener('pointerenter', () => show(bar));
-            bar.addEventListener('pointerleave', hide);
-            bar.addEventListener('focus', () => show(bar));
-            bar.addEventListener('blur', hide);
-        });
-        // The <g> elements do not tile the plot — the SVG has padding around
-        // them — so leaving a bar sideways lands on the svg, not on another bar.
-        // Both leave paths are needed: the bar's own, and the chart's for when
-        // the pointer exits the panel altogether.
-        chart.addEventListener('pointerleave', hide);
-    }
-
-    bindStats(container) {
-        this.bindSubTabStrip(container, 'data-stats-tab', (tab) => {
-            {
-                if (tab === this.statsTab) return;
-                this.statsTab = tab;
-                this.restoreConfigHash();
-                // Fetched on first open rather than with the section: each
-                // tab's endpoint is of no use to the other tabs.
-                this.loadStatsTabData(tab);
-                // Only the body changes; repainting the tab strip too would
-                // rebuild the buttons under the pointer that just clicked one.
-                this.repaintStatsBody();
-                this.syncSubTabStrip('data-stats-tab', this.statsTab);
-            }
-        });
-        container.querySelectorAll('[data-stats-range]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const next = Number(btn.getAttribute('data-stats-range'));
-                if (!next || next === this.statsRange) return;
-                this.statsRange = next;
-                this.saveStatsRange(next);
-                this.repaintStatsBody();
-            });
-        });
-        this.bindActivityChartTooltip(container);
-        void this.mountStatsHealthLines?.(container);
-        void this.mountStatsColumns?.(container);
-        container.querySelectorAll('[data-stats-action]').forEach((btn) => {
-            // Guarded like the panel links below, and for a sharper reason:
-            // repaintStatsBody binds the replaced foot and then binds the whole
-            // dashboard container, which contains it. Export is not
-            // idempotent, so a second listener meant a second file in the
-            // user's downloads for one click.
-            if (btn.dataset.statsActionBound === '1') return;
-            btn.dataset.statsActionBound = '1';
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-stats-action');
-                if (action === 'export') void this.exportStatsCSV();
-                // Recomputed from what is in memory, so this is a repaint
-                // rather than a fetch — except for the two tabs whose figures
-                // come from the server, which are dropped so they are asked for
-                // again.
-                if (action === 'refresh') {
-                    this._statsTrend = undefined;
-                    this._statsHealth = undefined;
-                    this._statsInboxItems = undefined;
-                    this._statsInboxAgg = undefined;
-                    this._statsFinders = undefined;
-                    this._statsLibrary = undefined;
-                    this._statsServer = undefined;
-                    this._statsNotify = undefined;
-                    this._statsFeeds = undefined;
-                    // Refresh means "work them out again", so the memo goes too
-                    // — otherwise the button would only re-fetch the two
-                    // server-side tabs and hand back the same cached arithmetic
-                    // for the other three.
-                    this.invalidateStatsCache();
-                    this.loadStatsTabData(this.statsTab);
-                    this.repaintStatsBody();
-                }
-                // Duplicates are the actionable half of this panel, and health
-                // is where they can actually be merged.
-                if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
-                // The whole tab, not only its duplicates: broken links and
-                // monitors down were listed here with no way through to the
-                // view that repairs them.
-                if (action === 'open-health-view') this.openViewFromTile('health');
-                if (action === 'add-bookmark') this.openAddBookmarkModal();
-                // The summary's own way through: the shortcut panel it names
-                // lives on Activity, a tab away from where the line is read.
-                if (action === 'shortcuts') {
-                    this.statsTab = 'usage';
-                    this.restoreConfigHash();
-                    this.render();
-                    setTimeout(() => document.getElementById('config-stats-shortcuts')
-                        ?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 80);
-                }
-            });
-        });
-        // Cleanup candidates hand off to the bookmarks list, which is where the
-        // rows can actually be tagged or deleted.
-        container.querySelectorAll('[data-cleanup-goto]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.getAttribute('data-cleanup-goto');
-                if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
-                this.bmCleanupFilter = key;
-                this.bmTagFilter = [];
-                // A stale search or category from an earlier visit would narrow
-                this.bmQuery = '';
-                this.bmPageFilter = '';
-                this.bmCategoryFilter = '';
-                this.bmSelected.clear();
-                this.resetBookmarkVisibleLimit();
-                this._bmDuplicateUrls = null;
-                void this.openLibraryView();
-            });
-        });
-        // A statistics row that names something the bookmark list can filter by
-        // hands off to it, the way the cleanup panel already does. Same reset of
-        // the other filters, so what lands is the row you clicked and not that
-        // row narrowed by whatever an earlier visit left behind.
-        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const raw = btn.getAttribute('data-stats-goto') || '';
-                const split = raw.indexOf(':');
-                const kind = split < 0 ? '' : raw.slice(0, split);
-                const value = split < 0 ? '' : raw.slice(split + 1);
-                if (!kind || !value) return;
-
-                this.bmCleanupFilter = '';
-                this.bmQuery = '';
-                this.bmPageFilter = '';
-                this.bmCategoryFilter = '';
-                this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
-                // A bookmark names a row rather than a tag, so it arrives as the
-                // list's own search — the filter that reproduces "this row, in
-                // the list where I can act on it". A category arrives as its
-                // pageId::id key, which is what bookmarks carry, not its label.
-                if (kind === 'bookmark') this.bmQuery = String(value);
-                if (kind === 'category') this.bmCategoryFilter = String(value);
-                this.bmSelected.clear();
-                this.resetBookmarkVisibleLimit();
-                this._bmDuplicateUrls = null;
-                this._trackAction('stats-goto', { kind });
-                void this.openLibraryView();
-            });
-        });
-
-        // The 🔗 beside a tab's heading, same clipboard path as Help's.
-        container.querySelectorAll('[data-stats-panel-link]').forEach((btn) => {
-            if (btn.dataset.statsLinkBound === '1') return;
-            btn.dataset.statsLinkBound = '1';
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-stats-panel-link') || this.statsTab;
-                const url = `${window.location.origin}${window.location.pathname}#config/stats/${tab}`;
-                void navigator.clipboard?.writeText(url)
-                    .then(() => this.notify(this.t('config.helpLinkCopied', 'Link copied'), 'success'))
-                    .catch(() => this.notify(this.t('config.copyFailed', 'Could not copy'), 'error'));
-            });
-        });
-
-        const scopeSelect = container.querySelector('[data-stats-scope]');
-        if (scopeSelect) {
-            scopeSelect.addEventListener('change', () => {
-                this.statsPageFilter = scopeSelect.value || '';
-                this.repaintStatsBody();
-            });
-        }
-        // A panel's way to another tab. Its own attribute: it shared
-        // data-stats-goto with the bookmark rows, so clicking the tag "dev"
-        // also set the open tab to "tag:dev".
-        container.querySelectorAll('[data-stats-tab-goto]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-stats-tab-goto');
-                if (!DashboardConfig.STATS_TABS.includes(tab) || tab === this.statsTab) return;
-                this.statsTab = tab;
-                this.restoreConfigHash();
-                this.loadStatsTabData(tab);
-                this.repaintStatsBody();
-                this.syncSubTabStrip('data-stats-tab', this.statsTab);
-            });
-        });
-        // "containers:updates" opens that section on that tab.
-        container.querySelectorAll('[data-stats-section-goto]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const [section, tab] = String(btn.getAttribute('data-stats-section-goto') || '').split(':');
-                const state = DashboardConfig.SUB_TAB_STATE[section];
-                if (tab && state && DashboardConfig.SUB_TABS[section]?.includes(tab)) this[state] = tab;
-                this.selectSection(section);
-            });
-        });
-        container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const mode = btn.getAttribute('data-stats-opens-mode');
-                if (mode !== 'opens' && mode !== 'lastUsed') return;
-                this.statsOpensMode = mode;
-                try { localStorage.setItem(DashboardConfig.STATS_OPENS_MODE_KEY, mode); } catch { /* per session then */ }
-                this.repaintStatsBody();
-            });
-        });
-        this.bindStatsFeeds?.(container);
-        container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const next = Number(btn.getAttribute('data-stats-inbox-range'));
-                if (![7, 30, 90].includes(next) || next === this.statsInboxRange) return;
-                this.statsInboxRange = next;
-                this.repaintStatsBody();
-            });
-        });
-        this.bindFormKeyboard(container);
-    }
-
-    /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
-    /**
-     * Every tab's figures, including the two that are not on screen.
-     *
-     * Health and Inbox come from the server and load when their tab is opened —
-     * deliberately, so opening Statistics does not fetch what nobody asked to
-     * see. That left the export carrying three tabs out of five, dressed as a
-     * complete file. It waits for them here instead: the cost lands on the
-     * button that wants them rather than on every visit, and the file says
-     * `inbox_included,0` if a fetch failed rather than quietly dropping rows.
-     */
-    async exportStatsCSV() {
-        await Promise.all([
-            this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
-            this._statsHealth === undefined ? this.loadStatsHealth() : null,
-            this._statsFeeds === undefined ? this.loadStatsFeeds() : null,
-        ].filter(Boolean)).catch(() => {});
-        // The memo lives for one paint, and an export is not one: a bookmark
-        // renamed or opened since the last paint would go out under its old
-        // name or count.
-        this.invalidateStatsCache();
-        return this.buildAndDownloadStatsCSV();
-    }
-
-    buildAndDownloadStatsCSV() {
-        const s = this.computeStats();
-        const a = s.activity;
-        const scopePage = this.statsScopePage();
-        const rows = [
-            ['metric', 'value'],
-            // Named first: a file of counts with no scope in it is a file that
-            // will be misread the week after it was exported.
-            ['scope', scopePage ? (scopePage.name || `#${scopePage.id}`) : 'all pages'],
-            ['bookmarks', s.total],
-            ['pages', s.pages],
-            ['categories', s.categories],
-            ['distinct_tags', s.tagCount],
-            ['tagged', s.tagged],
-            ['with_shortcut', s.withShortcut],
-            ['with_note', s.withNote],
-            ['with_icon', s.withIcon],
-            ['availability_checked', s.checked],
-            ['monitored', s.monitored],
-            ['never_opened', s.neverOpened],
-            // The threshold is a setting (7–365 days), so naming the column
-            // after 90 made the export claim something the panel above it did
-            // not: with the setting on 30, both were the same number under two
-            // different names.
-            ['stale_days_threshold', this.bookmarkStaleDays()],
-            ['stale_bookmarks', s.stale90],
-            ['duplicate_urls', s.duplicateUrls],
-            ['shortcut_conflicts', s.shortcutConflicts],
-            ['cleanup_score', s.cleanup.score],
-            // The activity panel's own figures, which the export omitted
-            // entirely — the tab you are looking at contributed nothing to it.
-            ['activity_range_days', this.statsRange || 30],
-            ['activity_bucket_days', a.bucketDays],
-            ['activity_bookmarks_used', a.activeCount],
-            ['activity_opens_all_time', a.totalOpens],
-            ['opens_total', s.concentration.totalOpens],
-            ['bookmarks_ever_opened', s.concentration.usedCount],
-            ['top10_share_of_opens_pct', s.concentration.share],
-        ];
-        s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
-        rows.push(['empty_pages', s.emptyPages || 0]);
-        const scoped = this.statsScopedBookmarks();
-        if (typeof this.statsRecency === 'function') {
-            this.statsRecency(scoped).forEach(([k, n]) => rows.push([`last_opened_${k}`, n]));
-            this.statsOpenCountBands(scoped).forEach(([k, n]) => rows.push([`opened_times_${k}`, n]));
-            this.statsTagsPerBookmark(scoped).forEach(([k, n]) => rows.push([`tags_per_bookmark_${k}`, n]));
-            this.statsAge(scoped).forEach(([k, n]) => rows.push([`saved_${k}`, n]));
-            const d = this.statsDomains(scoped);
-            rows.push(['unique_hosts', d.unique]);
-            rows.push(['self_hosted', d.selfHosted]);
-            d.hosts.forEach(([host, n]) => rows.push([`host:${host}`, n]));
-        }
-        s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
-        // The untruncated lists: the rows are labelled `tag:` and `bookmark:`,
-        // so stopping at the twenty the panel happens to show would be a
-        // silently partial export dressed as a complete one.
-        (s.topTagsAll || s.topTags).forEach(([tag, n]) => rows.push([`tag:${tag}`, n]));
-        (s.topOpenedAll || s.topOpened).forEach(([name, n]) => rows.push([`bookmark_opens:${name}`, n]));
-        s.categoryEffectiveness.forEach((c) => rows.push([`category_opens_per_bookmark:${c.label}`, c.perBookmark.toFixed(2)]));
-        // The chart series itself, one row per bar, so the shape is reproducible
-        // in a spreadsheet rather than only visible on screen.
-        (a.dateLabels || []).forEach((d, i) => rows.push([`bookmarks_last_used:${d}`, a.buckets[i]]));
-
-        // Inbox and Health are two of the five tabs and come from the server
-        // rather than from computeStats(). The section loads both on the way in
-        // now, so an export normally carries them — but a download fired before
-        // those answered would otherwise be a complete-looking file with two
-        // tabs silently missing. So the file says which it is: `included,0`
-        // reads as "asked, and it is not in here".
-        const inbox = this._statsInboxAgg;
-        rows.push(['inbox_included', inbox ? 1 : 0]);
-        rows.push(['health_included', this._statsHealth ? 1 : 0]);
-        // Watch feeds is a third server tab. Off or empty it contributes
-        // nothing, and `included,0` says so rather than leaving the file silent.
-        const feeds = this._statsFeeds;
-        const feedsIn = Boolean(feeds && feeds.enabled && (feeds.feeds || []).length);
-        rows.push(['feeds_included', feedsIn ? 1 : 0]);
-        if (feedsIn) {
-            const tot = feeds.totals || {};
-            rows.push(['feeds_period_days', feeds.days]);
-            rows.push(['feeds_watched', tot.feeds || 0]);
-            rows.push(['feeds_items_last_7_days', tot.published || 0]);
-            rows.push(['feeds_read_last_7_days', tot.read || 0]);
-            rows.push(['feeds_read_pct_last_7_days', tot.readPct || 0]);
-            rows.push(['feeds_unread_now', tot.unreadNow || 0]);
-            rows.push(['feeds_errors_last_7_days', tot.failed || 0]);
-            rows.push(['feeds_push_last_7_days', feeds.health?.push || 0]);
-            rows.push(['feeds_webhooks_last_7_days', feeds.health?.webhooks || 0]);
-            (feeds.feeds || []).forEach((f) => {
-                const label = f.title && f.title !== f.name ? `${f.name} · ${f.title}` : f.name;
-                rows.push([`feed_items:${label}`, f.published]);
-                rows.push([`feed_read:${label}`, f.read]);
-                rows.push([`feed_unread:${label}`, f.unread]);
-                rows.push([`feed_state:${label}`, f.state]);
-            });
-            (feeds.daily || []).forEach((d) => {
-                rows.push([`feed_items_published:${d.date}`, d.published]);
-                rows.push([`feed_items_read:${d.date}`, d.read]);
-            });
-        }
-        if (inbox) {
-            rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
-            rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);
-            rows.push(['inbox_promoted_lifetime', Number(inbox.totalPromoted || 0)]);
-            rows.push(['inbox_kept_lifetime', Number(inbox.totalKept || 0)]);
-            rows.push(['inbox_deleted_lifetime', Number(inbox.totalDeleted || 0)]);
-        }
-        const health = this._statsHealth;
-        if (health) {
-            rows.push(['health_healthy', Number(health.healthy || 0)]);
-            rows.push(['health_broken', Number(health.broken || 0)]);
-            rows.push(['health_monitors_down', Number(health.monitorDown || 0)]);
-            rows.push(['health_unchecked', Number(health.unchecked || 0)]);
-            if (health.avgScore !== null && health.avgScore !== undefined) rows.push(['health_score_avg', health.avgScore]);
-            Object.entries(health.flags || {}).forEach(([flag, n]) => rows.push([`flag:${flag}`, n]));
-            const incidents = health.incidents || [];
-            rows.push(['outages_on_record', Math.max(Number(health.fleet?.totalIncidents) || 0, incidents.length)]);
-            rows.push(['downtime_minutes', Math.round(incidents.reduce((n, i) => n + (Number(i.durationMs) || 0), 0) / 60000)]);
-        }
-
-        const esc = (v) => {
-            const str = String(v ?? '');
-            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-        };
-        const csv = rows.map((r) => r.map(esc).join(',')).join('\n');
-        this.triggerDownload(new Blob([csv], { type: 'text/csv' }),
-            `nextdash-stats-${new Date().toISOString().slice(0, 10)}.csv`);
-    }
-
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
     /*
@@ -26212,41 +24721,6 @@ class DashboardConfig {
         body.innerHTML = searching ? this.renderHelpSearchResults() : this.renderHelpBody();
         this.bindHelpActions(body);
         if (searching) this.bindHelpResultJumps(body);
-    }
-
-    renderHelp() {
-        // A full repaint replaces the menu's button; the menu goes with it.
-        this._helpMoreClose?.({ refocus: false });
-        this.ensureHelpProse();
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <!--
-                The opening line is a direct child of the body so the shell
-                lifts it onto the view band, the way every other section's is.
-                Inside the header block it was invisible to that lift, which
-                left Help the one section whose band carried no line and whose
-                text stood above the tab strip instead of under it.
-            -->
-            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-            ${this.renderSectionTabStrip('help')}
-            <!--
-                The sheet and the search share the tab note's row rather than
-                standing above the strip: a block above it put Help's tabs
-                eighty pixels below every other section's, so walking through
-                the rail moved the tabs under the pointer.
-            -->
-            <div class="config-help-header">
-                ${this.renderSectionTabNote('help', this.helpTab)}
-                <div class="config-help-header-aside">
-                    ${this.renderCheatSheetPdfLink()}
-                    <input type="search" class="config-text config-help-search" id="config-help-search"
-                           placeholder="${esc(this.t('config.helpFilterPlaceholder', 'Search help…'))}"
-                           aria-label="${esc(this.t('config.helpFilterLabel', 'Search help'))}"
-                           value="${esc(this.helpQuery || '')}">
-                </div>
-            </div>
-            <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
-        `;
     }
 
     /**
@@ -26517,7 +24991,7 @@ class DashboardConfig {
      * what this is meant to replace.
      */
     renderHelpArt(titleKey) {
-        const art = DashboardConfig.HELP_PANEL_ART[titleKey];
+        const art = this.ensureHelpArt()?.[titleKey];
         if (!art || typeof window.SettingArt?.render !== 'function') return '';
         const esc = (v) => this.dash.escapeHtml(v);
         const parts = art.map(({ kind, value, captionKey, caption }) => {
@@ -26532,11 +25006,59 @@ class DashboardConfig {
     }
 
     /**
+     * The help drawings, from memory. Never starts the fetch on a render path
+     * that Help's own opening already awaited (ensureSection('help') does, so
+     * the first draw has the strips and a linked panel is not pushed down by
+     * them). A caller that got here without it starts one try, and the strips
+     * are put in on arrival.
+     */
+    ensureHelpArt() {
+        if (this._helpArt) return this._helpArt;
+        if (!this._helpArtPromise && !this._helpArtTried) {
+            this._helpArtTried = true;
+            void this.loadHelpArt().then(() => {
+                if (!this._helpArt || this.section !== 'help' || !this.isActiveView()) return;
+                const body = document.getElementById('config-help-body');
+                if (body) this.repaintHelpBodyKeepingSearch(body);
+            });
+        }
+        return null;
+    }
+
+    /**
+     * Fetch the drawings once. Resolves either way: Help without its strips is
+     * what it looked like before the pictures. A failed answer, whether a bad
+     * status or no network, is not remembered, so the next opening of Help
+     * asks again.
+     */
+    loadHelpArt() {
+        if (this._helpArt) return Promise.resolve(this._helpArt);
+        if (this._helpArtPromise) return this._helpArtPromise;
+        // Versioned by the app fingerprint, as overview-features.json is; the
+        // fingerprint covers static/data/*.json, so an edit to the file moves it.
+        const version = document.querySelector('meta[name="nextdash-app-version"]')?.content || '';
+        const file = DashboardConfig.HELP_PANEL_ART_FILE;
+        const url = version ? `${file}?v=${encodeURIComponent(version)}` : file;
+        this._helpArtPromise = fetch(url)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((doc) => {
+                if (doc && typeof doc === 'object') this._helpArt = doc;
+                this._helpArtPromise = null;
+                return this._helpArt || null;
+            })
+            .catch(() => {
+                this._helpArtPromise = null;
+                return null;
+            });
+        return this._helpArtPromise;
+    }
+
+    /**
      * The words inside a drawing, in the reader's language.
      *
      * A chip reading "Bookmark" beside Dutch prose is worse than no chip: it
      * reads as the name of something rather than as the word. So a label in
-     * HELP_PANEL_ART is written as `{ k, d }` — key and fallback — and resolved
+     * The entries of help-panel-art.json are written as `{ k, d }` — key and fallback — and resolved
      * here, beside the other places this view translates. Anything that is not
      * a word stays as it is: `200 OK`, `Shift + H`, `data/*.json` and the
      * numbers a meter is drawn from are the same in every language.
@@ -26588,630 +25110,12 @@ class DashboardConfig {
      * as the ones in the config panels — so a reader meets the grid, the
      * spacing and the margins here in exactly the shape they will meet them
      * under Appearance.
+     *
+     * The set lives in static/data/help-panel-art.json (28 KB of drawing
+     * data that only Help reads), fetched on the first Help render rather than
+     * parsed with every open of Config; ensureHelpArt() below.
      */
-    static HELP_PANEL_ART = {
-        // ── Getting started ────────────────────────────────────────────────
-        'config.helpVersionTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtLifeCapture', d: 'Capture' },
-                    { k: 'config.helpArtLifeCheck', d: 'Check' },
-                    { k: 'config.helpArtLifeTidy', d: 'Tidy' },
-                    { k: 'config.feedsTitle', d: 'Watch feeds' },
-                ],
-                captionKey: 'config.helpArtLifeOfLink', caption: 'The life of a link',
-            },
-        ],
-        'config.helpStartTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.page', d: 'Page' },
-                    { k: 'config.category', d: 'Category' },
-                    { k: 'config.detailBookmarkFallback', d: 'Bookmark' },
-                ],
-                captionKey: 'config.helpArtStack', caption: 'How it is stacked',
-            },
-            { kind: 'keys', value: ['>', '+', '/'], captionKey: 'config.helpArtStartKeys', caption: 'Search, add, tags' },
-        ],
-        'config.helpFirstHourTitle': [
-            {
-                kind: 'steps',
-                value: [
-                    { k: 'config.helpArtStepImport', d: 'Import' },
-                    { k: 'config.helpArtStepPages', d: 'Split across pages' },
-                    { k: 'config.helpArtStepShortcuts', d: 'Give shortcuts' },
-                    { k: 'config.helpArtStepChecks', d: 'Turn on checks' },
-                ],
-            },
-        ],
-        'config.helpBellTitle': [
-            {
-                kind: 'keys', value: ['Shift + N', 'Enter', '?'],
-                captionKey: 'config.helpArtBellKeys', caption: 'Open, act, keys and help',
-            },
-        ],
-        'config.helpStartDailyTitle': [
-            {
-                kind: 'keys', value: ['>', 'Ctrl + V', '!', 'e'],
-                captionKey: 'config.helpArtDailyKeys', caption: 'A day in four keys',
-            },
-        ],
-
-        // ── Statistics ─────────────────────────────────────────────────────
-        'config.helpStatsTitle': [
-            {
-                kind: 'bars', value: { values: [0.5, 0.95, 0.4, 0.7, 0.3, 0.55], mark: 1 },
-                captionKey: 'config.helpArtStatsBars', caption: 'What you open, ranked',
-            },
-        ],
-        'config.helpStatsReadingTitle': [
-            {
-                kind: 'meter', value: { fill: 0.78 },
-                captionKey: 'config.helpArtConcentration', caption: 'Concentration',
-            },
-            {
-                kind: 'spark', value: [0.3, 0.42, 0.35, 0.6, 0.55, 0.8],
-                captionKey: 'config.helpArtTrend', caption: 'The direction it moved',
-            },
-        ],
-        'config.helpStatsUsageTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtOpenBookmark', d: 'Open a bookmark' },
-                    '+1',
-                    { k: 'config.helpArtTimestamp', d: 'Time stamped' },
-                ],
-                captionKey: 'config.helpArtCountMechanism', caption: 'The whole mechanism',
-            },
-        ],
-        'config.helpStatsPrivacyTitle': [
-            {
-                kind: 'boundary',
-                value: {
-                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
-                    inside: [
-                        { k: 'config.statsBookmarks', d: 'Bookmarks' },
-                        { k: 'config.helpArtCounts', d: 'Counts' },
-                    ],
-                    out: null,
-                },
-                captionKey: 'config.helpArtNothingLeaves', caption: 'None of it is sent anywhere',
-            },
-        ],
-
-        // ── Configuring ────────────────────────────────────────────────────
-        'config.helpConfigTitle': [
-            { kind: 'panelMap', value: 'rail', captionKey: 'config.helpArtConfigRail', caption: 'Sections down the left' },
-            { kind: 'keys', value: [',', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
-        ],
-        'config.helpBehaviorTitle': [
-            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Four tabs' },
-            {
-                kind: 'toggles', value: [true, false, true],
-                captionKey: 'config.helpArtSavesInstantly', caption: 'Saved the moment you change it',
-            },
-        ],
-        'config.helpAppearanceTitle': [
-            { kind: 'spacing', value: 'snug', captionKey: 'config.categorySpacingSnug', caption: 'Snug' },
-            { kind: 'spacing', value: 'airy', captionKey: 'config.categorySpacingAiry', caption: 'Airy' },
-            { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
-            { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
-        ],
-        // ── Widgets, sources, archive, webhooks, themes ────────────────────
-        'config.helpWidgetsTitle': [
-            {
-                kind: 'widgetSpan', value: 2,
-                captionKey: 'config.helpArtWidgetWide', caption: 'A block beside your categories',
-            },
-            {
-                kind: 'bars', value: { values: [0.9, 0.7, 0.95, 0.4, 0.8], mark: 3, tone: 'bad' },
-                captionKey: 'config.helpArtWidgetFigures', caption: 'Figures it already keeps',
-            },
-        ],
-        'config.helpWidgetKindsTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
-                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
-                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
-                ],
-                captionKey: 'config.helpArtWidgetKinds', caption: 'What each one answers',
-            },
-            {
-                kind: 'spark', value: [0.2, 0.35, 0.3, 0.5, 0.65, 0.6, 0.8],
-                captionKey: 'config.helpArtWidgetTrend', caption: 'Or the direction it is going',
-            },
-        ],
-        'config.helpWidgetAddingTitle': [
-            {
-                kind: 'steps',
-                value: [
-                    { k: 'config.helpArtWidgetStepChoose', d: 'Choose a kind' },
-                    { k: 'config.helpArtWidgetStepName', d: 'Name it' },
-                    { k: 'config.helpArtWidgetStepPlace', d: 'Drag it into place' },
-                ],
-            },
-            {
-                kind: 'widgetSpan', value: 1,
-                captionKey: 'config.helpArtWidgetNarrow', caption: 'One column, or two',
-            },
-        ],
-        'config.helpWidgetCustomTitle': [
-            {
-                kind: 'boundary',
-                value: {
-                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
-                    inside: [
-                        { k: 'config.helpArtWidgetAddress', d: 'The address' },
-                        { k: 'config.helpArtWidgetKey', d: 'The key' },
-                    ],
-                    out: { k: 'config.helpArtWidgetTile', d: 'The tile' },
-                },
-                captionKey: 'config.helpArtWidgetFetched', caption: 'Fetched here, never by your browser',
-            },
-            {
-                kind: 'query', value: [['token', 'server.disk'], ['text', '[0].used']],
-                captionKey: 'config.helpArtWidgetPath', caption: 'A path into the answer',
-            },
-        ],
-        'config.helpWidgetServicesTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtWidgetPreset', d: 'Pick a service' },
-                    { k: 'config.helpArtWidgetFilled', d: 'Address and figures filled in' },
-                    { k: 'config.helpArtWidgetYours', d: 'Edit anything' },
-                ],
-                captionKey: 'config.helpArtWidgetPresets', caption: 'Forty-one already known',
-            },
-        ],
-        'config.helpSourcesTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtSourceService', d: 'A service' },
-                    { k: 'config.helpArtSourcePreview', d: 'Preview' },
-                    { k: 'config.helpArtSourcePage', d: 'Your page' },
-                ],
-                captionKey: 'config.helpArtSourceFlow', caption: 'Nothing is written unseen',
-            },
-        ],
-        'config.helpArchiveTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtArchiveSave', d: 'You save it' },
-                    { k: 'config.helpArtArchiveCopy', d: 'A copy is kept' },
-                    { k: 'config.helpArtArchiveGone', d: 'The page dies' },
-                ],
-                captionKey: 'config.helpArtArchiveFlow', caption: 'The copy is made first',
-            },
-        ],
-        'config.helpIntegrationsTitle': [
-            {
-                kind: 'boundary',
-                value: {
-                    label: { k: 'config.helpArtOutLabel', d: 'nextDash' },
-                    inside: [
-                        { k: 'config.helpArtOutAdded', d: 'Added' },
-                        { k: 'config.helpArtOutDown', d: 'Down' },
-                    ],
-                    out: { k: 'config.helpArtOutReceiver', d: 'Your receiver' },
-                },
-                captionKey: 'config.helpArtOutFlow', caption: 'Pushed, and signed',
-            },
-        ],
-        'config.helpHeaderTitle': [
-            // The keys for the three things the header now carries: the pages,
-            // the dock, and the theme browser behind the destinations.
-            { kind: 'keys', value: ['1–9', "'", 'Shift + A'] },
-        ],
-        'config.helpThemesTitle': [
-            // The browser first, because it is the change: what was a list of
-            // 214 names is a grid you can see. Then the two things every theme
-            // gained behind it.
-            {
-                kind: 'themeGrid', value: ['a', 'b', 'c', 'd', 'e', 'f'],
-                captionKey: 'config.helpArtThemeBrowser', caption: 'A grid, not a list of names',
-            },
-            {
-                kind: 'depth', value: 'rich',
-                captionKey: 'config.helpArtThemeDepth', caption: 'A card on a surface',
-            },
-            {
-                kind: 'pattern', value: 'grid',
-                captionKey: 'config.helpArtThemePattern', caption: 'Dots, grid, lines or hatch',
-            },
-            {
-                kind: 'swatches', value: ['light', 'dark'],
-                captionKey: 'config.helpArtThemePair', caption: 'A light and a dark half',
-            },
-            {
-                kind: 'swatches', value: ['accent', 'light', 'dark'],
-                captionKey: 'config.helpArtThemeEditor', caption: 'Or recolour any of them',
-            },
-        ],
-
-        // ── Pages & bookmarks ──────────────────────────────────────────────
-        'config.helpWorkspaceTitle': [
-            { kind: 'grid', value: 2, captionKey: 'config.helpArtColumns2', caption: '2 columns' },
-            { kind: 'grid', value: 3, captionKey: 'config.helpArtColumns3', caption: '3 columns' },
-            { kind: 'grid', value: 5, captionKey: 'config.helpArtColumns5', caption: '5 columns' },
-        ],
-        // Moving is a movement: the drawings run, and rest on where the block
-        // ended up for a reader who asked for less motion.
-        'config.helpMoveTitle': [
-            { kind: 'blockMove', value: 'place', captionKey: 'config.helpArtMovePlace', caption: 'The box shows where it lands' },
-            { kind: 'blockMove', value: 'wide', captionKey: 'config.helpArtMoveWide', caption: 'On the column line: wide' },
-            { kind: 'blockMove', value: 'page', captionKey: 'config.helpArtMovePage', caption: 'To another page' },
-            { kind: 'keys', value: ['↑', 'Tab', 'Space', '← → ↑ ↓', 'W', 'Enter'], captionKey: 'config.helpArtMoveKeys', caption: 'From a bookmark, without the mouse' },
-        ],
-        'config.helpBookmarksTitle': [
-            {
-                kind: 'bookmarkRow', value: ['icon', 'tag', 'key', 'dot'],
-                captionKey: 'config.helpArtRowCarries', caption: 'Icon, name, tags, shortcut, availability',
-            },
-        ],
-        'config.helpTagsTitle': [
-            {
-                kind: 'query', value: [['token', 'tag:'], ['text', 'work']],
-                captionKey: 'config.helpArtTagFilter', caption: 'Filters without rearranging the grid',
-            },
-            { kind: 'keys', value: ['/'], captionKey: 'config.helpArtTagCloud', caption: 'The tag cloud' },
-        ],
-
-        // ── Bookmarks view ─────────────────────────────────────────────────
-        // Carried over from the old health view's art: the tiles are a rail
-        // of filters now, not a row of tiles, so the caption moved with it.
-        'config.helpLibraryTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
-                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
-                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
-                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
-                ],
-                captionKey: 'config.helpArtHealthTiles', caption: 'The filters, in the rail',
-            },
-            { kind: 'keys', value: ['Shift + B'] },
-        ],
-        'config.helpBmPanelTitle': [
-            {
-                kind: 'steps',
-                value: [
-                    { k: 'config.bmTabDetails', d: 'Details' },
-                    { k: 'config.bmHealth', d: 'Health' },
-                    { k: 'config.bmUsage', d: 'Usage' },
-                ],
-                captionKey: 'config.helpArtBmPanelTabs', caption: 'Three tabs, or 1 / 2 / 3',
-            },
-        ],
-        'config.helpBmWorkThroughTitle': [
-            { kind: 'keys', value: ['f', 'p', 'd', 'z'], captionKey: 'config.helpArtBmWorkKeys', caption: 'One bookmark at a time' },
-        ],
-
-        // ── Containers ─────────────────────────────────────────────────────
-        'config.helpContainersTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['ok', { k: 'dashboard.dockerFilterRunning', d: 'Running' }],
-                    ['off', { k: 'dashboard.dockerFilterStopped', d: 'Stopped' }],
-                    ['warn', { k: 'dashboard.dockerFilterUpdates', d: 'Updates' }],
-                ],
-                captionKey: 'config.helpArtContainerFilters', caption: 'What the filters ask',
-            },
-            { kind: 'keys', value: ['s', 'r', 'p', 'u'], captionKey: 'config.helpArtContainerKeys', caption: 'Start/stop, restart, pause, update' },
-        ],
-
-        // ── Search & keyboard ──────────────────────────────────────────────
-        'config.helpSearchTitle': [
-            { kind: 'keys', value: ['>', ':', '!'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
-            {
-                kind: 'query',
-                value: [['prefix', '>'], ['text', { k: 'config.helpArtSearchQuery', d: 'status page' }]],
-            },
-        ],
-        'config.helpFindersTitle': [
-            {
-                kind: 'query', value: [['prefix', '!'], ['token', 'g'], ['text', 'nextdash']],
-                captionKey: 'config.helpArtFinderExample', caption: 'Google, without opening Google first',
-            },
-        ],
-        'config.helpCommandsTitle': [
-            {
-                kind: 'query', value: [['prefix', ':'], ['text', 'density compact']],
-                captionKey: 'config.helpArtCommandExample', caption: 'Actions, not destinations',
-            },
-        ],
-        'config.helpKeyboardTitle': [
-            {
-                kind: 'keys', value: ['>', '?', ':', '+', '!', '/'],
-                captionKey: 'config.helpArtOverlayKeys', caption: 'The overlays',
-            },
-            {
-                kind: 'keys', value: ['Shift + B', 'Shift + U', 'Shift + I', ','],
-                captionKey: 'config.helpArtViewKeys', caption: 'The views',
-            },
-            {
-                kind: 'keys', value: ['j', 'k', 'g', 'End'],
-                captionKey: 'config.helpArtMoveKeys', caption: 'Moving around',
-            },
-        ],
-        'config.helpConfigKeyboardTitle': [
-            { kind: 'panelMap', value: 'body', captionKey: 'config.helpArtConfigLayer', caption: 'Its own keyboard layer' },
-            { kind: 'keys', value: ['j', 'k', 'g', 'End', '?'] },
-        ],
-
-        // ── Health ─────────────────────────────────────────────────────────
-        'config.helpHealthTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['off', { k: 'config.checkModeOff', d: 'Off' }],
-                    ['idle', { k: 'config.checkModePeriodic', d: 'Periodic' }],
-                    ['ok', { k: 'config.checkModeMonitor', d: 'Monitor' }],
-                ],
-                captionKey: 'config.helpArtCheckModes', caption: 'Three availability modes',
-            },
-        ],
-        'config.helpHealthWalkthroughTitle': [
-            {
-                kind: 'steps',
-                value: [
-                    { k: 'config.checkModeMonitor', d: 'Monitor' },
-                    { k: 'config.monitorInterval', d: 'Check every' },
-                    { k: 'config.helpArtStepExpected', d: 'Expected response' },
-                    { k: 'config.maintenanceTitle', d: 'Maintenance windows' },
-                ],
-            },
-        ],
-
-        // ── Monitoring ─────────────────────────────────────────────────────
-        'config.helpHealthStatsTitle': [
-            {
-                kind: 'bars', value: { values: [1, 1, 1, 0.25, 1, 1, 1], mark: 3, tone: 'bad' },
-                captionKey: 'config.helpArtHeartbeat', caption: 'The last checks, one bar each',
-            },
-            {
-                kind: 'spark', value: [0.35, 0.4, 0.38, 0.5, 0.45, 0.42],
-                captionKey: 'config.helpArtResponseTime', caption: 'Response time',
-            },
-            {
-                kind: 'meter', value: { fill: 0.99, tone: 'ok' },
-                captionKey: 'config.helpArtUptime', caption: 'Uptime over 24 hours',
-            },
-        ],
-        'config.helpHealthExpectTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    '200 OK',
-                    { k: 'config.helpArtExpectText', d: 'Contains “Login”' },
-                    { k: 'config.statsHealthy', d: 'Healthy' },
-                ],
-                captionKey: 'config.helpArtExpectTwoTests', caption: 'Answering is not the same as working',
-            },
-        ],
-        'config.helpHealthCertTitle': [
-            {
-                kind: 'meter', value: { fill: 0.86, mark: 0.72, tone: 'warn' },
-                captionKey: 'config.helpArtCertMeter', caption: 'Warned before it expires, not after',
-            },
-        ],
-        'config.helpHealthDriftTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    '200 OK',
-                    { k: 'config.helpArtDriftChanged', d: 'Title changed' },
-                    { k: 'config.helpArtDriftFlagged', d: 'Flagged' },
-                ],
-                captionKey: 'config.helpArtDrift', caption: 'Answering fine, no longer your page',
-            },
-        ],
-        'config.helpFreshTitle': [
-            {
-                kind: 'bookmarkRow', value: ['icon', 'key'],
-                captionKey: 'config.helpArtFreshRow', caption: 'A count on the row',
-            },
-        ],
-        'config.helpHealthMaintenanceTitle': [
-            {
-                kind: 'dayWindow', value: { from: 3, to: 4 },
-                captionKey: 'config.helpArtWindowNightly', caption: 'A nightly window is not an incident',
-            },
-        ],
-        'config.helpNotificationsTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtDown', d: 'Down' },
-                    { k: 'config.helpArtAlert', d: 'Push or webhook' },
-                    { k: 'config.helpArtYourDevices', d: 'Your devices' },
-                ],
-            },
-        ],
-        // The page a visitor gets: a service that works and one that is down,
-        // the two states the panel's prose keeps returning to.
-        // Monitoring is a section of three tabs, which is the whole article.
-        'config.helpMonitoringConfigTitle': [
-            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtMonitoringTabs', caption: 'Three tabs' },
-        ],
-        'config.helpDigestTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtDigestWeek', d: 'A week' },
-                    { k: 'config.helpArtDigestOne', d: 'One message' },
-                    { k: 'config.helpArtYourDevices', d: 'Your devices' },
-                ],
-            },
-        ],
-        'config.helpStatusPageTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
-                    ['off', { k: 'config.helpArtDown', d: 'Down' }],
-                ],
-            },
-        ],
-        // Only the status page's own addresses may reach the internet; the rest
-        // of the app must not. Literal paths, so nothing to translate.
-        'config.helpStatusPageShareTitle': [
-            {
-                kind: 'flow',
-                value: ['/s/*', '/static/status/*', 'nextDash'],
-            },
-        ],
-
-        // ── Inbox ──────────────────────────────────────────────────────────
-        'config.helpInboxTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    'Ctrl + V',
-                    { k: 'config.helpTabInbox', d: 'Inbox' },
-                    { k: 'config.detailBookmarkFallback', d: 'Bookmark' },
-                ],
-                captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes',
-            },
-            { kind: 'keys', value: ['Shift + I'] },
-        ],
-        'config.helpInboxWorkTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['idle', { k: 'config.statsInboxUnread', d: 'Unread' }],
-                    ['off', { k: 'config.helpArtSnoozed', d: 'Snoozed' }],
-                    ['ok', { k: 'config.statsInboxWithNote', d: 'With note' }],
-                ],
-                captionKey: 'config.helpArtInboxFilters', caption: 'The filters, each with its count',
-            },
-        ],
-        'config.helpInboxTriageTitle': [
-            {
-                kind: 'keys', value: ['j', 'k', 't', 'z'],
-                captionKey: 'config.helpArtTriageKeys', caption: 'One link at a time, no mouse',
-            },
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtTriageOne', d: 'One link' },
-                    { k: 'config.helpArtTriageDecide', d: 'Keep or drop' },
-                    { k: 'config.helpArtTriageNext', d: 'Next' },
-                ],
-            },
-        ],
-        /*
-         * Keeping a link is a branch in the queue, not a step after it: a link
-         * either goes on a page or waits in Bookmarks › Unsorted, and it waits
-         * without staying in the queue. Drawn as the branch it is, with the
-         * key that takes it. The Kept tab this used to describe is gone; the
-         * branch itself is the same shape, so only its second leaf changed.
-         */
-        'config.helpInboxUnsortedTitle': [
-            {
-                kind: 'keys', value: ['m'],
-                captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
-            },
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtKeptQueue', d: 'In the queue' },
-                    [
-                        { k: 'config.helpArtKeptFiled', d: 'Filed on a page' },
-                        { k: 'config.helpArtKeptUnsorted', d: 'Bookmarks › Unsorted' },
-                    ],
-                ],
-            },
-        ],
-        'config.helpInboxSettingsTitle': [
-            {
-                kind: 'toggles', value: [true, false],
-                captionKey: 'config.helpArtInboxSwitch', caption: 'Two of the Collecting switches, as they start',
-            },
-        ],
-        'config.helpInboxTourTitle': [
-            {
-                kind: 'steps', value: ['', '', '', ''],
-                captionKey: 'config.helpArtTourSteps', caption: 'Four steps, shown once',
-            },
-        ],
-        'config.helpCaptureTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtShareSheet', d: 'Share sheet' },
-                    '/add',
-                    { k: 'config.helpTabInbox', d: 'Inbox' },
-                ],
-                captionKey: 'config.helpArtCaptureRoute', caption: 'From a phone, with nothing installed',
-            },
-        ],
-
-        // ── Data & hosting ─────────────────────────────────────────────────
-        'config.helpDataTitle': [
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtBackup', d: 'Backup' },
-                    'ZIP',
-                    { k: 'config.trashRestore', d: 'Restore' },
-                ],
-                captionKey: 'config.helpArtRestoreSafety', caption: 'A restore copies what is there first',
-            },
-        ],
-        'config.helpServerLogTitle': [
-            {
-                kind: 'states',
-                value: [
-                    ['off', { k: 'config.helpArtLogOff', d: 'Off by default' }],
-                    ['idle', { k: 'config.helpArtLogInfo', d: 'Info' }],
-                    ['warn', { k: 'config.helpArtLogWarn', d: 'Warning' }],
-                    ['bad', { k: 'config.helpArtLogError', d: 'Error' }],
-                ],
-            },
-        ],
-        'config.helpActivityTrailTitle': [
-            {
-                kind: 'flow',
-                value: [{ k: 'config.helpArtOutLabel', d: 'nextDash' }, 'JSON', 'activity.log'],
-            },
-        ],
-        'config.helpGlancesInsightsTitle': [
-            {
-                kind: 'bars',
-                value: {
-                    values: [0.38, 0.32, 0.26, 0.2, 0.16, 0.12, 0.1, 0.1, 0.1, 0.12, 0.16, 0.2, 0.26, 0.34, 0.42, 0.5, 0.58, 0.68, 0.8, 0.9, 0.86, 0.74, 0.58, 0.44],
-                    mark: 19,
-                },
-                captionKey: 'config.helpArtInsDay', caption: 'A typical day',
-            },
-            {
-                kind: 'meter',
-                value: { fill: 0.3, mark: 0.8 },
-                captionKey: 'config.helpArtInsLoad', caption: 'Load against the cores',
-            },
-        ],
-        'config.helpSelfHostingTitle': [
-            {
-                kind: 'boundary',
-                value: {
-                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
-                    inside: [{ k: 'config.helpArtSingleBinary', d: 'One binary' }, 'data/*.json'],
-                    out: null,
-                },
-                captionKey: 'config.helpArtNoDatabase', caption: 'Plain files, no database',
-            },
-        ],
-    };
+    static HELP_PANEL_ART_FILE = '/static/data/help-panel-art.json';
 
     /**
      * Panels whose subject is one switch, and where that switch lives.
@@ -27684,29 +25588,6 @@ class DashboardConfig {
             </div>`;
     }
 
-    /** Rebuild the bookmarklet when the token field changes, and copy on request. */
-    bindCapturePanel(container) {
-        const tokenInput = container.querySelector('[data-capture-token]');
-        tokenInput?.addEventListener('input', () => {
-            this._captureToken = tokenInput.value;
-            const body = document.getElementById('config-view-body');
-            if (body) {
-                body.innerHTML = this.renderSection();
-                this.bindHelp?.(body);
-                // Focus returns to the field being typed in, which the repaint
-                // replaced under the cursor.
-                document.querySelector('[data-capture-token]')?.focus();
-            }
-        });
-        container.querySelector('[data-capture-copy]')?.addEventListener('click', () => {
-            const text = container.querySelector('[data-capture-bookmarklet]')?.value || '';
-            if (!text) return;
-            void navigator.clipboard?.writeText(text)
-                .then(() => this.notify(this.t('config.helpCaptureCopied', 'Bookmarklet copied'), 'success'))
-                .catch(() => this.notify(this.t('config.copyFailed', 'Could not copy'), 'error'));
-        });
-    }
-
     renderHelpData() {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
@@ -27758,43 +25639,6 @@ class DashboardConfig {
                 'What nextDash is, what changed recently, and where it comes from.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-about-body" role="tabpanel" tabindex="0">${this.renderAboutBody()}</div>`;
-    }
-
-    /** The two About tabs, plus the buttons the news tab carries. */
-    bindAboutTabs(container) {
-        const body = container.querySelector('#config-view-body') || container;
-        if (body.dataset.aboutBound === '1') return;
-        body.dataset.aboutBound = '1';
-        // `toggle` does not bubble, so it is caught on the way down.
-        body.addEventListener('toggle', (e) => {
-            if (this.section === 'about' && e.target.matches?.('[data-about-credits]') && e.target.open) void this.loadLicences();
-        }, true);
-        body.addEventListener('click', (e) => {
-            if (this.section !== 'about') return;
-            const tab = e.target.closest('[data-about-tab]');
-            if (tab) {
-                this.aboutTab = DashboardConfig.normalizeAboutTab(tab.getAttribute('data-about-tab'));
-                this._trackAction('subtab', { section: 'about', tab: this.aboutTab, via: 'click' });
-                this.render();
-                this.restoreConfigHash();
-                return;
-            }
-            const chip = e.target.closest('[data-news-filter]');
-            if (chip) {
-                const next = window.DashboardNewsStream?.SOURCES?.includes(chip.getAttribute('data-news-filter'))
-                    ? chip.getAttribute('data-news-filter')
-                    : 'all';
-                this.newsFilter = this.newsFilter === next ? 'all' : next;
-                this.render();
-                return;
-            }
-            if (e.target.closest('[data-about-action="copy-diagnostics"]')) {
-                void this.copyDiagnostics();
-                return;
-            }
-            const go = e.target.closest('[data-overview-go]');
-            if (go) this.handleOverviewGo(go);
-        });
     }
 
     aboutTabLabel(tab) {
@@ -27896,19 +25740,6 @@ class DashboardConfig {
             }).join('')}</ul>`).join('');
     }
 
-    /** Fetch the licence list the first time the credits are opened. */
-    async loadLicences() {
-        if (this._licences !== undefined) return;
-        try {
-            const res = await fetch('/static/data/licenses.json');
-            this._licences = res.ok ? await res.json() : null;
-        } catch {
-            this._licences = null;
-        }
-        const target = document.querySelector('[data-about-licences]');
-        if (target) target.innerHTML = this.renderLicenceList();
-    }
-
     /**
      * About → Install: which release this is, whether it is the newest, and the
      * facts a bug report needs. The release comes from the update status the
@@ -28004,73 +25835,6 @@ class DashboardConfig {
         if (!this.isActiveView() || this.section !== 'about' || this.aboutTab !== 'install') return;
         const body = document.getElementById('config-about-body');
         if (body) body.innerHTML = this.renderAboutInstall();
-    }
-
-    /**
-     * The Markdown a bug report needs. Counts and on/off names only: never a
-     * bookmark name or address, the data path, a token or a setting's value.
-     */
-    buildDiagnostics() {
-        const info = this._aboutInfo || {};
-        const status = this._updateStatus || {};
-        const s = this.computeStats();
-        const settings = this.dash.settings || {};
-        const features = Object.entries(DashboardConfig.HELP_PANEL_FEATURES)
-            .filter(([, f]) => f.isOn(settings))
-            .map(([key]) => this.t(key, key));
-        const unknown = 'unknown';
-        const lines = [
-            '### nextDash',
-            `- Release: ${status.current || info.release || unknown}`,
-            `- Build: ${[info.buildVersion, info.buildCommit].filter((v) => v && v !== 'unknown').join(' ') || unknown}${info.buildDate ? ` (${info.buildDate})` : ''}`,
-            status.latest ? `- Latest on GitHub: ${status.latest}` : '',
-            '',
-            '### Environment',
-            `- Platform: ${info.os ? `${info.os}/${info.arch}` : unknown}`,
-            `- Go: ${info.goVersion || unknown}`,
-            `- Uptime: ${info.uptimeSeconds !== undefined ? DashboardConfig.formatUptime(info.uptimeSeconds) : unknown}`,
-            `- Data size: ${info.dataBytes ? this.formatBytes(info.dataBytes) : unknown}`,
-            '',
-            '### Counts',
-            `- Pages: ${(this.dash.pages || []).length}`,
-            `- Categories: ${s.categories}`,
-            `- Bookmarks: ${(this.dash.allBookmarks || []).length}`,
-            `- Widgets: ${this._statsLibrary && this._statsLibrary.widgets !== null ? this._statsLibrary.widgets : unknown}`,
-            `- Tags: ${s.tagCount}`,
-            '',
-            '### Features on',
-            features.length ? features.map((f) => `- ${f}`).join('\n') : '- none of the optional ones',
-            '',
-            '### Browser',
-            `- ${navigator.userAgent}`,
-            `- Language: ${navigator.language || unknown}`,
-            `- Screen: ${window.innerWidth}x${window.innerHeight}`,
-            `- Theme: ${settings.theme || unknown}`,
-        ];
-        return lines.filter((l, i) => l !== '' || lines[i - 1] !== '').join('\n');
-    }
-
-    async copyDiagnostics() {
-        const text = this.buildDiagnostics();
-        let copied = false;
-        try {
-            await navigator.clipboard.writeText(text);
-            copied = true;
-        } catch {
-            // Plain-HTTP LAN installs have no Clipboard API.
-            const area = document.createElement('textarea');
-            area.value = text;
-            area.setAttribute('readonly', '');
-            area.style.position = 'fixed';
-            area.style.opacity = '0';
-            document.body.appendChild(area);
-            area.select();
-            try { copied = document.execCommand('copy'); } catch { copied = false; }
-            area.remove();
-        }
-        this.notify(copied
-            ? this.t('config.aboutDiagCopied', 'Diagnostics copied.')
-            : this.t('config.aboutDiagFailed', 'Could not copy. Select the text and copy it by hand.'), copied ? 'success' : 'error');
     }
 
     /**
@@ -28205,134 +25969,6 @@ class DashboardConfig {
         ];
     }
 
-    bindHelp(container) {
-        this.bindCapturePanel(container);
-        this.bindHelpTabStrip(container);
-        this.bindHelpSearch(container);
-        this.bindHelpActions(container);
-    }
-
-    bindHelpTabStrip(container) {
-        this.bindSubTabStrip(container, 'data-help-tab', (tab) => this.switchHelpTab(tab));
-        const toggle = container.querySelector('[data-help-more-toggle]');
-        if (toggle && toggle.dataset.helpMoreBound !== '1') {
-            toggle.dataset.helpMoreBound = '1';
-            toggle.addEventListener('click', () => {
-                if (this._helpMoreClose) this._helpMoreClose();
-                else this.openHelpMoreMenu(toggle);
-            });
-        }
-    }
-
-    switchHelpTab(tab) {
-        if (tab === this.helpTab) return;
-        this.helpTab = tab;
-        // Switching tabs by hand means the reader has stopped searching;
-        // leaving the query on would show results instead of the tab
-        // they just clicked.
-        this.helpQuery = '';
-        const field = document.getElementById('config-help-search');
-        if (field) field.value = '';
-        this.restoreConfigHash();
-        const body = document.getElementById('config-help-body');
-        if (!body) { this.render(); return; }
-        body.innerHTML = this.renderHelpBody();
-        this.syncSubTabStrip('data-help-tab', this.helpTab);
-        this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
-        // The new body carries its own action buttons.
-        this.bindHelpActions(body);
-    }
-
-    /**
-     * The topics past Basics, as a menu under "More topics".
-     *
-     * Built on open and dropped on close, and hung on the body rather than in
-     * the strip: the strip scrolls sideways and clips what overflows it, and a
-     * panel under Glass would make a fixed menu's coordinates its own.
-     */
-    openHelpMoreMenu(toggle) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const [, ...rest] = DashboardConfig.HELP_TAB_GROUPS;
-        const menu = document.createElement('div');
-        menu.className = 'move-popover config-help-more-menu';
-        menu.id = 'config-help-more-menu';
-        menu.setAttribute('role', 'menu');
-        menu.setAttribute('aria-label', this.t('config.helpMoreTopics', 'More topics'));
-        menu.innerHTML = rest.map((group) => `
-            <div class="move-popover-section-label" role="presentation">${esc(this.t(group.label[0], group.label[1]))}</div>
-            ${group.tabs.map((tab) => `<button type="button" class="move-popover-item${tab === this.helpTab ? ' is-current' : ''}" role="menuitem" tabindex="-1" data-help-more="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`).join('')}
-        `).join('');
-        document.body.appendChild(menu);
-        const items = [...menu.querySelectorAll('[data-help-more]')];
-
-        const MARGIN = 8;
-        const position = () => {
-            const rect = toggle.getBoundingClientRect();
-            const width = menu.offsetWidth;
-            const left = Math.min(Math.max(MARGIN, rect.left), window.innerWidth - width - MARGIN);
-            menu.style.left = `${Math.round(left)}px`;
-            menu.style.top = `${Math.round(rect.bottom + 4)}px`;
-        };
-        let onOutside = null;
-        const close = ({ refocus = true } = {}) => {
-            if (this._helpMoreClose !== close) return;
-            this._helpMoreClose = null;
-            menu.remove();
-            toggle.setAttribute('aria-expanded', 'false');
-            document.removeEventListener('click', onOutside, true);
-            window.removeEventListener('resize', position);
-            window.removeEventListener('scroll', position, true);
-            if (refocus && toggle.isConnected) toggle.focus({ preventScroll: true });
-        };
-        onOutside = (e) => {
-            if (menu.contains(e.target) || toggle.contains(e.target)) return;
-            close({ refocus: false });
-        };
-        items.forEach((item, i) => {
-            item.addEventListener('click', () => {
-                close({ refocus: false });
-                this.switchHelpTab(item.getAttribute('data-help-more'));
-                document.querySelector(`[data-help-tab="${CSS.escape(this.helpTab)}"]`)?.focus();
-            });
-            item.addEventListener('keydown', (e) => {
-                const last = items.length - 1;
-                const next = { ArrowDown: i === last ? 0 : i + 1, ArrowUp: i === 0 ? last : i - 1, Home: 0, End: last }[e.key];
-                if (next != null) {
-                    e.preventDefault();
-                    items[next].focus();
-                } else if (e.key === 'Tab') {
-                    close({ refocus: false });
-                }
-            });
-        });
-
-        toggle.setAttribute('aria-expanded', 'true');
-        position();
-        // Bound on the next tick, or the click that opened the menu closes it.
-        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
-        window.addEventListener('resize', position);
-        window.addEventListener('scroll', position, true);
-        this._helpMoreClose = close;
-        (items.find((item) => item.classList.contains('is-current')) || items[0])?.focus();
-    }
-
-    /**
-     * Draw the Help strip again when the tab it should show has changed.
-     *
-     * The row holds Basics plus the open tab when that one lives in the menu,
-     * so a switch to or from a menu topic changes which buttons the row has --
-     * marking a different button active is not enough.
-     */
-    repaintHelpStripIfNeeded() {
-        const strip = document.querySelector('.config-subtabs--more');
-        if (!strip) return;
-        const have = [...strip.querySelectorAll('[data-help-tab]')].map((b) => b.getAttribute('data-help-tab')).join(',');
-        if (have === this.helpStripTabs().join(',')) return;
-        const host = strip.parentElement;
-        strip.outerHTML = this.renderSectionTabStrip('help');
-        this.bindHelpTabStrip(host);
-    }
-
     /** The tabs on Help's row: Basics, and the open tab if it is past them. */
     helpStripTabs() {
         const shown = [...DashboardConfig.HELP_TAB_GROUPS[0].tabs];
@@ -28385,46 +26021,6 @@ class DashboardConfig {
         if (this.tipsQuery) apply();
     }
 
-    /** The help search field, and the tab buttons on each result. */
-    bindHelpSearch(container) {
-        const field = container.querySelector('#config-help-search');
-        if (!field) return;
-
-        const repaint = () => {
-            const body = document.getElementById('config-help-body');
-            if (!body) return;
-            const query = String(this.helpQuery || '').trim();
-            body.innerHTML = query ? this.renderHelpSearchResults() : this.renderHelpBody();
-            // Results carry panels lifted from every tab, so their buttons need
-            // binding just as a freshly switched tab body does.
-            this.bindHelpActions(body);
-            this.bindHelpResultJumps(body);
-            // The tab strip means nothing while results are showing; dim it
-            // rather than remove it, so the way back is still where it was.
-            container.querySelector('.config-subtabs')?.classList.toggle('is-muted', !!query);
-        };
-
-        let debounce = null;
-        field.addEventListener('input', () => {
-            clearTimeout(debounce);
-            debounce = setTimeout(() => {
-                this.helpQuery = field.value;
-                repaint();
-            }, 200);
-        });
-        // Escape clears the query rather than closing config, matching the other
-        // search fields — but only while there is something to clear.
-        field.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape' || !String(this.helpQuery || '').trim()) return;
-            e.preventDefault();
-            e.stopPropagation();
-            this.helpQuery = '';
-            field.value = '';
-            repaint();
-        });
-    }
-
-    /** "Open this tab" on a search result. */
     /**
      * Copy a link that reopens this one topic.
      *

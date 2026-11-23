@@ -202,6 +202,10 @@ const (
 	// config alone: no service is asked and nothing is stored but the settings.
 	WidgetTypeClock     WidgetType = "clock"
 	WidgetTypeCountdown WidgetType = "countdown"
+	// WidgetTypeTimer is a kitchen timer or a pomodoro timer. Like the clock it
+	// is drawn in the browser: a running timer lives in the reader's own
+	// localStorage, and the server keeps only the settings.
+	WidgetTypeTimer WidgetType = "timer"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -247,6 +251,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeStack:           {},
 	WidgetTypeClock:           {},
 	WidgetTypeCountdown:       {},
+	WidgetTypeTimer:           {},
 	WidgetTypeJellyfin:        {},
 	WidgetTypeEmby:            {},
 	WidgetTypeSonarr:          {},

@@ -307,6 +307,12 @@ class DashboardContextMenu {
                 icon: '→',
                 key: 'M',
             },
+            // A label row above this bookmark, where its category is in manual order.
+            ...(bookmarkRef.scope === 'current' && window.DashboardCategoryDividers?.slotAbove?.(d, row) ? [{
+                id: 'add-label-above',
+                label: this.t('dashboard.contextMenuAddLabelAbove', 'Add label above'),
+                icon: '—',
+            }] : []),
             {
                 id: 'related',
                 label: this.t('dashboard.contextMenuRelated', 'Related links…'),
@@ -348,6 +354,10 @@ class DashboardContextMenu {
             { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'R' },
             ...(d.netBadges?.hasChecks?.(bookmarkRef.bookmark)
                 ? [{ id: 'net-checks', label: this.t('nettools.menuChecks', 'Network checks'), icon: '◉', key: 'N' }]
+                : []),
+            // Only for what is a service: a container, a monitor or a network check.
+            ...(window.DashboardServiceLoader?.isService?.(d, bookmarkRef.bookmark)
+                ? [{ id: 'service', label: window.DashboardServiceLoader.text(d, 'menuOpen', 'Service overview'), icon: '◈', key: 'L' }]
                 : []),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ]);
@@ -1024,6 +1034,11 @@ class DashboardContextMenu {
             case 'tags':
                 d.showTagPopover?.(row, bookmark, bookmarkIndex);
                 break;
+            case 'add-label-above': {
+                const slot = window.DashboardCategoryDividers?.slotAbove?.(d, row);
+                if (slot) window.DashboardCategoryDividers.add(d, slot.categoryId, slot.index);
+                break;
+            }
             case 'move':
                 void d.showMovePopover?.(row, bookmark, bookmarkIndex);
                 break;
@@ -1044,6 +1059,9 @@ class DashboardContextMenu {
             }
             case 'health':
                 void this.revealInHealth(bookmarkRef);
+                break;
+            case 'service':
+                void d.service?.openServiceView?.({ url: bookmark.url, page: Number(bookmarkRef.pageId) || Number(d.currentPageId) });
                 break;
             case 'net-checks':
                 d.netBadges?.openTests(Number(bookmarkRef.pageId) || Number(d.currentPageId), bookmark.url);

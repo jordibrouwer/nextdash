@@ -199,6 +199,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Maintenance windows](#125-maintenance-windows)
 - [Keeping a copy of a page](#126-keeping-a-copy-of-a-page)
 - [The status page](#127-the-status-page)
+- [The timeline](#128-the-timeline)
 
 </details>
 
@@ -239,6 +240,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Apps it finds on its own](#1510-apps-it-finds-on-its-own)
 - [Other Docker hosts](#1511-other-docker-hosts)
 - [Compose stacks](#1512-compose-stacks)
+- [The Service overview](#1513-the-service-overview)
 
 </details>
 
@@ -950,7 +952,9 @@ What needs you waits in the bell instead of popping up over your work: questions
 <p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Watch feeds row, 9 new from 5 watched feeds, a Clean up group with two questions, each with Start and No, and a Tips group with three tips; every row shows its age on the right" width="860"></p>
 <p align="center"><sub>The bell, open: one row for new watched news, and the age of each row.</sub></p>
 
-The bell shakes and pulses for something new, with a short tone (news from watched feeds has a softer two-note chime of its own); while anything is still unread the badge pulses once a minute and the bell shakes and pulses once an hour, without a tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
+The bell shakes and pulses for something new, with a short three-note tone (news from watched feeds has a softer two-note chime of its own); while anything is still unread the badge pulses once a minute and the bell shakes and pulses once an hour, without a tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
+
+An outage reaches the bell as soon as a check finishes, without waiting for the next refresh. An urgent row such as an outage always rings, even inside the five-minute pause that holds back quiet rows, and it rings once however many tabs are open. The browser tab says so too: while a monitored bookmark is down, the title starts with a red dot and the number (`🔴 2`), the favicon gets a red dot with the count (9+ above nine) and an installed app's icon shows the number as a badge. The red dot takes the place of the purple news dot. It goes away when the bookmark is up again or Health is switched off. A timer that ends while the tab is hidden puts a ⏰ in the title too, and turns the favicon dot green when nothing else needs the red or purple one. The timer's chime is its own, so its bell row shakes the bell without a second tone.
 
 <a id="the-page-switcher"></a>
 
@@ -1461,6 +1465,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `z` | Remind me of it: choose a time ([§6](#bookmark-reminders)) |
 | `f` | Filter the grid by the bookmark's tag |
 | `r` | Open the bookmark in the Bookmarks view, on its Health tab |
+| `l` | Open its Service overview: health, container, timeline and logs in one window ([§15.13](#1513-the-service-overview)) |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
 | `t` | Filter the grid by this bookmark's tag |
@@ -1692,12 +1697,23 @@ With web search on ([§8.3](#83-beyond-the-current-page)), nextDash offers a sec
 
 A lone **`:`** lists every command in five groups — Bookmarks, Search & navigate, Look & layout, Smart collections, Settings & tools — with your recent commands on top. Commands with an argument complete as you type. A toggle keeps the palette open and shows its new state; a setting command such as `:density`, `:columns` or `:theme` lists its choices with the one in force tinted and marked *current*.
 
+A slip in a command is forgiven. Type `:dokcer` and the palette offers `:docker` as *Did you mean*. One swapped, missing, extra or wrong letter counts as a single slip, two for names longer than four letters. Anything that already matches a command by its first letters is answered as before.
+
+<details>
+<summary>📷 Screenshot — A typo in a command</summary>
+
+<p align="center"><img src="screenshots/manual.md/08-command-typo.jpg" alt="The search panel in command mode with dokcer typed: one row, :DOCKER, marked Did you mean" width="860"></p>
+<p align="center"><sub>A swapped letter still finds the command.</sub></p>
+
+</details>
+
 | Command | What it does |
 |---------|--------------|
 | `:new` / `:add` | Full form / quick add |
 | `:edit` · `:move` · `:copy` · `:note` · `:pin` · `:unpin` · `:remove` | On the selected bookmark |
 | `:remind <when>` · `:remind <name> <when>` · `:remind clear` | Set or clear a reminder on a bookmark ([§6](#bookmark-reminders)) |
 | `:related` · `:related <name>` | The links that belong with a bookmark ([§6](#related-links)) |
+| `:service <name>` | The Service overview of a bookmark or a container ([§15.13](#1513-the-service-overview)) |
 | `:tag` · `:tag work` · `:tag +name` · `:tag -name` | List tags, browse a tag, add or remove a tag on the selected bookmark |
 | `:filter <tag>` | The tag view for a tag |
 | `:find <text>` / `:find clear` | Filter this page |
@@ -1812,9 +1828,13 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 - **Overview** — Structure → Categories is one table for every page, grouped by page; a page's row folds its categories away. Chips narrow it to some pages or to a view (*Spread*, *With broken links*, *Empty*), and columns show each category's bookmarks, broken links and whether it spreads. The order of categories is set on the dashboard, not here.
 - **Delete** — `Delete` on the header, the right-click menu, or Structure → Categories. The bookmarks are kept and lose their category; the category goes to the trash.
 - **Duplicate** — on the row in Structure → Categories, with its width, icon and sort, and optionally its bookmarks.
+- **Labels** — a long category can be split without making a new one. A label is a small name with a hairline to the right edge, between two bookmarks. Right-click the header and choose **Add label** (it lands at the end), or right-click a bookmark and choose **Add label above**. Type the name where it appears: click it or press `F2`, `Enter` keeps it, `Esc` cancels, and an empty new label goes away again. Move a label with `Alt + ↑/↓` or its menu, and delete it from its menu; **Undo** brings it back. A bookmark dragged across a label joins that group. A sorted category hides its labels and keeps them, and the tiles view shows each one across the whole row. A label is not a bookmark, so no count, search, check or export sees it. A category holds at most 50, and page templates keep their names and positions.
 
 <p align="center"><img src="screenshots/manual.md/09-category-tiles.jpg" alt="A category shown as tiles: a grid of large icons with the bookmark names under them" width="290"></p>
 <p align="center"><sub>Show as tiles: the same bookmarks as a grid.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/09-label-rows.jpg" alt="The Docs category with two labels between its bookmarks, Tools and Reference, each a small name with a line to the right edge" width="290"></p>
+<p align="center"><sub>Labels split a long category into groups.</sub></p>
 
 <p align="center"><img src="screenshots/manual.md/09-move-block.svg" alt="Three short loops: a category lifted from the left column and set down in the middle one with a dashed box where it lands, a category dropped on the line between two columns so it spans both, and a category sent to page 2" width="630"></p>
 
@@ -2378,7 +2398,7 @@ Checks run in the server's monitor loop together with the bookmarks' own checks:
 
 #### TLS in detail
 
-The handshake runs against the check's port: its own, else the port of an https bookmark address, else 443; the bookmark's host is the server name. A chain that does not verify is down (class *certificate*), and the unverified certificates are still shown (up to 5, with subject, issuer, validity and names). **Warn at or below (days)** (1 to 120, 14 by default; exactly 14 days left already warns) turns a valid certificate into a **Warning** and sends one expiry notice at each mark of a ladder derived from it (14, 3 and 1 days by default), apart from the host certificate warnings of [§12.4](#124-alerts). A STARTTLS port does not speak TLS first and shows the handshake error.
+The handshake runs against the check's port: its own, else the port of an https bookmark address, else 443; the bookmark's host is the server name. A chain that does not verify is down (class *certificate*), and the unverified certificates are still shown (up to 5, with subject, issuer, validity and names). **Warn at or below (days)** (1 to 120, 14 by default; exactly 14 days left already warns) turns a valid certificate into a **Warning** and sends one expiry notice at each mark of a ladder derived from it (14, 3 and 1 days by default), apart from the host certificate warnings of [§12.4](#124-alerts). A mail or FTP port speaks plain text first: on 25, 587 and 2525 (SMTP), 143 (IMAP), 110 (POP3) and 21 (FTP) the check asks for STARTTLS before the handshake, and any other port that greets like one of these is tried again over STARTTLS. The result then shows the protocol (*SMTP STARTTLS*). A server that refuses STARTTLS is down with its reply.
 
 #### HTTP detail and JSON
 
@@ -2570,8 +2590,8 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 - **ntfy** alerts carry **Open link** and **Health** buttons, and a failure is sent at a higher priority than a recovery. Fill in **Address of this dashboard** for the Health button; it links to `/#health`, which redirects into the Bookmarks view.
 - Local addresses are refused unless *Allow local bookmarks* is on.
 - **Many at once** — when a host takes many bookmarks down together, the alerts are collapsed into one message. Certificate warnings are always separate.
-- **Certificates** — by default warnings at 30, 7 and 3 days before expiry; **Warn about certificates** (Monitoring → Checks) offers *Default (30 days ahead)* or *n days ahead* (3 to 120), and the two later warnings follow in the same proportion. They go through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§20.3](#203-webhooks)).
-- **Domains** — the registration behind your bookmarks, looked up through the registries' public RDAP service. On by default; **Monitoring → Checks → Look up when my domains expire** switches it off. Only the domain names of checked and monitored bookmarks are looked up, one request per domain a day, and each name goes to the registry of its extension (Verisign for `.com`, for example). Warnings come at 60, 7 and 3 days (**Warn about domains** moves the first), by the same channels, and to any webhook subscribed to `health.domain-expiring`. Not every registry publishes a date: `.nl` answers without one, and `.de`, `.io`, `.be`, `.eu` and a few others have no RDAP service. Those domains are listed as having no date and are never warned about. In the Bookmarks view a bookmark whose domain is close gets a **Domain** badge, and the **Domains** filter lists them.
+- **Certificates** — by default warnings at 30, 7 and 3 days before expiry; **Warn about certificates** (Monitoring → Checks) offers *Default (30 days ahead)*, *n days ahead* (3 to 120) or *Only when expired*, and the two later warnings follow in the same proportion. Short-lived certificates, such as Let's Encrypt's six-day ones, renew themselves and sit inside every warning window, so for them choose *Only when expired*. One host can have its own rule: in a bookmark's **Expectations** panel, **Certificate warning for {host}** takes *Follow the global setting* or any of the choices above, applies to every bookmark on that host and beats the global setting. **Certificate rules** in the rail of the Bookmarks view lists the hosts that have one. They go through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§20.3](#203-webhooks)).
+- **Domains** — the registration behind your bookmarks, looked up through the registries' public RDAP service. On by default; **Monitoring → Checks → Look up when my domains expire** switches it off. Only the domain names of checked and monitored bookmarks are looked up, one request per domain a day, and each name goes to the registry of its extension (Verisign for `.com`, for example). Warnings come at 60, 7 and 3 days (**Warn about domains** moves the first), by the same channels, and to any webhook subscribed to `health.domain-expiring`. Not every registry publishes a date: `.nl` answers without one, and `.de`, `.io`, `.be`, `.eu` and a few others have no RDAP service. Those domains are listed as having no date, and nextDash cannot warn about them by itself. If you know the date, type it in: open the bookmark in the Bookmarks view, its Health tab and **Expectations**, and fill in **Registration of {domain} expires on** with the date from your registrar. The date belongs to the registered domain, so every bookmark on it shares it, and nextDash then warns at the same marks as for any other domain. Empty the field to remove it. The field only shows for a domain whose registry gives no date: when a registry does, its date is used and there is nothing to type. In the Bookmarks view a bookmark whose domain is close gets a **Domain** badge, and the **Domains** filter lists them.
 
 <a id="muting-one-bookmark"></a>
 
@@ -2616,6 +2636,14 @@ On the day the digest comes out it goes first, and the daily review card ([§4](
 
 <p align="center"><img src="screenshots/manual.md/12-checkup.jpg" alt="The checkup window listing three steps: broken links, doubled bookmarks and never opened, each with an Open in Bookmarks button" width="760"></p>
 <p align="center"><sub>The checkup lists the steps that have something to do.</sub></p>
+
+<details>
+<summary>📷 Screenshot — A domain date typed by hand</summary>
+
+<p align="center"><img src="screenshots/manual.md/12-domain-date.jpg" alt="The Expectations part of a bookmark's Health tab with the field Registration of jwt.io expires on, filled with 14 March 2027, and a note that the registry does not publish this date" width="860"></p>
+<p align="center"><sub>For a registry that publishes no date, you type it in yourself.</sub></p>
+
+</details>
 
 <a id="125-maintenance-windows"></a>
 
@@ -2684,6 +2712,35 @@ Everything saves as you go.
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
+
+<a id="128-the-timeline"></a>
+
+### 12.8 The timeline
+
+**Config → Timeline** lists what happened to your services in one stream, newest first and grouped by day: container events, updates and rollbacks, outages of monitors and network checks, Glances incidents and Unraid alerts.
+
+An outage is the headline of its row, and the row shows what came shortly before it: *Sonarr down 03:02, 1 min after auto-update 4.0.9 → 4.0.10*. nextDash looks for the likely cause in the 15 minutes before the outage and takes the first match from this list:
+
+1. an update of the same container;
+2. a crash or an unhealthy stretch of the linked container;
+3. a Glances incident on the same machine;
+4. an Unraid alert on the same machine.
+
+The last two read *Possible cause*, and only when that machine is the Docker host. A row with none says *No cause found*. A restart loop and a flapping monitor are one row each, and the stop and start that an update causes never count as an outage.
+
+- **Sources**, **Show** (*All*, *Only outages*, *With a cause*) and **Period** (24 hours, 7 days or 30 days) narrow the list. Your choice is kept.
+- **Open** on a row goes to its Service overview ([§15.13](#1513-the-service-overview)), to Glances or to Unraid.
+- A source that cannot reach as far back as the period says so (*recorded since …*). The raw checks of a network check go back about three days.
+- Updates remember who started them: automatic, from the panel, or from a compose file. An older entry reads plain *updated*.
+- The Unraid watcher writes what it finds (array stopped, disk errors, parity errors, alerts) to `unraid-events.json`: thirty days, at most 500 entries. It does this even when its alert switch is off, and the file is part of a backup.
+
+<details>
+<summary>📷 Screenshot — Config → Timeline</summary>
+
+<p align="center"><img src="screenshots/manual.md/18-timeline.jpg" alt="Config, Timeline: the filters for sources, what to show and the period, and a stream where Sonarr down for 14 minutes is the headline of a row that says it came one minute after an automatic update to 4.0.10" width="860"></p>
+<p align="center"><sub>An outage with its likely cause: the update that came a minute before it.</sub></p>
+
+</details>
 
 <a id="13-inbox"></a>
 
@@ -3307,6 +3364,40 @@ The paths come from the labels Docker put on the containers, so you name only th
 
 ---
 
+<a id="1513-the-service-overview"></a>
+
+### 15.13 The Service overview
+
+A service usually lives in several places: a bookmark, a monitor, a container and a feed of releases. The Service overview puts them on one screen, so "is Sonarr down, and why?" has a single place to be answered.
+
+It opens as a large window over the view you are in, and as a full-screen sheet on a phone. `Esc`, a click beside it, the close button or the browser's Back button take you back to where you were.
+
+**Opening it.** Use **Service overview** in the Bookmarks panel (it has its own row under **Open**, **Edit** and **Re-check**) or in a container's side panel, type `:service <name>`, or press `l` on a selected bookmark on the dashboard. The right-click menu of a bookmark that has a container, a monitor or a network check offers it too, and so does the menu of a container here. Every service in **Config → Status page** has the same button. The page has an address of its own: `/#service?url=…&page=…` for a bookmark and `/#service?container=<name>` for a container.
+
+**What it shows.** The title bar holds the name, the address and the actions. Under it a status line says *All good* or *Incident since 14:21*, followed by the key figures: 30-day uptime, the response time and, for a running container, its CPU and memory. Only the sections that have something show. What is missing folds into one *Not set up yet* card.
+
+- Health: the 30-day uptime strip, with uptime over 24 hours, 7 days and 30 days, and each network check of the bookmark ([§11.14](#1114-the-tests-tab-network-checks)).
+- The container: state, image, version, ports and age. A running container also shows its CPU over the last hour and its memory, read every ten seconds while the section is on screen and the tab is visible.
+- One timeline with the container's events and updates, the outages of the address and of each check, and new releases from the feeds you watch, newest first.
+
+**Logs, releases and a note.** The **Logs** strip opens the same reader as the container panel ([§15.8](#158-the-logs-window)) inside the page. Nothing is requested until you open it, and without the write token it says *Logs need the write token*. **Show releases from GitHub** asks the container's source for its release notes only after you click; opening the page never contacts GitHub. The **Note** saves when you leave the field, as in the Bookmarks panel. A container without a bookmark has no note.
+
+**Acting.** Restart, Start, Stop and Update appear only when **Allow actions** is on, and never for the container nextDash itself runs in. Each asks first, and answering does not close the page.
+
+**Other Docker hosts.** The same ways in work on the tab of another host: **Service overview** in its panel and menu, and `:service <name>` while that tab is open. A link you made by hand between a container and a bookmark is stored per host. The automatic match (port, subdomain, title) reads that host's own address, and other hosts are only asked when the bookmark has no container here. A remote container's start, stop and crash history and its update history are kept for this host only, so its timeline holds the bookmark's events and says *Timeline only for this host*. Start, stop and update stay on that host's tab in Containers.
+
+**Staying current.** The window refreshes when a container changes state or a check changes, and every 30 seconds while the tab is visible. It only listens while it is open.
+
+**For MCP and the assistant.** The read-only tool `service_get` returns what the page shows for a bookmark or a container: status, uptime, network checks, watched feeds, the container and the timeline. It never returns environment variables, labels, mounts, log lines or healthcheck output. With **Containers read** off it leaves the container out and does not ask Docker ([§24.6](#246-the-mcp-endpoint)).
+
+<details>
+<summary>📷 Screenshot — The Service overview</summary>
+
+<p align="center"><img src="screenshots/manual.md/15-service-overview.jpg" alt="The Service overview of Sonarr: a status line that says All good, uptime over 24 hours, 7 days and 30 days, the container with its image and version, and a timeline with an update, an outage of 14 minutes and a new release" width="860"></p>
+<p align="center"><sub>One service on one screen: status, uptime, the container and a timeline of what happened.</sub></p>
+
+</details>
+
 <a id="16-widgets"></a>
 
 ## 16. 🧩 Widgets
@@ -3414,6 +3505,7 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Watch feeds news** | The sites with new items from the feeds you watch ([§14](#14-watch-feeds)). **Layout**: *Sites, one row each*, *Headlines with pictures* or *Compact chips*. It fetches nothing itself; every way in leads to the news window |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
 | **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Look** is *A large clock face, other places below it* (the first three places) or *Plain lines of time*. The face can show a seconds hand, and, two columns wide, the moon with its phase and sunrise, sunset and the hours of daylight for the weather location (Appearance → Date & weather). **Use a 12-hour clock** and **Show today's date** are switches |
+| **Timer** | A kitchen timer or a pomodoro that counts down in the browser ([below](#the-timer-widget)) |
 | **Countdown** | The days left to a **Date**, or since it. The widget's title says what it counts to. An optional **Time of day** and **Count in hours and minutes near the end** switch the figure to hours and minutes in the last two days |
 | **Tabs** | Several widgets of the page in one tile, one tab each. **Widgets in the tabs** lists the other widgets of the page; each one you tick becomes a tab, in page order, and leaves the grid while the tabs hold it. Up to six tabs; a widget sits in one Tabs widget at most, and a widget moved to another page leaves the tabs. Its settings stay under Widgets. Only the tab in view is drawn |
 
@@ -3514,6 +3606,35 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 | **Trash** | **Mark as urgent within (days)** (1 to 30, 7 by default), **Rows to show** |
 | **Backups** | **List the backups themselves** (on), **Rows to show** |
 | **Jellyfin — now playing**, **Emby — now playing**, **Plex — now playing** | **Hide who is watching** (hides the names of the viewers), **Refresh every (seconds)** (5 to 300, 10 by default) |
+
+<a id="the-timer-widget"></a>
+
+**The Timer.** The Timer widget counts down in the browser and needs nothing set up. **Kind of timer** is *Kitchen timer: one countdown* or *Pomodoro: focus rounds and breaks*.
+
+- A kitchen timer has preset minutes (1, 5, 10 and 15; **Kitchen timer presets (minutes)** takes up to six whole minutes) and a box for your own.
+- A pomodoro cycles focus, a short break and, after **Pomodoro: focus rounds before a long break** rounds (2 to 8), a long break. The lengths are settings too. **Pomodoro: start the next phase by itself** chains the phases. The tile shows the round and how many focus rounds you finished today.
+- **Look** is *A ring around the time*, *Large time with a bar below* or *One compact row*.
+
+A run survives a reload, and other tabs on the same device see it. It also ends on time when no page is showing it: you hear a chime (**Play a sound when time is up**, on by default), the tab title gets a ⏰ while the tab is hidden, and a quiet row waits in the bell until you stop the timer. **Also show a system notification** asks the browser for permission the first time you start a timer. A running timer lives in this browser only, so it changes nothing on other devices, and a change of settings applies from the next phase.
+
+<details>
+<summary>📷 Screenshot — The Timer widget</summary>
+
+<p align="center"><img src="screenshots/manual.md/16-timer-widget.jpg" alt="A Timer tile: a ring around 01:00, four presets (1, 5, 10 and 15 min), a box for your own and a Start button" width="290"></p>
+<p align="center"><sub>A kitchen timer, ready to start.</sub></p>
+
+</details>
+
+**Acting from a tile.** Some tiles can act on their service. The switch for it sits in the widget's settings and is off until you turn it on, and every action needs the write token. Home Assistant is the exception: its switch starts on, so existing tiles keep switching.
+
+| Tile | What it can do |
+|---|---|
+| **Seerr** | Approve or decline a pending request. Decline asks for a second click. |
+| **Sonarr**, **Radarr** | Start a search for an upcoming episode or film. |
+| **qBittorrent**, **SABnzbd** | Pause and resume one download, or the whole client from the totals line. |
+| **Pi-hole**, **AdGuard Home** | Pause blocking for 5 minutes, 30 minutes, an hour or until you resume it. |
+
+The server reads the address and the key itself and only acts on a line the tile was showing. qBittorrent 4 and 5 both work.
 
 <a id="162-adding-and-arranging"></a>
 
@@ -4712,6 +4833,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Containers** | Connection · View · Updates · Alerts ([§18.7](#187-config-containers)) |
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§16.6](#166-unraid-widgets)) |
 | **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§16A.10](#16a10-config-glances)) |
+| **Timeline** | What happened to your services in one stream, with the likely cause of each outage ([§12.8](#128-the-timeline)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.7](#127-the-status-page)) |
 | **AI Assistant** | One tab, Settings: the switch, the provider, the key, the model and the conversations it keeps ([§24.11](#2411-the-assistant)) |
 | **Statistics** | Summary · Usage · Collection · Inbox · Health · Server ([§19](#19-statistics)) |

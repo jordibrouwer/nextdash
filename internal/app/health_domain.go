@@ -276,13 +276,109 @@ func (c *rdapClient) lookup(ctx context.Context, domain string) (rdapResult, err
 
 // ---- recording ------------------------------------------------------------
 
+// parseManualDomainDate reads a hand-typed expiry, "YYYY-MM-DD", as the last
+// millisecond of that day in UTC (Unix ms): a registrar's date names a day the
+// domain is still good on, so it must not read as expired at that day's start.
+// ok is false for anything else.
+func parseManualDomainDate(value string) (int64, bool) {
+	when, err := time.Parse("2006-01-02", strings.TrimSpace(value))
+	if err != nil {
+		return 0, false
+	}
+	return when.Add(24*time.Hour).UnixMilli() - 1, true
+}
+
+// sanitizeDomainExpiryManual keeps the hand-typed dates that name a registrable
+// domain and hold a real date. Keys are folded to lower case.
+func sanitizeDomainExpiryManual(in map[string]string) map[string]string {
+	if len(in) == 0 {
+		return in
+	}
+	out := make(map[string]string, len(in))
+	for name, value := range in {
+		domain, ok := registrableDomain(name)
+		if !ok || domain != strings.ToLower(strings.TrimSpace(name)) {
+			continue
+		}
+		if _, ok := parseManualDomainDate(value); !ok {
+			continue
+		}
+		out[domain] = strings.TrimSpace(value)
+	}
+	return out
+}
+
+// manualDomainDates is the typed-in dates as Unix ms, by domain.
+func manualDomainDates(s Settings) map[string]int64 {
+	out := make(map[string]int64, len(s.DomainExpiryManual))
+	for name, value := range s.DomainExpiryManual {
+		if ms, ok := parseManualDomainDate(value); ok {
+			out[strings.ToLower(name)] = ms
+		}
+	}
+	return out
+}
+
+// crossedThreshold marks every threshold the entry has reached and returns a
+// copy of it when one is new, so each warning goes out once.
+func crossedThreshold(entry *HostDomain, now time.Time, thresholds []int) *HostDomain {
+	days := certDaysLeft(entry.ExpiresAt, now)
+	reached := 0
+	for _, threshold := range thresholds {
+		if days <= threshold && (reached == 0 || threshold < reached) {
+			reached = threshold
+		}
+	}
+	if reached == 0 || containsInt(entry.NotifiedDays, reached) {
+		return nil
+	}
+	for _, threshold := range thresholds {
+		if threshold >= reached && !containsInt(entry.NotifiedDays, threshold) {
+			entry.NotifiedDays = append(entry.NotifiedDays, threshold)
+		}
+	}
+	copied := *entry
+	return &copied
+}
+
+// hasRegistryDate says the entry's date came from a registry.
+func (e HostDomain) hasRegistryDate() bool {
+	return e.ExpiresAt > 0 && !e.Manual && (e.State == domainStateOK || e.State == domainStateError)
+}
+
+// applyManualDate lays a hand-typed date over an entry the registry gave none
+// for. A date from the registry always wins. Moving the typed date later or
+// removing it starts the countdown over. Reports the entry when it newly crossed a warning threshold.
+func applyManualDate(entry *HostDomain, manualMs int64, now time.Time, thresholds []int) *HostDomain {
+	if entry.hasRegistryDate() {
+		return nil
+	}
+	if manualMs <= 0 {
+		if entry.Manual {
+			entry.Manual = false
+			entry.ExpiresAt = 0
+			entry.NotifiedDays = nil
+		}
+		return nil
+	}
+	// A date moved later is a renewal and starts the countdown over; one moved
+	// earlier (a typo fixed) keeps what was already warned, as a registry's does.
+	if !entry.Manual || manualMs > entry.ExpiresAt {
+		entry.NotifiedDays = nil
+	}
+	entry.Manual = true
+	entry.ExpiresAt = manualMs
+	return crossedThreshold(entry, now, thresholds)
+}
+
 // recordDomainResult folds one lookup into the stored map and reports the entry
-// when it newly crossed a warning threshold.
+// when it newly crossed a warning threshold. manualMs is the date typed in for
+// this domain, or 0.
 //
 // A later expiry is a renewal and clears the notification history; an earlier
 // one is taken as the registry's word but keeps it. A failed lookup keeps the
 // date it already had, since one bad answer is no reason to forget a deadline.
-func recordDomainResult(stored map[string]HostDomain, domain string, result rdapResult, lookupErr error, now time.Time, thresholds []int) *HostDomain {
+func recordDomainResult(stored map[string]HostDomain, domain string, result rdapResult, lookupErr error, now time.Time, thresholds []int, manualMs int64) *HostDomain {
 	if stored == nil {
 		return nil
 	}
@@ -292,39 +388,29 @@ func recordDomainResult(stored map[string]HostDomain, domain string, result rdap
 
 	if lookupErr != nil {
 		entry.State = domainStateError
+		crossed := applyManualDate(&entry, manualMs, now, thresholds)
 		stored[domain] = entry
-		return nil
+		return crossed
 	}
 	entry.State = result.State
 	entry.Status = result.Status
 	if result.State != domainStateOK || result.ExpiresAt <= 0 {
-		entry.ExpiresAt = 0
-		entry.NotifiedDays = nil
+		// A typed date and its history survive; applyManualDate keeps or drops
+		// them. A date the registry used to give is gone.
+		if !entry.Manual {
+			entry.ExpiresAt = 0
+			entry.NotifiedDays = nil
+		}
+		crossed := applyManualDate(&entry, manualMs, now, thresholds)
 		stored[domain] = entry
-		return nil
+		return crossed
 	}
-	if !existed || result.ExpiresAt > entry.ExpiresAt {
+	if !existed || entry.Manual || result.ExpiresAt > entry.ExpiresAt {
 		entry.NotifiedDays = nil
 	}
+	entry.Manual = false
 	entry.ExpiresAt = result.ExpiresAt
-
-	days := certDaysLeft(entry.ExpiresAt, now)
-	reached := 0
-	for _, threshold := range thresholds {
-		if days <= threshold && (reached == 0 || threshold < reached) {
-			reached = threshold
-		}
-	}
-	var crossed *HostDomain
-	if reached != 0 && !containsInt(entry.NotifiedDays, reached) {
-		for _, threshold := range thresholds {
-			if threshold >= reached && !containsInt(entry.NotifiedDays, threshold) {
-				entry.NotifiedDays = append(entry.NotifiedDays, threshold)
-			}
-		}
-		copied := entry
-		crossed = &copied
-	}
+	crossed := crossedThreshold(&entry, now, thresholds)
 	stored[domain] = entry
 	return crossed
 }
@@ -356,12 +442,18 @@ func summarizeDomains(stored map[string]HostDomain, enabled bool) DomainSummary 
 			// A lookup that failed keeps the date it had; with one, it is still watched.
 			if entry.ExpiresAt > 0 {
 				summary.Watched++
+			} else {
+				summary.Failed = append(summary.Failed, name)
 			}
 		case domainStateHidden, domainStateUnsupported:
 			summary.Watched++
+			if entry.Manual && entry.ExpiresAt > 0 {
+				continue
+			}
 			summary.NoDate = append(summary.NoDate, DomainNoDate{Domain: name, State: entry.State})
 		}
 	}
+	sort.Strings(summary.Failed)
 	sort.Slice(summary.NoDate, func(i, j int) bool { return summary.NoDate[i].Domain < summary.NoDate[j].Domain })
 	return summary
 }
@@ -439,6 +531,7 @@ func (h *Handlers) refreshDomainExpiry(ctx context.Context) {
 	now := time.Now()
 	thresholds := domainThresholdsFor(settings)
 
+	manual := manualDomainDates(settings)
 	stored := h.hostDomains()
 	var due []string
 	for name := range live {
@@ -479,7 +572,7 @@ func (h *Handlers) refreshDomainExpiry(ctx context.Context) {
 			if cache.Domains == nil {
 				cache.Domains = map[string]HostDomain{}
 			}
-			if hit := recordDomainResult(cache.Domains, name, result, err, time.Now(), thresholds); hit != nil {
+			if hit := recordDomainResult(cache.Domains, name, result, err, time.Now(), thresholds, manual[name]); hit != nil {
 				crossed = append(crossed, *hit)
 			}
 			if writeErr := writeHealthCacheFile(cache); writeErr != nil {
@@ -491,6 +584,11 @@ func (h *Handlers) refreshDomainExpiry(ctx context.Context) {
 	}
 	wg.Wait()
 
+	// Typed dates take hold at once for domains not looked up in this pass.
+	if hits, touched := h.reconcileManualDomains(live, manual, thresholds, due); touched {
+		changed = true
+		crossed = append(crossed, hits...)
+	}
 	if h.pruneDomains(live) {
 		changed = true
 	}
@@ -501,6 +599,50 @@ func (h *Handlers) refreshDomainExpiry(ctx context.Context) {
 		sort.Slice(crossed, func(i, j int) bool { return crossed[i].ExpiresAt < crossed[j].ExpiresAt })
 		h.dispatchMonitorNotifications(context.WithoutCancel(ctx), domainExpiryNotifications(crossed, time.Now()))
 	}
+}
+
+// reconcileManualDomains applies the typed-in dates to the stored entries that
+// were not just looked up, so an edit or a removal is recorded within one pass
+// and its warnings go out without waiting for the daily lookup.
+func (h *Handlers) reconcileManualDomains(live map[string]struct{}, manual map[string]int64, thresholds []int, skip []string) ([]HostDomain, bool) {
+	skipped := map[string]struct{}{}
+	for _, name := range skip {
+		skipped[name] = struct{}{}
+	}
+	h.healthCacheMu.Lock()
+	defer h.healthCacheMu.Unlock()
+	cache := readHealthCacheFile()
+	if len(cache.Domains) == 0 {
+		return nil, false
+	}
+	now := time.Now()
+	var crossed []HostDomain
+	touched := false
+	for name, entry := range cache.Domains {
+		if _, ok := live[name]; !ok {
+			continue
+		}
+		if _, ok := skipped[name]; ok {
+			continue
+		}
+		before := entry
+		hit := applyManualDate(&entry, manual[name], now, thresholds)
+		if entry.Manual != before.Manual || entry.ExpiresAt != before.ExpiresAt || len(entry.NotifiedDays) != len(before.NotifiedDays) {
+			cache.Domains[name] = entry
+			touched = true
+		}
+		if hit != nil {
+			crossed = append(crossed, *hit)
+		}
+	}
+	if !touched {
+		return nil, false
+	}
+	if err := writeHealthCacheFile(cache); err != nil {
+		logWarn(logComponentHealth, "the typed domain dates could not be saved (%v)", err)
+		return nil, false
+	}
+	return crossed, true
 }
 
 // pruneDomains drops domains no checked bookmark points at any more.
@@ -557,6 +699,35 @@ func (h *Handlers) StartDomainExpiryScheduler(stop <-chan struct{}) {
 	}()
 }
 
+// overlayManualDomains lays the typed-in dates over a copy of the stored
+// entries, for the report, so a date just typed shows at once instead of at the
+// next pass. Nothing is written; the pass records it and sends the warnings.
+// Only domains a checked bookmark points at count, as for the lookups.
+func overlayManualDomains(stored map[string]HostDomain, manual map[string]int64, live map[string]struct{}) map[string]HostDomain {
+	out := make(map[string]HostDomain, len(stored)+len(manual))
+	for name, entry := range stored {
+		// A typed date removed from settings drops out at once too.
+		if entry.Manual {
+			if _, ok := manual[name]; !ok {
+				applyManualDate(&entry, 0, time.Time{}, nil)
+			}
+		}
+		out[name] = entry
+	}
+	for name, ms := range manual {
+		if _, ok := live[name]; !ok {
+			continue
+		}
+		entry, existed := out[name]
+		if !existed {
+			entry = HostDomain{Domain: name, State: domainStateHidden}
+		}
+		applyManualDate(&entry, ms, time.Time{}, nil)
+		out[name] = entry
+	}
+	return out
+}
+
 // datedDomains is every domain with a date to count down to. Unlike the
 // certificates the report carries all of them, not only the ones near a
 // threshold: the widget's window is its own setting and can reach past the
@@ -568,7 +739,7 @@ func (h *Handlers) StartDomainExpiryScheduler(stop <-chan struct{}) {
 func datedDomains(stored map[string]HostDomain) map[string]HostDomain {
 	out := map[string]HostDomain{}
 	for name, entry := range stored {
-		if entry.ExpiresAt > 0 && (entry.State == domainStateOK || entry.State == domainStateError) {
+		if entry.ExpiresAt > 0 && (entry.State == domainStateOK || entry.State == domainStateError || entry.Manual) {
 			out[name] = entry
 		}
 	}

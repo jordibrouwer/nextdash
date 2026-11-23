@@ -584,6 +584,84 @@ class DashboardHealth {
      * read these fields belong to the monitor, so offering them elsewhere would
      * be a control that governs nothing.
      */
+    /** The hostname a bookmark's certificate is stored under, or ''. */
+    certHostOf(issue) {
+        const certHost = String(issue?.certHost || '').toLowerCase();
+        if (certHost) return certHost;
+        try {
+            return new URL(String(issue?.url || '')).hostname.toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    /**
+     * Per-host certificate warning: a stored value beats the global setting.
+     * Written to settings.certWarnByHost, so it covers every bookmark on the host.
+     */
+    renderCertWarnField(issue) {
+        const esc = (v) => this.escape(v);
+        const host = this.certHostOf(issue);
+        if (!host || !/^https:/i.test(String(issue?.url || ''))) return '';
+        const current = Number(this.dash.settings?.certWarnByHost?.[host]) || 0;
+        const opt = (value, label) => `<option value="${value}"${current === value ? ' selected' : ''}>${esc(label)}</option>`;
+        const ahead = (n) => this.t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', String(n));
+        return `
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="cert-warn-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCertWarnLabel', 'Certificate warning for {host}').replace('{host}', host))}</label>
+                    <select id="cert-warn-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-cert-warn data-cert-host="${esc(host)}">
+                        ${opt(0, this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}
+                        ${opt(-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired'))}
+                        ${[7, 14, 30, 60, 90].map((n) => opt(n, ahead(n))).join('')}
+                    </select>
+                    <span class="health-expect-note">${esc(this.t('dashboard.healthCertWarnNote',
+                        'Applies to every bookmark on this host and beats the global setting. Choose "Only when expired" for short-lived certificates that renew themselves.'))}</span>
+                </div>
+`;
+    }
+
+    /**
+     * Whether this row's registered domain can take a date typed by hand: the
+     * registry answered (or has no RDAP at all) and gave no date. A date from the
+     * registry always wins, so a domain that has one gets no field.
+     */
+    domainDateEditable(issue) {
+        if (this.dash.settings?.domainExpiry === false) return false;
+        const name = String(issue?.domain || '').toLowerCase();
+        if (!name) return false;
+        if (this.dash.settings?.domainExpiryManual?.[name]) return true;
+        if (this.report?.domains?.[name]?.manual) return true;
+        const summary = this.report?.domainSummary;
+        if (Array.isArray(summary?.failed) && summary.failed.includes(name)) return true;
+        const noDate = summary?.noDate;
+        return Array.isArray(noDate) && noDate.some((entry) => String(entry?.domain || '').toLowerCase() === name);
+    }
+
+    /**
+     * An expiry date typed in for a registry that publishes none (.nl, .de, .io,
+     * .be, .eu ...). Per registered domain, in settings.domainExpiryManual, so it
+     * covers every bookmark on the domain and warns like a registry date does.
+     */
+    renderDomainDateField(issue) {
+        if (!this.domainDateEditable(issue)) return '';
+        const esc = (v) => this.escape(v);
+        const name = String(issue.domain).toLowerCase();
+        const current = String(this.dash.settings?.domainExpiryManual?.[name] || '');
+        return `
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="domain-date-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthDomainDateLabel', 'Registration of {domain} expires on').replace('{domain}', name))}</label>
+                    <input type="date" id="domain-date-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-domain-date data-domain-name="${esc(name)}"
+                        value="${esc(current)}">
+                    <span class="health-expect-note">${esc(this.t('dashboard.healthDomainDateNote',
+                        'The registry does not publish this date, so nextDash cannot look it up. Enter it from your registrar and it warns like any other domain. Empty the field to remove it.'))}</span>
+                </div>
+`;
+    }
+
     renderExpectPanel(issue) {
         const esc = (v) => this.escape(v);
         const monitored = this.checkModeOf(issue) === window.CheckMode.MONITOR;
@@ -626,6 +704,10 @@ class DashboardHealth {
                         'Keys and passwords are kept in their own file, outside your backups. Manage them under Config → Health.'
                     ))}</span>
                 </div>
+
+                ${this.renderCertWarnField(issue)}
+
+                ${this.renderDomainDateField(issue)}
 
                 <div class="health-expect-toggles">
                     <label class="health-expect-check">
@@ -1841,6 +1923,42 @@ class DashboardHealth {
         const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();
         const credentialId = String(wrap.querySelector('[data-credential-id]')?.value || '').trim();
         const allowInsecureTls = Boolean(wrap.querySelector('[data-allow-insecure]')?.checked);
+
+        // Per host, in settings rather than on the bookmark.
+        const certSel = wrap.querySelector('[data-cert-warn]');
+        if (certSel) {
+            const host = String(certSel.dataset.certHost || '');
+            const value = Number(certSel.value) || 0;
+            const map = { ...(this.dash.settings.certWarnByHost || {}) };
+            if ((Number(map[host]) || 0) !== value) {
+                if (value) map[host] = value; else delete map[host];
+                this.dash.settings.certWarnByHost = map;
+                if ((await this.dash.saveSettings()) === false) {
+                    this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+                    return 'failed';
+                }
+            }
+        }
+
+        // Per registered domain, in settings, like the certificate rule above.
+        const domainInput = wrap.querySelector('[data-domain-date]');
+        if (domainInput) {
+            const name = String(domainInput.dataset.domainName || '').toLowerCase();
+            const value = String(domainInput.value || '').trim();
+            const previous = this.dash.settings.domainExpiryManual;
+            const map = { ...(previous || {}) };
+            if (String(map[name] || '') !== value) {
+                if (value) map[name] = value; else delete map[name];
+                // {} rather than a missing key: the server keeps what an omitted key held.
+                this.dash.settings.domainExpiryManual = map;
+                if ((await this.dash.saveSettings()) === false) {
+                    // Not saved: do not keep it locally, or the next save writes it.
+                    this.dash.settings.domainExpiryManual = previous;
+                    this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+                    return 'failed';
+                }
+            }
+        }
 
         window.nextdashTrack?.('health:expectations');
         this._busyKeys.add(key);

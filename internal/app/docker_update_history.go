@@ -45,6 +45,9 @@ type dockerUpdateHistoryEntry struct {
 	ToImageID   string `json:"toImageId"`
 	FromVersion string `json:"fromVersion,omitempty"`
 	ToVersion   string `json:"toVersion,omitempty"`
+	// By says who started it: auto, manual, compose or auto-rollback. Empty on
+	// entries written before this field existed: who did it is not known.
+	By string `json:"by,omitempty"`
 }
 
 // dockerRollbackOffer is what the drawer's Roll back button names.
@@ -143,10 +146,10 @@ func dockerImageVersion(ctx context.Context, api *dockerAPI, id string) string {
 	return img.Config.Labels["org.opencontainers.image.version"]
 }
 
-func (h *Handlers) recordDockerUpdate(ctx context.Context, api *dockerAPI, kind, name, image, fromID, toID string) {
+func (h *Handlers) recordDockerUpdate(ctx context.Context, api *dockerAPI, kind, name, image, fromID, toID, by string) {
 	e := dockerUpdateHistoryEntry{
 		At: time.Now().UnixMilli(), Kind: kind, Container: name, Image: image,
-		FromImageID: fromID, ToImageID: toID,
+		FromImageID: fromID, ToImageID: toID, By: by,
 		FromVersion: dockerImageVersion(ctx, api, fromID), ToVersion: dockerImageVersion(ctx, api, toID),
 	}
 	if err := appendDockerUpdateHistory(e); err != nil {
@@ -169,7 +172,7 @@ func dockerRollbackOfferFor(ctx context.Context, api *dockerAPI, history []docke
 
 // dockerRollbackUpdate puts a container back on the image its last update
 // replaced, and skips the version it leaves.
-func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c dockerContainerSummary) (dockerRecreateResult, error) {
+func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c dockerContainerSummary, by string) (dockerRecreateResult, error) {
 	res := dockerRecreateResult{OldImageID: c.ImageID, ContainerID: c.ID}
 	dockerStep(ctx, "check", "start")
 	in, err := api.inspectContainer(ctx, c.ID)
@@ -222,7 +225,7 @@ func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c d
 		_ = api.post(ctx, tagQuery(in.Image), nil)
 		return res, err
 	}
-	h.recordDockerUpdate(ctx, api, "rollback", c.name(), c.Image, in.Image, oldImg.ID)
+	h.recordDockerUpdate(ctx, api, "rollback", c.name(), c.Image, in.Image, oldImg.ID, by)
 	if parsed, ok := parseImageRef(ref); ok {
 		h.markDockerImageRolledBack(c.Image, localDigestFor(parsed, oldImg.RepoDigests), localDigestFor(parsed, newImg.RepoDigests))
 	}

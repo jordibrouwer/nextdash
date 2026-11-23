@@ -239,8 +239,10 @@ func Run(files assetFS) {
 	// New feature endpoints
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
+	r.HandleFunc("/api/live", handlers.LiveStream).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
 	r.HandleFunc("/api/net/capabilities", handlers.GetNetCapabilities).Methods("GET")
+	r.HandleFunc("/api/service", handlers.ServiceViewHandler).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.GetNetChecks).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.PutNetChecks).Methods("PUT")
 	r.HandleFunc("/api/net/history", handlers.GetNetHistory).Methods("GET")
@@ -297,6 +299,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/containers/{id}/health", handlers.DockerContainerHealthHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/timeline", handlers.DockerContainerTimelineHandler).Methods("GET")
 	r.HandleFunc("/api/docker/history", handlers.DockerHistoryHandler).Methods("GET")
+	r.HandleFunc("/api/timeline", handlers.TimelineHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/changelog", handlers.DockerChangelogHandler).Methods("GET")
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
@@ -411,7 +414,15 @@ func Run(files assetFS) {
 	registerGlancesViewRoutes(r, handlers)
 	r.HandleFunc("/api/widgets/homeassistant", handlers.homeAssistantWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/setup", handlers.homeAssistantSetupHandler).Methods("POST", "OPTIONS")
-	r.HandleFunc("/api/widgets/homeassistant/action", handlers.homeAssistantActionHandler).Methods("POST", "OPTIONS")
+	// One action route per widget type that can act (widgets_actions.go).
+	r.HandleFunc("/api/widgets/homeassistant/action", handlers.widgetActionHandler(WidgetTypeHomeAssistant)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/qbittorrent/action", handlers.widgetActionHandler(WidgetTypeQBittorrent)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/sabnzbd/action", handlers.widgetActionHandler(WidgetTypeSABnzbd)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/seerr/action", handlers.widgetActionHandler(WidgetTypeSeerr)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/sonarr/action", handlers.widgetActionHandler(WidgetTypeSonarr)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/radarr/action", handlers.widgetActionHandler(WidgetTypeRadarr)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/pihole/action", handlers.widgetActionHandler(WidgetTypePihole)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/adguard/action", handlers.widgetActionHandler(WidgetTypeAdguard)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
@@ -540,6 +551,9 @@ func Run(files assetFS) {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+	// Shutdown waits for handlers but never cancels their requests: end the
+	// live streams, or an open dashboard tab holds every restart for 15 seconds.
+	srv.RegisterOnShutdown(handlers.live.Close)
 
 	// Weekly automatic local backups (keeps the latest few, respects the setting).
 	schedulerStop := make(chan struct{})

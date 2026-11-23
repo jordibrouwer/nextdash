@@ -133,11 +133,13 @@ func parityRunErrors(p *UnraidParityView, started time.Time, waited time.Duratio
 }
 
 // pickUnraidWatcher decides which watcher a tick uses. Anything that is not
-// "the same server, still switched on" -- another address, the alert switch
-// off, the server disabled or gone -- gets a fresh one, so the next look only
-// remembers and one server's history is never replayed as another's news.
+// "the same server, still enabled" -- another address, the server disabled or
+// gone -- gets a fresh one, so the next look only remembers and one server's
+// history is never replayed as another's news. The alert switch does not
+// matter here: the server is watched for the timeline either way, and the
+// switch only decides whether what it finds is sent on.
 func pickUnraidWatcher(w *unraidWatcher, lastBase string, srv UnraidServer, ok bool) (*unraidWatcher, string, bool) {
-	if !ok || !srv.Notify {
+	if !ok {
 		return newUnraidWatcher(), "", false
 	}
 	if w == nil || srv.BaseURL != lastBase {
@@ -200,8 +202,9 @@ func unraidPushTag(n monitorNotification) string {
 	return fmt.Sprintf("nextdash-unraid-%s-%08x", n.Event, h.Sum32())
 }
 
-// StartUnraidWatcher looks at the active server once a minute while its alert
-// switch is on, and sends what changed through the alert channels.
+// StartUnraidWatcher looks at the active server once a minute. What it finds is
+// always written for the timeline; it goes out through the alert channels only
+// while the server's alert switch is on.
 func (h *Handlers) StartUnraidWatcher(stop <-chan struct{}) {
 	go func() {
 		w := newUnraidWatcher()
@@ -220,14 +223,14 @@ func (h *Handlers) StartUnraidWatcher(stop <-chan struct{}) {
 			if !active {
 				continue
 			}
-			h.unraidWatchTick(w)
+			h.unraidWatchTick(w, srv.Notify)
 		}
 	}()
 }
 
 // unraidWatchTick is one look. A panic in it is logged and the next tick goes
 // on: this runs for the life of the process.
-func (h *Handlers) unraidWatchTick(w *unraidWatcher) {
+func (h *Handlers) unraidWatchTick(w *unraidWatcher, notify bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			logWarn(logComponentNotify, "an Unraid look failed and was skipped: %v", r)
@@ -258,5 +261,15 @@ func (h *Handlers) unraidWatchTick(w *unraidWatcher) {
 	// remembered as seen, with nothing to be sent on.
 	dctx, dcancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer dcancel()
-	h.dispatchUnraidNotices(dctx, notices)
+	h.recordAndDispatchUnraid(dctx, notices, notify, time.Now())
+}
+
+// recordAndDispatchUnraid writes what the watcher found down for the timeline,
+// whatever the alert switch says, and sends it on only while the switch is on.
+func (h *Handlers) recordAndDispatchUnraid(ctx context.Context, notices []monitorNotification, notify bool, now time.Time) {
+	recordUnraidEvents(notices, now)
+	if !notify {
+		return
+	}
+	h.dispatchUnraidNotices(ctx, notices)
 }

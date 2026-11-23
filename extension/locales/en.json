@@ -63,7 +63,7 @@
   "previewLinkLabel": "Link preview",
   "previewRefresh": "Refresh",
   "previewClear": "Clear",
-  "previewEmpty": "No preview metadata yet — refresh to fetch title, description and image.",
+  "previewEmpty": "No preview metadata yet. Refresh to fetch title, description and image.",
   "previewNoUrl": "Enter a URL first.",
   "previewRefreshed": "Link preview updated.",
   "previewRefreshFailed": "Could not fetch link preview.",

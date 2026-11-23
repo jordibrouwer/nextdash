@@ -55,7 +55,11 @@ func (h *Handlers) runTLS(ctx context.Context, g netGuard, t netTarget, c NetChe
 		return res
 	}
 	res.OK = true
-	res.Detail = fmt.Sprintf("%s, %s", out.Version, tlsDaysPhrase(out.DaysLeft))
+	version := out.Version
+	if out.StartTLS != "" {
+		version += " via " + out.StartTLS + " STARTTLS"
+	}
+	res.Detail = fmt.Sprintf("%s, %s", version, tlsDaysPhrase(out.DaysLeft))
 	if out.DaysLeft <= minDays {
 		res.Warn = true
 		res.Detail = tlsDaysPhrase(out.DaysLeft)
@@ -79,8 +83,10 @@ func tlsDaysPhrase(days int) string {
 func tlsHandshakeSentence(err error) string {
 	msg := err.Error()
 	switch {
+	case errors.Is(err, errStartTLSRefused):
+		return "The server did not accept STARTTLS: " + truncateNetDetail(strings.TrimPrefix(msg, errStartTLSRefused.Error()+": "))
 	case strings.Contains(msg, "first record does not look like a TLS handshake"):
-		return "This port does not speak TLS. A mail or similar port may use STARTTLS, which is not supported."
+		return "This port does not speak TLS, and it did not greet like an SMTP, IMAP, POP3 or FTP server that offers STARTTLS."
 	case strings.Contains(msg, "protocol version"):
 		return "The server only offers a TLS version older than 1.2, which is not supported."
 	}

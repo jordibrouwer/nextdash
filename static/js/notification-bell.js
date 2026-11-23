@@ -10,7 +10,8 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset, sound, animation })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset, sound, silent, animation })
+ *   (`silent: true` for a source that rings by itself: its fresh row shakes the bell but adds no tone)
  *   (`sound: 'chime'` gives a row's arrival a softer tone than the default bell,
  *   `animation: 'news'` a nod with a paper sliding in instead of the alarm swing)
  *     -> { refresh(), unregister() }
@@ -29,10 +30,10 @@
  * that was already read. A throwing onRead is logged and ignored.
  *
  * The bell also draws the eye: a shake and a pulse when something unread is
- * there on load, a shake, a pulse and a short bell tone when a refresh finds
+ * there on load, a shake, a pulse and a short three-note bell tone when a refresh finds
  * more unread than the one before (the tone follows the `bellSound` setting),
  * and, while anything stays unread, a pulse every 20 seconds and a shake every
- * 90 seconds. The tone sounds at most once per five minutes.
+ * 90 seconds. The tone sounds at most once per five minutes, except for an urgent row, which always rings.
  *
  * `onReset()` is optional and undoes what onNo did: called by
  * `NotificationBell.resetDismissed()` for each source whose forever "No" it
@@ -44,6 +45,8 @@
 
     const FIRST_REFRESH_MS = 3000;
     const REFRESH_EVERY_MS = 5 * 60 * 1000;
+    // The longest the bell waits between looks while the live channel is up.
+    const LIVE_FALLBACK_MS = 15 * 60 * 1000;
     // While something is unread the badges pulse every 20 seconds and the bell
     // shakes every 90 seconds, until the row is read or answered.
     const REMINDER_EVERY_MS = 20 * 1000;
@@ -51,6 +54,8 @@
     // No more than one notification tone per five minutes.
     const SOUND_EVERY_MS = 5 * 60 * 1000;
     const SOUND_KEY = 'nextdash-bell-sound-at';
+    const URGENT_KEY = 'nextdash-bell-urgent-rung';
+    const URGENT_KEEP_MS = 10 * 60 * 1000;
     const Model = global.NotificationBellModel;
     const States = () => global.DiscoverabilityState;
 
@@ -66,6 +71,7 @@
     let looked = true;         // the panel was opened since the last shake
     let audioCtx = null;
     let lastSoundAt = 0;
+    let urgentRung = {};   // row key -> time of its tone, when storage is not there
     let lastAnim = { kind: 'none', at: 0 };   // the last thing that drew the eye, for analytics
 
     const GROUP_FALLBACK = {
@@ -170,24 +176,21 @@
         return audioCtx;
     }
 
-    /** A short bell: three sine partials, a quick attack and about a second of decay. */
+    /** The bell: three rising notes (C, E, G) on a triangle wave, with a soft high C on top. */
     function ring(ctx) {
         const now = ctx.currentTime;
-        const master = ctx.createGain();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(0.2, now + 0.008);
-        master.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
-        master.connect(ctx.destination);
-        [[660, 1], [1320, 0.45], [1980, 0.2]].forEach(([freq, level]) => {
+        [[523, 0, 0.5, 0.18, 'triangle'], [659, 0.11, 0.5, 0.18, 'triangle'], [784, 0.22, 0.5, 0.18, 'triangle'], [1047, 0.22, 0.6, 0.08, 'sine']].forEach(([freq, delay, length, level, type]) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'sine';
+            osc.type = type;
             osc.frequency.value = freq;
-            gain.gain.value = level;
+            gain.gain.setValueAtTime(0.0001, now + delay);
+            gain.gain.exponentialRampToValueAtTime(level, now + delay + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + length);
             osc.connect(gain);
-            gain.connect(master);
-            osc.start(now);
-            osc.stop(now + 1.2);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + length + 0.05);
         });
     }
 
@@ -225,7 +228,8 @@
      * time of the last tone lives in localStorage so several tabs and reloads
      * share one budget; without storage it falls back to this page's memory.
      * The slot is taken before the audio wakes, so a tone the browser keeps
-     * shut still uses it and a burst cannot queue up behind it.
+     * shut still uses it and a burst cannot queue up behind it. An urgent row
+     * is the exception: see claimUrgent.
      */
     function claimSoundSlot() {
         const now = Date.now();
@@ -238,12 +242,33 @@
     }
 
     /**
-     * Play a tone: the bell by default, or another by name ('chime'). A browser
+     * An urgent row rings whatever the slot says, but once per row: the keys
+     * already rung live in localStorage, so several tabs that all see the same
+     * new row make one tone, not one each. True when any of the keys is new.
+     */
+    function claimUrgent(keys) {
+        const now = Date.now();
+        let seen = urgentRung;
+        try { seen = { ...seen, ...JSON.parse(localStorage.getItem(URGENT_KEY) || '{}') }; } catch { /* memory only */ }
+        Object.keys(seen).forEach((k) => { if (!(now - seen[k] < URGENT_KEEP_MS)) delete seen[k]; });
+        const isNew = keys.some((k) => !(k in seen));
+        keys.forEach((k) => { if (!(k in seen)) seen[k] = now; });
+        urgentRung = seen;
+        try { localStorage.setItem(URGENT_KEY, JSON.stringify(seen)); } catch { /* memory only */ }
+        return isNew;
+    }
+
+    /**
+     * Play a tone: the bell by default, or another by name ('chime'). Pass the
+     * keys of the fresh urgent rows to ring past the five-minute limit. A browser
      * keeps audio shut until the page has been touched; when the context will
      * not wake, this stays silent.
      */
-    async function playSound(tone = 'bell') {
-        if (!claimSoundSlot()) return;
+    async function playSound(tone = 'bell', urgentKeys = [], opts = {}) {
+        const urgent = Boolean(urgentKeys.length && claimUrgent(urgentKeys));
+        // `free`: an urgent tone of a source's own (the timer's chime) leaves the shared slot alone.
+        const slot = opts.free && urgent ? true : claimSoundSlot();
+        if (!urgent && !slot) return;
         try {
             const ctx = context();
             if (!ctx) return;
@@ -296,9 +321,12 @@
         pulse();
         // A source may name its own tone (`sound: 'chime'`); when anything fresh
         // is not such a row, or two sources differ, the plain bell sounds.
-        const tones = new Set(fresh.map((r) => r.source.sound || 'bell'));
+        // A source that makes its own sound (`silent: true`, the timer) adds none here.
+        const sounding = fresh.filter((r) => !r.source.silent);
+        if (!sounding.length) return;
+        const tones = new Set(sounding.map((r) => r.source.sound || 'bell'));
         const tone = tones.size === 1 ? [...tones][0] : 'bell';
-        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone);
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, sounding.filter((r) => r.kind === 'urgent').map(rowKey));
     }
 
     function remind() {
@@ -658,8 +686,16 @@
         entry.at = at;
     }
 
-    async function refreshAll() {
-        await Promise.all([...sources.values()].map(refreshOne));
+    /**
+     * Look at every source. With `skipLive`, leave out the sources the live
+     * channel keeps current (`live: true`): the health row and the net rows. The
+     * rest have no ping and no timer of their own, so they still need this one.
+     */
+    async function refreshAll(opts) {
+        const skipLive = opts?.skipLive === true;
+        await Promise.all([...sources.values()]
+            .filter((rec) => !(skipLive && rec.source.live))
+            .map(refreshOne));
         changed();
         const { red, grey } = counts();
         noticeUnread(red + grey);
@@ -798,8 +834,23 @@
 
     function startTimers() {
         setTimeout(refreshAll, FIRST_REFRESH_MS);
-        const tick = () => { if (document.visibilityState === 'visible') refreshAll(); };
-        timer = setInterval(tick, REFRESH_EVERY_MS);
+        let lastAt = Date.now();
+        const tick = () => {
+            if (document.visibilityState !== 'visible') return;
+            lastAt = Date.now();
+            refreshAll();
+        };
+        // While the live channel is connected a ping brings the health and net
+        // news, so those two only get looked at every LIVE_FALLBACK_MS as the
+        // safety net. Everything else keeps the five-minute pace.
+        const slowTick = () => {
+            if (global.LiveChannel?.connected && Date.now() - lastAt < LIVE_FALLBACK_MS - 1000) {
+                if (document.visibilityState === 'visible') refreshAll({ skipLive: true });
+                return;
+            }
+            tick();
+        };
+        timer = setInterval(slowTick, REFRESH_EVERY_MS);
         document.addEventListener('visibilitychange', tick);
         setInterval(remind, REMINDER_EVERY_MS);
         setInterval(nag, NAG_EVERY_MS);

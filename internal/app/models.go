@@ -377,6 +377,8 @@ type Category struct {
 	Spread     bool   `json:"spread,omitempty"`     // May run across several grid columns; how many follows from the item limit
 	View       string `json:"view,omitempty"`       // How the bookmarks are drawn: empty is rows, "tiles" is a grid of icons; see category_view.go
 	VisibleOn  string `json:"visibleOn,omitempty"`  // Where it shows: empty is every screen, "desktop" or "mobile"; see visible_on.go
+	// Dividers are label rows between the bookmarks; see category_dividers.go.
+	Dividers []CategoryDivider `json:"dividers,omitempty"`
 }
 
 type Page struct {
@@ -854,7 +856,16 @@ type Settings struct {
 	DetectSoftNotFound         bool   `json:"detectSoftNotFound"`       // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
 	DomainExpiry               bool   `json:"domainExpiry"`             // Look up when the domains of checked bookmarks expire, through the registries' public RDAP service. On by default; each lookup sends one domain name to the registry of its extension.
 	DomainWarnDays             int    `json:"domainWarnDays,omitempty"` // How many days before expiry a domain starts warning. 0 means the built-in 60; clamped to 8–180 on save. A week and three days follow.
-	CertWarnDays               int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	// DomainExpiryManual is an expiry date typed in by hand for a registrable
+	// domain (lower-cased), as "YYYY-MM-DD". Used only while the registry gives
+	// no date of its own (.nl, .de, .io, .be, .eu); a date from the registry wins.
+	DomainExpiryManual map[string]string `json:"domainExpiryManual,omitempty"`
+	CertWarnDays       int               `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save; -1 means warn only once expired (for short-lived, auto-renewed certificates). The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	// CertWarnByHost overrides CertWarnDays for one host (lower-cased), same
+	// values: -1 only once expired, 3–120 days ahead. Absent or 0 follows the
+	// global. Set from a bookmark's Expectations panel; a certificate belongs to
+	// a host, so every bookmark on it shares the entry.
+	CertWarnByHost map[string]int `json:"certWarnByHost,omitempty"`
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -3431,6 +3442,7 @@ func (fs *FileStore) saveCategoriesByPageLocked(pageID int, categories []Categor
 		categories[i].Name = clampEntityName(categories[i].Name)
 		categories[i].View = normalizeCategoryView(categories[i].View)
 		categories[i].VisibleOn = normalizeVisibleOn(categories[i].VisibleOn)
+		categories[i].Dividers = normalizeCategoryDividers(categories[i].Dividers)
 	}
 	fs.ensureDataDir()
 
@@ -5918,7 +5930,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 	}
 	// Same shape: 0 means the built-in 30 days, anything else is held inside a
 	// range where a renewal reminder is still a reminder.
-	if settings.CertWarnDays != 0 {
+	if settings.CertWarnDays != 0 && settings.CertWarnDays != certWarnExpiredOnly {
 		if settings.CertWarnDays < certWarnDaysMin {
 			settings.CertWarnDays = certWarnDaysMin
 		}
@@ -5926,6 +5938,23 @@ func (fs *FileStore) getSettingsShared() Settings {
 			settings.CertWarnDays = certWarnDaysMax
 		}
 	}
+	for host, v := range settings.CertWarnByHost {
+		key := certHostKey(host)
+		switch {
+		case key == "" || v == 0:
+			delete(settings.CertWarnByHost, host)
+			continue
+		case v != certWarnExpiredOnly && v < certWarnDaysMin:
+			v = certWarnDaysMin
+		case v > certWarnDaysMax:
+			v = certWarnDaysMax
+		}
+		if key != host {
+			delete(settings.CertWarnByHost, host)
+		}
+		settings.CertWarnByHost[key] = v
+	}
+	settings.DomainExpiryManual = sanitizeDomainExpiryManual(settings.DomainExpiryManual)
 	if settings.DomainWarnDays != 0 {
 		if settings.DomainWarnDays < domainWarnDaysMin {
 			settings.DomainWarnDays = domainWarnDaysMin
@@ -7295,6 +7324,9 @@ type DomainSummary struct {
 	Enabled bool           `json:"enabled"`
 	Watched int            `json:"watched"`
 	NoDate  []DomainNoDate `json:"noDate,omitempty"`
+	// Failed names the domains whose lookup failed and that have no date yet.
+	// Not shown as "no date", but they can still be given one by hand.
+	Failed []string `json:"failed,omitempty"`
 }
 
 // DomainNoDate names a domain with nothing to count down to, and why.
@@ -7382,7 +7414,10 @@ type HealthScanCacheFile struct {
 // www.example.com are one registration and one renewal.
 type HostDomain struct {
 	Domain    string `json:"domain"`
-	ExpiresAt int64  `json:"expiresAt,omitempty"` // Unix ms; 0 when the registry gives no date
+	ExpiresAt int64  `json:"expiresAt,omitempty"` // Unix ms; 0 when there is no date
+	// Manual says ExpiresAt is the date typed in by hand (Settings.DomainExpiryManual)
+	// because the registry gives none. State still says what the registry does.
+	Manual bool `json:"manual,omitempty"`
 	// State is ok, hidden (the registry answers but publishes no expiry date, as
 	// .nl does), unsupported (the extension has no RDAP service) or error (the
 	// last lookup failed and will be tried again).

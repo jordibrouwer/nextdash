@@ -1,6 +1,9 @@
 package app
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 /*
 AdGuard Home: queries, what is blocked and who asks, on the DNS tile.
@@ -25,6 +28,8 @@ type adguardStats struct {
 type adguardStatus struct {
 	Version    string `json:"version"`
 	Protection *bool  `json:"protection_enabled"`
+	// DisabledDuration is the milliseconds left of a timed pause, 0 for none.
+	DisabledDuration int64 `json:"protection_disabled_duration"`
 }
 
 // adguardTop merges the single-key maps AdGuard uses for a list.
@@ -69,6 +74,9 @@ func (h *Handlers) fetchAdguard(ctx context.Context, spec dnsSpec, credential He
 	var status adguardStatus
 	if err := h.dnsGetJSON(ctx, spec.Server, credential, "/control/status", &status); err == nil {
 		dns.Protection = status.Protection
+		if status.Protection != nil && !*status.Protection && status.DisabledDuration > 0 {
+			dns.PausedUntil = time.Now().UnixMilli() + status.DisabledDuration
+		}
 		dns.Version = status.Version
 	} else {
 		dns.Partial = true

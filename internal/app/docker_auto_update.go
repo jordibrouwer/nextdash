@@ -217,7 +217,7 @@ func (h *Handlers) autoUpdateOne(ctx context.Context, api *dockerAPI, c dockerCo
 	if outcome.Phase != "done" {
 		return true
 	}
-	h.recordDockerUpdate(nctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+	h.recordDockerUpdate(nctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID, "auto")
 	// A stopped container is updated and stays stopped, as it was: there is
 	// nothing to watch, and the watch read its "created" state as a failed
 	// update, rolled it back and skipped the new version, every night.
@@ -321,7 +321,7 @@ func (h *Handlers) rollBackAutoUpdate(ctx context.Context, api *dockerAPI, name,
 		}
 	}
 	dockerNotifications.expect(name, time.Now().Add(dockerActionTimeout))
-	res, err := h.dockerRollbackUpdate(ctx, api, *c)
+	res, err := h.dockerRollbackUpdate(ctx, api, *c, "auto-rollback")
 	// The container was running when the update began, and the rollback
 	// recreates it from the failed one's state -- exited, most of the time -- so
 	// the old version came back created but never started, and a restart policy

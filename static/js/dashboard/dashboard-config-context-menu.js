@@ -183,6 +183,9 @@ class DashboardConfigContextMenu {
                 ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢', key: 'L' }] : []),
             ]),
             ...group(filterItems),
+            ...(window.DashboardServiceLoader?.isService?.(c.dash, bookmark)
+                ? group([{ id: 'service', label: window.DashboardServiceLoader.text(c.dash, 'menuOpen', 'Service overview'), icon: '◈' }])
+                : []),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ];
     }

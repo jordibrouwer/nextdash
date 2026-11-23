@@ -347,13 +347,16 @@ class DashboardDocker {
         history.replaceState(history.state, '', next);
     }
 
-    async openDockerView({ select, section, filter } = {}) {
+    async openDockerView({ select, section, filter, host } = {}) {
         const d = this.dash;
-        // A container picked from search or the palette is one of this host's.
-        if (select && this.isRemote()) {
-            if (d.activeView === DashboardDocker.VIEW) await this.switchHost('local');
+        // A container picked from search or the palette is one of this host's;
+        // one picked on the Service overview names its host, and the view goes there.
+        // Before the hosts are loaded the id is taken as given: loadHosts() sends the view home when it is gone.
+        const wanted = host && (!this.hosts.length || this.hosts.some((h) => h.id === host)) ? host : 'local';
+        if (select && this.hostId !== wanted) {
+            if (d.activeView === DashboardDocker.VIEW) await this.switchHost(wanted);
             else {
-                this.hostId = 'local';
+                this.hostId = wanted;
                 this.persistHost();
                 this.applyHost();
             }
@@ -2461,7 +2464,8 @@ class DashboardDocker {
             a.textContent = webui.label;
             webuiCell.appendChild(a);
         }
-        const linked = window.DockerSearchIndex?.bookmarkFor?.(c, this.dash.allBookmarks);
+        const index = window.DockerSearchIndex;
+        const linked = index?.bookmarkFor?.(index.onActiveHost?.(c) || c, this.dash.allBookmarks);
         // After the link, so the addresses keep one left edge down the column.
         if (linked) webuiCell.appendChild(this.bookmarkDot(linked));
         if (this.showsColumn('webui')) tr.appendChild(webuiCell);

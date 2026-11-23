@@ -1268,6 +1268,7 @@ class DashboardRenderCore {
         stack: 'Tabs',
         clock: 'Clock',
         countdown: 'Countdown',
+        timer: 'Timer',
         'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',
@@ -1712,6 +1713,11 @@ class DashboardRenderCore {
         const d = this.dash;
         this.destroyCategoryReorderInstances();
 
+        // Label rows between the bookmarks, before the lists get their drag
+        // handlers: both render paths end here.
+        window.DashboardCategoryDividers?.bind?.(d);
+        window.DashboardCategoryDividers?.decorate?.(d);
+
         if (typeof DragReorder === 'undefined') {
             return;
         }
@@ -1767,6 +1773,8 @@ class DashboardRenderCore {
                 onReorder: () => {
                     window.nextdashTrack?.('bookmark:reorder');
                     this.syncBookmarksFromDom();
+                    // A row dragged across a label changes group: read the slots back.
+                    window.DashboardCategoryDividers?.syncFromDom?.(d);
                 }
             });
 

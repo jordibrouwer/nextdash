@@ -22,6 +22,29 @@ class SearchCommandsComponent {
         { id: 'assistantTutorialV1', labelKey: 'config.tourAssistant', label: 'AI Assistant' },
     ];
 
+    /*
+     * Other names a command answers to, spelled as typed, mapped to the one
+     * name the palette lists. Also what the typo fallback measures against,
+     * so ":langauge" finds LANG and one command is never offered twice.
+     */
+    static COMMAND_ALIASES = {
+        favicon: 'favicons',
+        duplicate: 'duplicates',
+        previews: 'preview',
+        unpin: 'pin',
+        help: 'cheat',
+        'whats-new': 'whatsnew',
+        cat: 'category',
+        language: 'lang',
+        animation: 'animations',
+        'lock-layout': 'locklayout',
+        feeds: 'news',
+        keylegend: 'legend',
+        themes: 'studio',
+        collection: 'collections',
+        actionbar: 'action',
+    };
+
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
         this.language = language;
         this.updateQueryCallback = updateQueryCallback;
@@ -84,7 +107,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'service', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
             },
         ];
         // Which groups the reader has closed. All are open to begin with: a bare
@@ -181,6 +204,7 @@ class SearchCommandsComponent {
             'find': this.handleFindCommand.bind(this),
             'health': this.handleHealthCommand.bind(this),
             'docker': this.handleDockerCommand.bind(this),
+            'service': this.handleServiceCommand.bind(this),
             'glances': this.handleGlancesCommand.bind(this),
             'dark': this.handleDarkCommand.bind(this),
             'title': this.handleTitleCommand.bind(this),
@@ -339,6 +363,7 @@ class SearchCommandsComponent {
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
+        { id: 'timeline', labelKey: 'config.sectionTimeline', fallback: 'Timeline' },
         { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
@@ -689,20 +714,7 @@ class SearchCommandsComponent {
         const parts = afterColon.split(/\s+/);
         let potentialCommand = parts[0].toLowerCase();
         // Accept common aliases but keep a single canonical command in palette lists.
-        if (potentialCommand === 'favicon') potentialCommand = 'favicons';
-        if (potentialCommand === 'duplicate') potentialCommand = 'duplicates';
-        if (potentialCommand === 'previews') potentialCommand = 'preview';
-        if (potentialCommand === 'unpin') potentialCommand = 'pin';
-        if (potentialCommand === 'help') potentialCommand = 'cheat';
-        if (potentialCommand === 'whats-new') potentialCommand = 'whatsnew';
-        if (potentialCommand === 'cat') potentialCommand = 'category';
-        if (potentialCommand === 'language') potentialCommand = 'lang';
-        if (potentialCommand === 'animation') potentialCommand = 'animations';
-        if (potentialCommand === 'lock-layout') potentialCommand = 'locklayout';
-        if (potentialCommand === 'feeds') potentialCommand = 'news';
-        if (potentialCommand === 'keylegend') potentialCommand = 'legend';
-        if (potentialCommand === 'themes') potentialCommand = 'studio';
-        if (potentialCommand === 'collection') potentialCommand = 'collections';
+        potentialCommand = SearchCommandsComponent.COMMAND_ALIASES[potentialCommand] || potentialCommand;
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
         const tagShorthand = potentialCommand.match(/^tag:(.+)$/i);
@@ -732,7 +744,81 @@ class SearchCommandsComponent {
             }));
         }
 
-        return [];
+        // Nothing starts with it: a slip of the fingers (":dokcer") still finds
+        // the command it was meant to be.
+        return this.suggestCommandsForTypo(potentialCommand, 3, parts.slice(1).join(' '));
+    }
+
+    /**
+     * Commands within a typing slip of an unknown word.
+     *
+     * One swapped, missing, extra or wrong letter counts as one slip; a short
+     * word gets one slip, a longer one two. The word is also held against the
+     * front of each name, so a half-typed ":dokc" still points at ":docker".
+     *
+     * @param {string} word what was typed after the colon, lowercase
+     * @param {number} limit how many rows to hand back
+     * @param {string} rest arguments typed after the word, kept on the completion
+     * @returns {Array} "did you mean" rows, closest first
+     */
+    suggestCommandsForTypo(word, limit = 3, rest = '') {
+        const typed = String(word || '').toLowerCase();
+        if (typed.length < 3) return [];
+        const allowed = typed.length <= 4 ? 1 : 2;
+        const phone = window.MobileExperience?.isPhoneLayout?.() === true;
+        const aliases = SearchCommandsComponent.COMMAND_ALIASES;
+        // Every spelling the palette answers to, each pointing at the name it lists.
+        const spellings = new Map();
+        for (const name of Object.keys(this.availableCommands)) {
+            spellings.set(name, aliases[name] || name);
+        }
+        for (const [alias, canonical] of Object.entries(aliases)) {
+            if (Object.prototype.hasOwnProperty.call(this.availableCommands, canonical)) {
+                spellings.set(alias, canonical);
+            }
+        }
+        // Best distance per listed command, so an alias never adds a second row.
+        const best = new Map();
+        for (const [spelling, canonical] of spellings) {
+            if (phone && canonical === 'ask') continue;
+            const whole = SearchCommandsComponent._editDistance(typed, spelling);
+            const front = SearchCommandsComponent._editDistance(typed, spelling.slice(0, typed.length));
+            // A prefix match is weaker than a whole-name match: it costs a slip more.
+            const distance = Math.min(whole, front + 1);
+            if (distance <= allowed && distance < (best.get(canonical) ?? Infinity)) {
+                best.set(canonical, distance);
+            }
+        }
+        const scored = [...best].map(([name, distance]) => ({ name, distance }));
+        scored.sort((a, b) => a.distance - b.distance || a.name.length - b.name.length || a.name.localeCompare(b.name));
+        const hint = this._t('commands.didYouMean', 'Did you mean');
+        const tail = rest ? ` ${rest}` : ' ';
+        return scored.slice(0, limit).map(({ name }) => ({
+            name: '',
+            shortcut: `:${name.toUpperCase()}`,
+            completion: `:${name.toUpperCase()}${tail}`,
+            meta: hint,
+            type: 'command-completion',
+        }));
+    }
+
+    /** Damerau-Levenshtein distance: a swap of two neighbours is one slip. */
+    static _editDistance(a, b) {
+        const rows = a.length + 1;
+        const cols = b.length + 1;
+        const d = Array.from({ length: rows }, () => new Array(cols).fill(0));
+        for (let i = 0; i < rows; i++) d[i][0] = i;
+        for (let j = 0; j < cols; j++) d[0][j] = j;
+        for (let i = 1; i < rows; i++) {
+            for (let j = 1; j < cols; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+                if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                    d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+                }
+            }
+        }
+        return d[a.length][b.length];
     }
 
     /**
@@ -4371,6 +4457,73 @@ class SearchCommandsComponent {
                     return { navigate: true };
                 },
             }));
+    }
+
+    /**
+     * :service, :service <text>: the Service overview of a bookmark (any http or
+     * https one) or of a container, found by name. The page works out the
+     * rest -- the container of a bookmark, the bookmark of a container.
+     */
+    handleServiceCommand(args) {
+        const dash = window.dashboardInstance;
+        if (!dash?.service) return [];
+        const text = args.join(' ').trim().toLowerCase();
+        const seen = new Set();
+        const pool = [...(dash.bookmarks || []).map((b) => ({ ...b, pageId: b.pageId ?? dash.currentPageId })), ...(dash.allBookmarks || [])]
+            .filter((b) => b && /^https?:\/\//i.test(String(b.url || '')))
+            .filter((b) => {
+                const key = String(b.url);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        const context = this.contextBookmark && /^https?:\/\//i.test(String(this.contextBookmark.url || '')) ? this.contextBookmark : null;
+        const open = (opts) => () => {
+            this._closeCommandPalette();
+            void dash.service.openServiceView(opts);
+            return { navigate: true };
+        };
+        const bookmarkRow = (b) => ({
+            name: `${b.name || b.url} — ${this._t('service.paletteOpen', 'Service overview')}`,
+            shortcut: ':SERVICE',
+            type: 'command',
+            action: open({ url: b.url, page: b.pageId }),
+        });
+        let hits;
+        if (!text) {
+            hits = (context ? [context] : []).concat([...pool].sort((a, z) => (z.openCount || 0) - (a.openCount || 0)));
+        } else {
+            hits = pool.filter((b) => String(b.name || '').toLowerCase().includes(text) || String(b.url).toLowerCase().includes(text));
+        }
+        const rows = hits.slice(0, 8).map(bookmarkRow);
+        // A container with no bookmark is a service too.
+        const index = window.DockerSearchIndex;
+        if (text && index && index.enabled?.() !== false && typeof index.match === 'function') {
+            const taken = new Set(rows.map((r) => r.name));
+            index.match(text, 5).forEach((c) => {
+                const linked = index.bookmarkFor?.(c, dash.allBookmarks || []);
+                if (linked && hits.some((b) => b.url === linked.bookmark.url)) return;
+                const name = `${c.name} — ${this._t('service.paletteContainer', 'Service overview (container)')}`;
+                if (!taken.has(name)) rows.push({ name, shortcut: ':SERVICE', type: 'command', action: open({ container: c.name }) });
+            });
+        }
+        // The Containers view is showing another Docker host: its containers
+        // are services too, and the palette is the one place the view's own
+        // list is at hand. They name their host, since "postgres" can be on two.
+        const remoteHost = window.dockerActiveHost?.();
+        const remoteList = remoteHost ? dash.docker?.instance?.containers : null;
+        if (text && Array.isArray(remoteList)) {
+            const hostName = dash.docker.instance.currentHost?.()?.name || remoteHost;
+            remoteList.filter((c) => index?.matches?.(c, text)).slice(0, 5).forEach((c) => {
+                rows.push({
+                    name: `${c.name} — ${this._t('service.paletteContainerOn', 'Service overview (container on {host})').replace('{host}', hostName)}`,
+                    shortcut: ':SERVICE',
+                    type: 'command',
+                    action: open({ container: c.name, host: remoteHost }),
+                });
+            });
+        }
+        return rows.slice(0, 10);
     }
 
     /**

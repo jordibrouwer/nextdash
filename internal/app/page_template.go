@@ -355,6 +355,7 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			Spread:    category.Spread,
 			View:      normalizeCategoryView(category.View),
 			VisibleOn: normalizeVisibleOn(category.VisibleOn),
+			Dividers:  templateDividers(category.Dividers),
 		})
 	}
 
@@ -655,6 +656,7 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 			SortMode: category.SortMode, Spread: category.Spread,
 			View:      normalizeCategoryView(category.View),
 			VisibleOn: normalizeVisibleOn(category.VisibleOn),
+			Dividers:  templateDividers(category.Dividers),
 		}))
 	}
 

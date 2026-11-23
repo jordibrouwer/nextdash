@@ -55,6 +55,7 @@
         if (handle || !global.NotificationBell) return;
         handle = global.NotificationBell.register({
             id: 'health-outage',
+            live: true, // the live channel keeps it current
             group: 'health',
             kind: 'health',
             icon: '\u{1F534}',
