@@ -696,6 +696,12 @@ class DashboardCategoryMenu {
                 icon: '+',
                 key: 'A',
             }] : []),
+            // A label between the bookmarks; only where the rows are in manual order.
+            ...(stored && window.DashboardCategoryDividers?.canAdd?.(this.dash, String(category.id)) ? [{
+                id: 'add-label',
+                label: this.t('categoryMenuAddLabel', 'Add label'),
+                icon: '—',
+            }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             ...this.editPanelEntry(),
             ...(stored ? [{
@@ -1133,6 +1139,11 @@ class DashboardCategoryMenu {
                 pageId: d.currentPageId,
                 source: 'category-menu',
             });
+            return;
+        }
+
+        if (action === 'add-label') {
+            window.DashboardCategoryDividers?.add?.(d, String(category.id));
             return;
         }
 

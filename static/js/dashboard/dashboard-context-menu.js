@@ -307,6 +307,12 @@ class DashboardContextMenu {
                 icon: '→',
                 key: 'M',
             },
+            // A label row above this bookmark, where its category is in manual order.
+            ...(bookmarkRef.scope === 'current' && window.DashboardCategoryDividers?.slotAbove?.(d, row) ? [{
+                id: 'add-label-above',
+                label: this.t('dashboard.contextMenuAddLabelAbove', 'Add label above'),
+                icon: '—',
+            }] : []),
             {
                 id: 'related',
                 label: this.t('dashboard.contextMenuRelated', 'Related links…'),
@@ -1028,6 +1034,11 @@ class DashboardContextMenu {
             case 'tags':
                 d.showTagPopover?.(row, bookmark, bookmarkIndex);
                 break;
+            case 'add-label-above': {
+                const slot = window.DashboardCategoryDividers?.slotAbove?.(d, row);
+                if (slot) window.DashboardCategoryDividers.add(d, slot.categoryId, slot.index);
+                break;
+            }
             case 'move':
                 void d.showMovePopover?.(row, bookmark, bookmarkIndex);
                 break;

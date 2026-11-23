@@ -211,6 +211,12 @@ class KeyboardNavigation {
                 return;
             }
 
+            // A label row between the bookmarks takes its own keys (F2, Delete,
+            // Alt+↑/↓); the grid's Alt+arrow would move a bookmark instead.
+            if (e.target?.closest?.('.category-divider')) {
+                return;
+            }
+
             if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
                 return;
             }
