@@ -534,6 +534,8 @@ class DashboardVisual {
             void d.netBadges?.refresh({ maxAgeMs: 5000 });
             this.applyLibraryBadge(library, summary, utils);
             this.maybePulseHealthAlert(utils.summarizeHealthCounts(summary).monitorDown || 0);
+            // The tab title, the favicon and the installed app's icon.
+            window.FeedWatchTabBadge?.setOutage(Number(summary.monitorDownCount) || 0);
             d.updateMiniStatusLine();
             return true;
         } catch (e) {
