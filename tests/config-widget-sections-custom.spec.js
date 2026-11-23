@@ -97,7 +97,7 @@ test.describe('the Custom widget in three sections', () => {
         await expect(connection).toHaveAttribute('data-widget-section-default', 'closed');
         await expect(connection).toHaveAttribute('open', '');
         await expect(key).toBeVisible();
-        await expect(key).toHaveAttribute('placeholder', 'Set — type to replace');
+        await expect(key).toHaveAttribute('placeholder', 'Set: type to replace');
         await expect(detail.locator('[data-secret-reveal]')).toBeVisible();
     });
 

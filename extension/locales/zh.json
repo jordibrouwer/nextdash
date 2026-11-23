@@ -63,7 +63,7 @@
   "previewLinkLabel": "链接预览",
   "previewRefresh": "刷新",
   "previewClear": "清除",
-  "previewEmpty": "暂无预览信息 —— 刷新即可获取标题、描述和图片。",
+  "previewEmpty": "暂无预览信息。刷新即可获取标题、描述和图片。",
   "previewNoUrl": "请先输入网址。",
   "previewRefreshed": "链接预览已更新。",
   "previewRefreshFailed": "无法获取链接预览。",
