@@ -53,6 +53,8 @@
     // No more than one notification tone per five minutes.
     const SOUND_EVERY_MS = 5 * 60 * 1000;
     const SOUND_KEY = 'nextdash-bell-sound-at';
+    const URGENT_KEY = 'nextdash-bell-urgent-rung';
+    const URGENT_KEEP_MS = 10 * 60 * 1000;
     const Model = global.NotificationBellModel;
     const States = () => global.DiscoverabilityState;
 
@@ -68,6 +70,7 @@
     let looked = true;         // the panel was opened since the last shake
     let audioCtx = null;
     let lastSoundAt = 0;
+    let urgentRung = {};   // row key -> time of its tone, when storage is not there
     let lastAnim = { kind: 'none', at: 0 };   // the last thing that drew the eye, for analytics
 
     const GROUP_FALLBACK = {
@@ -224,7 +227,8 @@
      * time of the last tone lives in localStorage so several tabs and reloads
      * share one budget; without storage it falls back to this page's memory.
      * The slot is taken before the audio wakes, so a tone the browser keeps
-     * shut still uses it and a burst cannot queue up behind it.
+     * shut still uses it and a burst cannot queue up behind it. An urgent row
+     * is the exception: see claimUrgent.
      */
     function claimSoundSlot() {
         const now = Date.now();
@@ -237,13 +241,31 @@
     }
 
     /**
-     * Play a tone: the bell by default, or another by name ('chime'). A browser
+     * An urgent row rings whatever the slot says, but once per row: the keys
+     * already rung live in localStorage, so several tabs that all see the same
+     * new row make one tone, not one each. True when any of the keys is new.
+     */
+    function claimUrgent(keys) {
+        const now = Date.now();
+        let seen = urgentRung;
+        try { seen = { ...seen, ...JSON.parse(localStorage.getItem(URGENT_KEY) || '{}') }; } catch { /* memory only */ }
+        Object.keys(seen).forEach((k) => { if (!(now - seen[k] < URGENT_KEEP_MS)) delete seen[k]; });
+        const isNew = keys.some((k) => !(k in seen));
+        keys.forEach((k) => { if (!(k in seen)) seen[k] = now; });
+        urgentRung = seen;
+        try { localStorage.setItem(URGENT_KEY, JSON.stringify(seen)); } catch { /* memory only */ }
+        return isNew;
+    }
+
+    /**
+     * Play a tone: the bell by default, or another by name ('chime'). Pass the
+     * keys of the fresh urgent rows to ring past the five-minute limit. A browser
      * keeps audio shut until the page has been touched; when the context will
      * not wake, this stays silent.
      */
-    async function playSound(tone = 'bell', always = false) {
-        // An urgent row always rings; claiming the slot still holds back quiet ones after it.
-        if (!claimSoundSlot() && !always) return;
+    async function playSound(tone = 'bell', urgentKeys = []) {
+        const slot = claimSoundSlot();
+        if (!(urgentKeys.length && claimUrgent(urgentKeys)) && !slot) return;
         try {
             const ctx = context();
             if (!ctx) return;
@@ -298,7 +320,7 @@
         // is not such a row, or two sources differ, the plain bell sounds.
         const tones = new Set(fresh.map((r) => r.source.sound || 'bell'));
         const tone = tones.size === 1 ? [...tones][0] : 'bell';
-        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, fresh.some((r) => r.kind === 'urgent'));
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, fresh.filter((r) => r.kind === 'urgent').map(rowKey));
     }
 
     function remind() {
