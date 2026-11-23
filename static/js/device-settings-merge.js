@@ -61,6 +61,7 @@
         'detectSoftNotFound',
         'tagLookupOnline',
         'certWarnDays',
+        'certWarnByHost',
         'domainExpiry',
         'domainWarnDays',
         'healthCheckTimeoutSeconds',

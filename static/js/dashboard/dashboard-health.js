@@ -584,6 +584,44 @@ class DashboardHealth {
      * read these fields belong to the monitor, so offering them elsewhere would
      * be a control that governs nothing.
      */
+    /** The hostname a bookmark's certificate is stored under, or ''. */
+    certHostOf(issue) {
+        const certHost = String(issue?.certHost || '').toLowerCase();
+        if (certHost) return certHost;
+        try {
+            return new URL(String(issue?.url || '')).hostname.toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    /**
+     * Per-host certificate warning: a stored value beats the global setting.
+     * Written to settings.certWarnByHost, so it covers every bookmark on the host.
+     */
+    renderCertWarnField(issue) {
+        const esc = (v) => this.escape(v);
+        const host = this.certHostOf(issue);
+        if (!host || !/^https:/i.test(String(issue?.url || ''))) return '';
+        const current = Number(this.dash.settings?.certWarnByHost?.[host]) || 0;
+        const opt = (value, label) => `<option value="${value}"${current === value ? ' selected' : ''}>${esc(label)}</option>`;
+        const ahead = (n) => this.t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', String(n));
+        return `
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="cert-warn-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCertWarnLabel', 'Certificate warning for {host}').replace('{host}', host))}</label>
+                    <select id="cert-warn-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-cert-warn data-cert-host="${esc(host)}">
+                        ${opt(0, this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}
+                        ${opt(-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired'))}
+                        ${[7, 14, 30, 60, 90].map((n) => opt(n, ahead(n))).join('')}
+                    </select>
+                    <span class="health-expect-note">${esc(this.t('dashboard.healthCertWarnNote',
+                        'Applies to every bookmark on this host and beats the global setting. Choose "Only when expired" for short-lived certificates that renew themselves.'))}</span>
+                </div>
+`;
+    }
+
     renderExpectPanel(issue) {
         const esc = (v) => this.escape(v);
         const monitored = this.checkModeOf(issue) === window.CheckMode.MONITOR;
@@ -626,6 +664,8 @@ class DashboardHealth {
                         'Keys and passwords are kept in their own file, outside your backups. Manage them under Config → Health.'
                     ))}</span>
                 </div>
+
+                ${this.renderCertWarnField(issue)}
 
                 <div class="health-expect-toggles">
                     <label class="health-expect-check">
@@ -1841,6 +1881,22 @@ class DashboardHealth {
         const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();
         const credentialId = String(wrap.querySelector('[data-credential-id]')?.value || '').trim();
         const allowInsecureTls = Boolean(wrap.querySelector('[data-allow-insecure]')?.checked);
+
+        // Per host, in settings rather than on the bookmark.
+        const certSel = wrap.querySelector('[data-cert-warn]');
+        if (certSel) {
+            const host = String(certSel.dataset.certHost || '');
+            const value = Number(certSel.value) || 0;
+            const map = { ...(this.dash.settings.certWarnByHost || {}) };
+            if ((Number(map[host]) || 0) !== value) {
+                if (value) map[host] = value; else delete map[host];
+                this.dash.settings.certWarnByHost = map;
+                if ((await this.dash.saveSettings()) === false) {
+                    this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+                    return 'failed';
+                }
+            }
+        }
 
         window.nextdashTrack?.('health:expectations');
         this._busyKeys.add(key);

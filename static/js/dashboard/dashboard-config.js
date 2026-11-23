@@ -11836,6 +11836,7 @@ class DashboardConfig {
                     // the same proportion the built-in ladder uses.
                     { field: 'certWarnDays', type: 'select', label: t('config.certWarnDaysLabel', 'Warn about certificates'), numeric: true, options: [
                         opt(0, t('config.certWarnDaysDefault', 'Default (30 days ahead)')),
+                        opt(-1, t('config.certWarnDaysExpiredOnly', 'Only when expired')),
                         opt(7, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '7')),
                         opt(14, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '14')),
                         opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
@@ -21456,6 +21457,7 @@ class DashboardConfig {
      */
     certWarnDays() {
         const n = Number(this.dash?.settings?.certWarnDays);
+        if (n === -1) return 0;
         if (!Number.isFinite(n) || n <= 0) return 30;
         return Math.min(120, Math.max(3, Math.round(n)));
     }

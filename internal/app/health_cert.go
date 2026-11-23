@@ -34,6 +34,11 @@ const (
 	// the setting is bounded either side of what it replaces.
 	certWarnDaysMin = 3
 	certWarnDaysMax = 120
+	// certWarnExpiredOnly is the CertWarnDays value for "only once expired".
+	// Short-lived certificates (Let's Encrypt's six-day profile) renew
+	// themselves and sit permanently inside every normal warning window; this
+	// keeps the expiry check but drops the lead-time warnings.
+	certWarnExpiredOnly = -1
 )
 
 // certNotifyThresholds are the day marks an alert fires on, largest first so the
@@ -48,6 +53,9 @@ var certNotifyThresholds = []int{certWarnDays, certUrgentDays, certCriticalDays}
 // still gets its "do it this week" and "this breaks now".
 func certWarnDaysFor(s Settings) int {
 	days := s.CertWarnDays
+	if days == certWarnExpiredOnly {
+		return certWarnExpiredOnly
+	}
 	if days <= 0 {
 		return certWarnDays
 	}
@@ -63,6 +71,10 @@ func certWarnDaysFor(s Settings) int {
 // certThresholdsFor is the notify ladder for these settings, largest first.
 func certThresholdsFor(s Settings) []int {
 	warn := certWarnDaysFor(s)
+	if warn == certWarnExpiredOnly {
+		// Below zero days left means expired; no earlier mark ever matches.
+		return []int{-1, -1, -1}
+	}
 	if warn == certWarnDays {
 		return certNotifyThresholds
 	}
@@ -81,6 +93,24 @@ func certThresholdsFor(s Settings) []int {
 		warn = urgent + 1
 	}
 	return []int{warn, urgent, critical}
+}
+
+// certHostKey is the key a host has in Settings.CertWarnByHost.
+func certHostKey(host string) string {
+	return strings.ToLower(strings.TrimSpace(host))
+}
+
+// certThresholdsForHost is the ladder for one host. A value stored for the
+// host beats the global CertWarnDays: the global is the default and the host
+// entry is the exception, so a short-lived certificate can be set apart without
+// loosening every other host. 0 or absent follows the global.
+func certThresholdsForHost(s Settings, host string) []int {
+	if v, ok := s.CertWarnByHost[certHostKey(host)]; ok && v != 0 {
+		local := s
+		local.CertWarnDays = v
+		return certThresholdsFor(local)
+	}
+	return certThresholdsFor(s)
 }
 
 // certSeverityWith is certSeverity against a chosen first threshold.
@@ -149,11 +179,13 @@ func recordHostCertificates(stored map[string]HostCertificate, seen []PingResult
 // recordHostCertificatesWith is recordHostCertificates against a chosen ladder,
 // so the lead time can be a setting without every caller passing it.
 func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingResult, now time.Time, thresholds []int) []HostCertificate {
+	return recordHostCertificatesFor(stored, seen, now, func(string) []int { return thresholds })
+}
+
+// recordHostCertificatesFor is recordHostCertificatesWith with a ladder per host.
+func recordHostCertificatesFor(stored map[string]HostCertificate, seen []PingResult, now time.Time, ladder func(host string) []int) []HostCertificate {
 	if stored == nil {
 		return nil
-	}
-	if len(thresholds) == 0 {
-		thresholds = certNotifyThresholds
 	}
 	var crossed []HostCertificate
 
@@ -175,6 +207,10 @@ func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingRe
 			entry = HostCertificate{Host: host, ExpiresAt: result.CertExpiry}
 		}
 		entry.SeenAt = now.UnixMilli()
+		thresholds := ladder(host)
+		if len(thresholds) == 0 {
+			thresholds = certNotifyThresholds
+		}
 
 		// The tightest threshold the certificate has already passed, which is the
 		// only one worth reporting: at five days left it is past both 30 and 7,
@@ -275,7 +311,10 @@ func (h *Handlers) recordMonitorCertificates(results []PingResult) []HostCertifi
 	if cache.Certificates == nil {
 		cache.Certificates = map[string]HostCertificate{}
 	}
-	crossed := recordHostCertificatesWith(cache.Certificates, results, time.Now(), certThresholdsFor(h.store.GetSettings()))
+	settings := h.store.GetSettings()
+	crossed := recordHostCertificatesFor(cache.Certificates, results, time.Now(), func(host string) []int {
+		return certThresholdsForHost(settings, host)
+	})
 	if err := writeHealthCacheFile(cache); err != nil {
 		return nil
 	}
@@ -291,12 +330,17 @@ func expiringCertificates(stored map[string]HostCertificate, now time.Time) map[
 
 // expiringCertificatesWith is expiringCertificates against a chosen ladder.
 func expiringCertificatesWith(stored map[string]HostCertificate, now time.Time, thresholds []int) map[string]HostCertificate {
+	return expiringCertificatesFor(stored, now, func(string) []int { return thresholds })
+}
+
+// expiringCertificatesFor is expiringCertificatesWith with a ladder per host.
+func expiringCertificatesFor(stored map[string]HostCertificate, now time.Time, ladder func(host string) []int) map[string]HostCertificate {
 	if len(stored) == 0 {
 		return nil
 	}
 	out := make(map[string]HostCertificate)
 	for host, cert := range stored {
-		switch certSeverityWith(cert.ExpiresAt, now, thresholds) {
+		switch certSeverityWith(cert.ExpiresAt, now, ladder(host)) {
 		case "warn", "urgent", "expired":
 			out[host] = cert
 		}

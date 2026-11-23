@@ -156,6 +156,44 @@
     background: var(--background-secondary);
 }
 
+/* Certificate rules: host on its own line, the rule and its reset below. */
+.config-bm-rail-cert {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1, 0.25rem);
+    align-items: center;
+    padding: var(--space-1, 0.25rem) 0;
+    min-width: 0;
+}
+
+.config-bm-rail-cert-host {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-bm-rail-cert-select {
+    min-width: 0;
+    width: 100%;
+}
+
+.config-bm-rail-cert-reset {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+    border-radius: var(--layout-radius-sm);
+    padding: 0 6px;
+}
+
+.config-bm-rail-cert-reset:hover,
+.config-bm-rail-cert-reset:focus-visible {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
 .config-bm-rail-clear-all,
 .config-bm-rail-more {
     margin-left: auto;

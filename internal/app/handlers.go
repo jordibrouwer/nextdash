@@ -1269,7 +1269,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Only the ones worth showing. A certificate with three months left is true
 	// but not news, and sending every host would grow the report by an entry per
 	// domain for something the UI would immediately filter out again.
-	report.Certificates = expiringCertificatesWith(h.hostCertificates(), monitorNow, certThresholdsFor(h.store.GetSettings()))
+	certSettings := h.store.GetSettings()
+	report.Certificates = expiringCertificatesFor(h.hostCertificates(), monitorNow, func(host string) []int {
+		return certThresholdsForHost(certSettings, host)
+	})
 	domainSettings := h.store.GetSettings()
 	if domainSettings.DomainExpiry {
 		storedDomains := h.hostDomains()

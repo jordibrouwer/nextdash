@@ -854,7 +854,12 @@ type Settings struct {
 	DetectSoftNotFound         bool   `json:"detectSoftNotFound"`       // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
 	DomainExpiry               bool   `json:"domainExpiry"`             // Look up when the domains of checked bookmarks expire, through the registries' public RDAP service. On by default; each lookup sends one domain name to the registry of its extension.
 	DomainWarnDays             int    `json:"domainWarnDays,omitempty"` // How many days before expiry a domain starts warning. 0 means the built-in 60; clamped to 8–180 on save. A week and three days follow.
-	CertWarnDays               int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	CertWarnDays               int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save; -1 means warn only once expired (for short-lived, auto-renewed certificates). The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	// CertWarnByHost overrides CertWarnDays for one host (lower-cased), same
+	// values: -1 only once expired, 3–120 days ahead. Absent or 0 follows the
+	// global. Set from a bookmark's Expectations panel; a certificate belongs to
+	// a host, so every bookmark on it shares the entry.
+	CertWarnByHost map[string]int `json:"certWarnByHost,omitempty"`
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -5918,13 +5923,29 @@ func (fs *FileStore) getSettingsShared() Settings {
 	}
 	// Same shape: 0 means the built-in 30 days, anything else is held inside a
 	// range where a renewal reminder is still a reminder.
-	if settings.CertWarnDays != 0 {
+	if settings.CertWarnDays != 0 && settings.CertWarnDays != certWarnExpiredOnly {
 		if settings.CertWarnDays < certWarnDaysMin {
 			settings.CertWarnDays = certWarnDaysMin
 		}
 		if settings.CertWarnDays > certWarnDaysMax {
 			settings.CertWarnDays = certWarnDaysMax
 		}
+	}
+	for host, v := range settings.CertWarnByHost {
+		key := certHostKey(host)
+		switch {
+		case key == "" || v == 0:
+			delete(settings.CertWarnByHost, host)
+			continue
+		case v != certWarnExpiredOnly && v < certWarnDaysMin:
+			v = certWarnDaysMin
+		case v > certWarnDaysMax:
+			v = certWarnDaysMax
+		}
+		if key != host {
+			delete(settings.CertWarnByHost, host)
+		}
+		settings.CertWarnByHost[key] = v
 	}
 	if settings.DomainWarnDays != 0 {
 		if settings.DomainWarnDays < domainWarnDaysMin {
