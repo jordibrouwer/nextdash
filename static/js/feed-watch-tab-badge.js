@@ -13,11 +13,13 @@
 (function (global) {
     'use strict';
 
-    const PREFIX = /^(?:\u{1F534}\s\d+\s+)?(?:\(\d+\)\s+)?/u;
+    const PREFIX = /^(?:\u23F0\s+)?(?:\u{1F534}\s\d+\s+)?(?:\(\d+\)\s+)?/u;
     let count = 0;
     // null until the first report: the app badge outlives the page, so a first
     // report of 0 must still clear whatever an earlier page left on the icon.
     let outage = null;
+    // Timers that ended while this tab was hidden.
+    let alarm = 0;
     let observer = null;
     let originalIcon = null;
     let iconLink = null;
@@ -25,6 +27,7 @@
     function withPrefix(title) {
         const base = String(title || '').replace(PREFIX, '');
         const parts = [];
+        if (alarm > 0) parts.push('\u23F0');
         if (outage > 0) parts.push(`\u{1F534} ${outage}`);
         if (count > 0) parts.push(`(${count})`);
         return parts.length ? `${parts.join(' ')} ${base}` : base;
@@ -61,7 +64,7 @@
         const img = new Image();
         img.onload = () => {
             // The counts may have gone back to 0 while the icon loaded.
-            if (count <= 0 && outage <= 0) return;
+            if (count <= 0 && outage <= 0 && alarm <= 0) return;
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = 32;
@@ -72,7 +75,7 @@
                 const r = down ? 11 : 8;
                 const cx = 32 - r;
                 const cy = r;
-                ctx.fillStyle = down ? '#dc2626' : '#8b5cf6';
+                ctx.fillStyle = down ? '#dc2626' : (count <= 0 && alarm > 0 ? '#16a34a' : '#8b5cf6');
                 ctx.beginPath();
                 ctx.arc(cx, cy, r, 0, Math.PI * 2);
                 ctx.fill();
@@ -112,11 +115,19 @@
         refresh();
     }
 
+    /** Set the number of timers that ended unseen; 0 clears the clock in the title. */
+    function setAlarm(next) {
+        const n = Math.max(0, Math.floor(Number(next) || 0));
+        if (n === alarm) return;
+        alarm = n;
+        refresh();
+    }
+
     function refresh() {
         watchTitle();
         applyTitle();
-        if (count > 0 || outage > 0) paintIcon(); else restoreIcon();
+        if (count > 0 || outage > 0 || alarm > 0) paintIcon(); else restoreIcon();
     }
 
-    global.FeedWatchTabBadge = { set, setOutage, count: () => count, outage: () => outage || 0 };
+    global.FeedWatchTabBadge = { set, setOutage, setAlarm, count: () => count, outage: () => outage || 0 };
 })(window);

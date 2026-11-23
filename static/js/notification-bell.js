@@ -10,7 +10,8 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset, sound, animation })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset, sound, silent, animation })
+ *   (`silent: true` for a source that rings by itself: its fresh row shakes the bell but adds no tone)
  *   (`sound: 'chime'` gives a row's arrival a softer tone than the default bell,
  *   `animation: 'news'` a nod with a paper sliding in instead of the alarm swing)
  *     -> { refresh(), unregister() }
@@ -263,9 +264,11 @@
      * keeps audio shut until the page has been touched; when the context will
      * not wake, this stays silent.
      */
-    async function playSound(tone = 'bell', urgentKeys = []) {
-        const slot = claimSoundSlot();
-        if (!(urgentKeys.length && claimUrgent(urgentKeys)) && !slot) return;
+    async function playSound(tone = 'bell', urgentKeys = [], opts = {}) {
+        const urgent = Boolean(urgentKeys.length && claimUrgent(urgentKeys));
+        // `free`: an urgent tone of a source's own (the timer's chime) leaves the shared slot alone.
+        const slot = opts.free && urgent ? true : claimSoundSlot();
+        if (!urgent && !slot) return;
         try {
             const ctx = context();
             if (!ctx) return;
@@ -318,9 +321,12 @@
         pulse();
         // A source may name its own tone (`sound: 'chime'`); when anything fresh
         // is not such a row, or two sources differ, the plain bell sounds.
-        const tones = new Set(fresh.map((r) => r.source.sound || 'bell'));
+        // A source that makes its own sound (`silent: true`, the timer) adds none here.
+        const sounding = fresh.filter((r) => !r.source.silent);
+        if (!sounding.length) return;
+        const tones = new Set(sounding.map((r) => r.source.sound || 'bell'));
         const tone = tones.size === 1 ? [...tones][0] : 'bell';
-        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, fresh.filter((r) => r.kind === 'urgent').map(rowKey));
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone, sounding.filter((r) => r.kind === 'urgent').map(rowKey));
     }
 
     function remind() {
