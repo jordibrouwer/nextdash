@@ -101,18 +101,12 @@ func TestUnraidWatcherStartsFreshPerServer(t *testing.T) {
 		t.Fatalf("B's first tick sent %v", got)
 	}
 
-	// Switched off, then on again: fresh.
-	off, base, active := pickUnraidWatcher(w2, base, UnraidServer{BaseURL: "https://b", Enabled: true}, true)
-	if active || off == w2 || base != "" {
-		t.Fatalf("off: active=%v same=%v base=%q", active, off == w2, base)
+	// The alert switch off: still watched, for the timeline, by the same watcher.
+	quiet, base, active := pickUnraidWatcher(w2, base, UnraidServer{BaseURL: "https://b", Enabled: true}, true)
+	if !active || quiet != w2 || base != "https://b" {
+		t.Fatalf("switch off: active=%v same=%v base=%q", active, quiet == w2, base)
 	}
-	w3, _, active := pickUnraidWatcher(off, base, on("https://b"), true)
-	if !active || w3 == w2 {
-		t.Fatal("back on kept the old watcher")
-	}
-	if got := observeBusy(w3, busy, now); len(got) != 0 {
-		t.Fatalf("after off/on sent %v", got)
-	}
+	w3 := quiet
 
 	// No server at all.
 	if gone, base, active := pickUnraidWatcher(w3, "https://b", UnraidServer{}, false); active || gone == w3 || base != "" {
