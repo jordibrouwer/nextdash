@@ -697,7 +697,7 @@
     function startTimer() {
         if (timer) return;
         // Counters read what the page already holds; a cheap look now and then keeps them true.
-        timer = setInterval(() => { if (isPhone()) { renderBar(); if (panel === 'status' && !document.getElementById(PANEL_ID)?.contains(document.activeElement)) renderPanel(); renderHome(); } }, 15000);
+        timer = setInterval(() => { if (document.hidden) return; if (isPhone()) { renderBar(); if (panel === 'status' && !document.getElementById(PANEL_ID)?.contains(document.activeElement)) renderPanel(); renderHome(); } }, 15000);
     }
 
     function stopTimer() {
@@ -746,7 +746,7 @@
         // Counters change when the Inbox or the health report do.
         const inboxBadge = document.getElementById('page-inbox-badge');
         if (inboxBadge) new MutationObserver(() => { if (isPhone()) renderBar(); }).observe(inboxBadge, { childList: true, attributes: true, characterData: true, subtree: true });
-        document.addEventListener('visibilitychange', () => { if (!document.hidden && isPhone()) { renderBar(); renderHome(); } });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && isPhone()) { renderBar(); renderHome(); if (panel === 'status' && !document.getElementById(PANEL_ID)?.contains(document.activeElement)) renderPanel(); } });
         // The grid is rebuilt by renders; the head goes back above it.
         const layout = document.getElementById('dashboard-layout');
         if (layout) new MutationObserver(() => { if (isPhone() && homeShown() && !document.getElementById(HOME_ID)) renderHome(); }).observe(layout.parentNode, { childList: true });

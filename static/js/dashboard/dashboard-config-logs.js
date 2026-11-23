@@ -1071,6 +1071,7 @@
                 this.stopServerLogTimer();
                 return;
             }
+            if (document.hidden) return;
             void this.loadServerLog();
         }, this.logRefreshSeconds * 1000);
     }

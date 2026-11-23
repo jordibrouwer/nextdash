@@ -18,16 +18,40 @@
     }
 
     /** One timer per body: drawn again, the old one goes first; gone from the page, it stops itself. */
-    function keepTicking(body, everyMs, redraw) {
+    function stopTicking(body) {
         if (body._ndTimeTimer) clearInterval(body._ndTimeTimer);
+        body._ndTimeTimer = null;
+        if (body._ndTimeVisible) document.removeEventListener('visibilitychange', body._ndTimeVisible);
+        body._ndTimeVisible = null;
+        body._ndTimeStale = null;
+    }
+
+    function keepTicking(body, everyMs, redraw) {
+        stopTicking(body);
         body._ndTimeTimer = setInterval(() => {
             if (!body.isConnected) {
-                clearInterval(body._ndTimeTimer);
-                body._ndTimeTimer = null;
+                stopTicking(body);
                 return;
             }
+            // Nobody sees a hidden tab: skip the redraw and catch up on return.
+            if (document.hidden) {
+                body._ndTimeStale = redraw;
+                return;
+            }
+            body._ndTimeStale = null;
             redraw();
         }, everyMs);
+        body._ndTimeVisible = () => {
+            if (!body.isConnected) {
+                stopTicking(body);
+                return;
+            }
+            if (document.hidden || !body._ndTimeStale) return;
+            const late = body._ndTimeStale;
+            body._ndTimeStale = null;
+            late();
+        };
+        document.addEventListener('visibilitychange', body._ndTimeVisible);
     }
 
     /* ---------- Clock ---------- */
@@ -131,10 +155,15 @@
             };
             handle = requestAnimationFrame(loop);
         } else {
+            const onVisible = () => { if (!document.hidden && body.isConnected) paint(); };
+            document.addEventListener('visibilitychange', onVisible);
+            const stopSteps = stop;
             handle = setInterval(() => {
-                if (!body.isConnected) { stop(); return; }
+                if (!body.isConnected) { stopSteps(); document.removeEventListener('visibilitychange', onVisible); return; }
+                if (document.hidden) return;
                 paint();
             }, 1000);
+            body._ndClockStop = () => { stopSteps(); document.removeEventListener('visibilitychange', onVisible); };
         }
     }
 
@@ -469,7 +498,7 @@
         const target = targetOf(config);
         if (!target) {
             // A date that was cleared: the timer of the countdown it used to be goes too.
-            if (body._ndTimeTimer) { clearInterval(body._ndTimeTimer); body._ndTimeTimer = null; }
+            stopTicking(body);
             u.say(panel, 'dashboard-widget-empty', label(dash, 'dashboard.widgetCountdownNoDate',
                 'Pick a date in this widget’s settings.'));
             return;

@@ -194,7 +194,7 @@
         tick();
         // Three minutes is far finer than the eye follows a sky, and a
         // sleeping tab catches up on the next visibilitychange.
-        const timer = window.setInterval(tick, 180000);
+        const timer = window.setInterval(() => { if (!document.hidden) tick(); }, 180000);
         const onVisible = () => { if (!document.hidden) tick(); };
         document.addEventListener('visibilitychange', onVisible);
         return () => {
@@ -263,7 +263,7 @@
         sync();
         // The widget writes to localStorage from this very tab, which fires no
         // storage event here, so a light poll is what notices its refresh.
-        const timer = window.setInterval(sync, 60000);
+        const timer = window.setInterval(() => { if (!document.hidden) sync(); }, 60000);
         const onVisible = () => { if (!document.hidden) sync(); };
         document.addEventListener('visibilitychange', onVisible);
         window.addEventListener('storage', sync);
