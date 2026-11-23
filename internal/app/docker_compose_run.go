@@ -679,7 +679,7 @@ func (h *Handlers) composeRecordUpdates(ctx context.Context, api *dockerAPI, bef
 		if !ok || b.name() == "" || c.ImageID == "" || c.ImageID == b.ImageID {
 			continue
 		}
-		h.recordDockerUpdate(ctx, api, "update", b.name(), b.Image, b.ImageID, c.ImageID)
+		h.recordDockerUpdate(ctx, api, "update", b.name(), b.Image, b.ImageID, c.ImageID, "compose")
 	}
 }
 

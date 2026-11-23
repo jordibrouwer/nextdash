@@ -193,11 +193,11 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 			h.markDockerImageCurrent(c.Image)
 		}
 		if err == nil && outcome.Phase == "done" {
-			h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID)
+			h.recordDockerUpdate(ctx, api, "update", name, c.Image, outcome.OldImageID, outcome.NewImageID, "manual")
 		}
 	case action == "rollback":
 		var outcome dockerRecreateResult
-		outcome, err = h.dockerRollbackUpdate(ctx, api, c)
+		outcome, err = h.dockerRollbackUpdate(ctx, api, c, "manual")
 		result["update"] = outcome
 	}
 
