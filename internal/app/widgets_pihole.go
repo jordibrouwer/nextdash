@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 )
 
 /*
@@ -165,6 +166,8 @@ func (h *Handlers) fetchPihole(ctx context.Context, spec dnsSpec, credential Hea
 	}
 	var blocking struct {
 		Blocking string `json:"blocking"`
+		// Timer is the seconds left of a timed pause, null when there is none.
+		Timer *float64 `json:"timer"`
 	}
 	if h.dnsGetJSON(ctx, spec.Server, credential, "/api/dns/blocking", &blocking) == nil {
 		// Only the two states that say something; "unknown" and "failed" are not off.
@@ -175,6 +178,9 @@ func (h *Handlers) fetchPihole(ctx context.Context, spec dnsSpec, credential Hea
 		case "disabled":
 			off := false
 			dns.Protection = &off
+			if blocking.Timer != nil && *blocking.Timer > 0 {
+				dns.PausedUntil = time.Now().UnixMilli() + int64(*blocking.Timer*1000)
+			}
 		}
 	} else {
 		dns.Partial = true

@@ -256,6 +256,12 @@
     cursor: pointer;
 }
 
+/* A line with action buttons (pause, approve, search): the line takes the
+   room, the buttons sit at its end. The totals line holds the client's own. */
+.media-action-line > .media-row { flex: 1 1 auto; min-width: 0; }
+.media-totals.media-action-line { display: flex; align-items: center; gap: 0.5rem; }
+.media-totals .media-action { margin-left: auto; }
+
 /* Config → Widgets: the Home Assistant picker. Search on the left, the
    chosen entities in their order on the right; stacked when narrow. */
 .config-ha-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }

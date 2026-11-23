@@ -22,6 +22,7 @@ type fakeArr struct {
 	failQueue bool
 	status    int
 	paths     []string
+	posts     []string // "path body" of every POST, e.g. a search command
 }
 
 func newFakeArr(t *testing.T) *fakeArr {
@@ -38,6 +39,13 @@ func newFakeArr(t *testing.T) *fakeArr {
 		}
 		if r.Header.Get("X-Api-Key") != arrTestKey {
 			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if r.Method == http.MethodPost {
+			fake.mu.Lock()
+			fake.posts = append(fake.posts, r.URL.Path+" "+readBody(r))
+			fake.mu.Unlock()
+			_, _ = w.Write([]byte(`{"id":1}`))
 			return
 		}
 		switch {

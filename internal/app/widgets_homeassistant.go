@@ -359,11 +359,8 @@ func (h *Handlers) homeAssistantAnswer(ctx context.Context, pageID int, widget W
 // homeAssistantWidgetHandler answers a tile, and says per request whether
 // this reader may switch: that is never part of the cached answer.
 func (h *Handlers) homeAssistantWidgetHandler(w http.ResponseWriter, r *http.Request) {
-	controls := hasWriteAccess(r) && !demoMode()
 	h.serveMediaWidget(w, r, WidgetTypeHomeAssistant, func(ctx context.Context, pageID int, widget Widget, forced bool) MediaResult {
-		result := h.homeAssistantAnswer(ctx, pageID, widget, forced)
-		result.Controls = controls
-		return result
+		return h.homeAssistantAnswer(ctx, pageID, widget, forced)
 	})
 }
 
@@ -448,86 +445,63 @@ func (h *Handlers) homeAssistantSetupHandler(w http.ResponseWriter, r *http.Requ
 }
 
 /*
-homeAssistantActionHandler switches one entity.
+Home Assistant switches one entity per action.
 
-The address and the token are the server's, never the browser's: the browser
-names a widget and an entity, and the switch happens only if that widget chose
-that entity and its domain is one a misclick cannot make dangerous.
+The browser names an entity; the switch happens only if this widget chose
+that entity and its domain is one a misclick cannot make dangerous. That is
+the check, not the last answer: an entity the reader chose is offered even
+while Home Assistant is slow to list it.
 */
-func (h *Handlers) homeAssistantActionHandler(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w, r)
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if !h.requireWriteAccess(w, r) || !h.requireSSRFAPIRateLimit(w, r) {
-		return
-	}
-	var body struct {
-		PageID int    `json:"pageId"`
-		ID     string `json:"id"`
-		Entity string `json:"entity"`
-	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-	widgets, _ := h.store.GetPageBlocks(body.PageID)
-	var found *Widget
-	for i := range widgets {
-		if widgets[i].ID == body.ID && widgets[i].Type == WidgetTypeHomeAssistant {
-			found = &widgets[i]
-			break
+func init() {
+	check := func(_ context.Context, _ *Handlers, req widgetActionRequest) bool {
+		if haControl(haDomain(req.Target)) != req.Action {
+			return false
 		}
+		for _, id := range haSpecFrom(req.Widget.Config).Entities {
+			if id == req.Target {
+				return true
+			}
+		}
+		return false
 	}
-	if found == nil {
-		http.Error(w, "No such widget", http.StatusNotFound)
-		return
+	widgetActions[WidgetTypeHomeAssistant] = widgetActionType{
+		Service:     "homeassistant",
+		OnByDefault: true,
+		Actions: map[string]widgetAction{
+			"toggle": {Check: check, Run: haSwitch("toggle")},
+			"run":    {Check: check, Run: haSwitch("turn_on")},
+		},
 	}
-	spec := haSpecFrom(found.Config)
-	chosen := false
-	for _, id := range spec.Entities {
-		chosen = chosen || id == body.Entity
-	}
-	domain := haDomain(body.Entity)
-	service := map[string]string{"toggle": "toggle", "run": "turn_on"}[haControl(domain)]
-	if !chosen || service == "" {
-		http.Error(w, "Not switchable from here", http.StatusForbidden)
-		return
-	}
-	credential, err := h.haCredential(spec.CredentialID)
-	if err != nil || spec.Server == "" {
-		w.WriteHeader(http.StatusBadGateway)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": errMediaNotSetUp.Error()})
-		return
-	}
+}
 
-	ctx, cancel := context.WithTimeout(r.Context(), mediaRequestTimeout)
-	defer cancel()
-	resp, err := h.mediaPost(ctx, spec.Server, credential, "/api/services/"+domain+"/"+service,
-		map[string]string{"entity_id": body.Entity})
-	// Asked again next time, switched or not: the old answer is stale either way.
-	mediaForget("homeassistant", body.PageID, body.ID)
-	if err != nil {
-		logWarn(logComponentWidgets, "Home Assistant could not switch %s: %v", body.Entity, err)
-		w.WriteHeader(http.StatusBadGateway)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": mediaErrorCode(err)})
-		return
+// haSwitch calls one Home Assistant service on the target and answers the
+// states it changed.
+func haSwitch(service string) func(context.Context, *Handlers, widgetActionRequest) (any, error) {
+	return func(ctx context.Context, h *Handlers, req widgetActionRequest) (any, error) {
+		spec := haSpecFrom(req.Widget.Config)
+		credential, err := h.haCredential(spec.CredentialID)
+		if err != nil || spec.Server == "" {
+			return nil, errMediaNotSetUp
+		}
+		resp, err := h.mediaPost(ctx, spec.Server, credential, "/api/services/"+haDomain(req.Target)+"/"+service,
+			map[string]string{"entity_id": req.Target})
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		var changed []haState
+		_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&changed)
+		type state struct {
+			ID    string `json:"id"`
+			State string `json:"state"`
+			On    bool   `json:"on"`
+		}
+		answer := struct {
+			States []state `json:"states"`
+		}{States: []state{}}
+		for _, s := range changed {
+			answer.States = append(answer.States, state{ID: s.EntityID, State: s.State, On: s.State == "on"})
+		}
+		return answer, nil
 	}
-	defer resp.Body.Close()
-	var changed []haState
-	_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&changed)
-	type state struct {
-		ID    string `json:"id"`
-		State string `json:"state"`
-		On    bool   `json:"on"`
-	}
-	answer := struct {
-		States []state `json:"states"`
-	}{States: []state{}}
-	for _, s := range changed {
-		answer.States = append(answer.States, state{ID: s.EntityID, State: s.State, On: s.State == "on"})
-	}
-	_ = json.NewEncoder(w).Encode(answer)
 }

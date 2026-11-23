@@ -102,3 +102,7 @@
 @media (max-width: 30rem) {
     .dns-detail-cols { grid-template-columns: 1fr; }
 }
+
+/* The pause control sits under the tile: a button cannot hold buttons. */
+.dns-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 0.4rem; }
+.dns-controls .dns-foot { margin-right: auto; }

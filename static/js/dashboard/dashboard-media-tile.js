@@ -57,6 +57,15 @@
         started: ['dashboard.widgetMediaStarted', '✓'],
         viewOnly: ['dashboard.widgetMediaViewOnly', 'View only'],
         switchFailed: ['dashboard.widgetMediaSwitchFailed', 'Could not switch {title}.'],
+        actionFailed: ['dashboard.widgetMediaActionFailed', 'That did not work for {title}.'],
+        actionSure: ['dashboard.widgetMediaActionSure', 'Sure?'],
+        pause: ['dashboard.widgetMediaPause', 'Pause'],
+        resume: ['dashboard.widgetMediaResume', 'Resume'],
+        pauseAll: ['dashboard.widgetMediaPauseAll', 'Pause all'],
+        resumeAll: ['dashboard.widgetMediaResumeAll', 'Resume all'],
+        approve: ['dashboard.widgetMediaApprove', 'Approve'],
+        decline: ['dashboard.widgetMediaDecline', 'Decline'],
+        search: ['dashboard.widgetMediaSearch', 'Search'],
         notFound: ['dashboard.widgetMediaNotFound', 'not found'],
         valueOn: ['dashboard.widgetMediaValueOn', 'on'],
         valueOff: ['dashboard.widgetMediaValueOff', 'off'],
@@ -480,6 +489,44 @@
         if (text) panel?.appendChild(textBlock('p', 'media-stale', text));
     }
 
+    /**
+     * Sends one action of a service tile: POST /api/widgets/<service>/action.
+     *
+     * The one way every tile acts (approve, pause, search, switch). The server
+     * checks the write token, the widget's own switch and that the target is
+     * a line it offered; this only sends, and forgets the tile's cached answer
+     * so the next read asks the service again, done or not.
+     *
+     * @returns {Promise<{ok: boolean, answer: any}>}
+     */
+    async function sendAction(dash, widget, service, pageId, { action, target, arg } = {}) {
+        let ok = false;
+        let answer = null;
+        try {
+            const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+            const body = { pageId, id: widget.id, action, target };
+            if (arg !== undefined) body.arg = arg;
+            const res = await send(`/api/widgets/${service}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            ok = res.ok;
+            answer = ok ? await res.json().catch(() => null) : null;
+        } catch (_error) {
+            ok = false;
+        }
+        if (dash?._widgetMedia) delete dash._widgetMedia[`${service}:${pageId}:${widget.id}`];
+        return { ok, answer };
+    }
+
+    // Whether the reader turned actions on for this tile. Home Assistant
+    // switched before the setting existed, so only an explicit false is off.
+    function actionsOn(widget, service) {
+        const value = widget?.config?.actions;
+        return service === 'homeassistant' ? value !== false : value === true;
+    }
+
     async function entityAction(dash, widget, item, button, row) {
         const state = entityState.get(widget.id) || {};
         if (button.getAttribute('aria-busy') === 'true') return;
@@ -488,28 +535,14 @@
         button.setAttribute('aria-busy', 'true');
         if (toggle) button.setAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
         entityMessage(row, '');
-        let ok = false;
-        let answer = null;
-        try {
-            const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
-            const res = await send('/api/widgets/homeassistant/action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: state.pageId, id: widget.id, entity: item.id }),
-            });
-            ok = res.ok;
-            answer = ok ? await res.json().catch(() => null) : null;
-        } catch (_error) {
-            ok = false;
-        }
+        const { ok, answer } = await sendAction(dash, widget, 'homeassistant', state.pageId,
+            { action: item.control, target: item.id });
         button.removeAttribute('aria-busy');
         if (!ok) {
             if (toggle) button.setAttribute('aria-pressed', before);
             entityMessage(row, say(dash, widget, 'switchFailed', { title: item.title }));
             return;
         }
-        // The next read asks Home Assistant again rather than the old answer.
-        if (dash?._widgetMedia) delete dash._widgetMedia[`homeassistant:${state.pageId}:${widget.id}`];
         const changed = (answer?.states || []).find((s) => s.id === item.id);
         if (toggle && changed) {
             item.on = !!changed.on;
@@ -523,6 +556,64 @@
             // than show the old lights until its next refresh.
             setTimeout(() => { void state.redraw?.(); }, SCENE_REDRAW_MS);
         }
+    }
+
+    /*
+     * One action button of a service tile (pause, approve, search...).
+     *
+     * `spec` comes from the service's lineActions or clientAction: action,
+     * glyph, label, and confirm for one a misclick should not do (a second
+     * click within a few seconds does it). Done, the tile reads the service
+     * again; refused, the line says so and the tile stays as it was.
+     */
+    const ACTION_ARM_MS = 4000;
+
+    function actionButton(dash, widget, spec, target, title, messageAt) {
+        const button = textBlock('button', 'media-run media-action', spec.glyph || say(dash, widget, spec.label));
+        button.type = 'button';
+        button.dataset.mediaAction = spec.action;
+        button.dataset.mediaTarget = target;
+        const label = say(dash, widget, spec.label);
+        button.setAttribute('aria-label', title ? `${label}: ${title}` : label);
+        button.title = label;
+        let armed = 0;
+        button.addEventListener('click', async (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            if (button.getAttribute('aria-busy') === 'true') return;
+            if (spec.confirm && Date.now() - armed > ACTION_ARM_MS) {
+                armed = Date.now();
+                button.textContent = say(dash, widget, 'actionSure');
+                setTimeout(() => {
+                    if (Date.now() - armed >= ACTION_ARM_MS && button.isConnected) {
+                        button.textContent = spec.glyph || label;
+                    }
+                }, ACTION_ARM_MS);
+                return;
+            }
+            armed = 0;
+            const state = entityState.get(widget.id) || {};
+            button.setAttribute('aria-busy', 'true');
+            entityMessage(messageAt, '');
+            const { ok } = await sendAction(dash, widget, serviceOf(widget).id, state.pageId,
+                { action: spec.action, target, arg: spec.arg });
+            button.removeAttribute('aria-busy');
+            if (!ok) {
+                button.textContent = spec.glyph || label;
+                entityMessage(messageAt, say(dash, widget, 'actionFailed', { title: title || label }));
+                return;
+            }
+            void state.redraw?.();
+        });
+        return button;
+    }
+
+    // The buttons a line offers, when this reader may act on this tile.
+    function lineActions(widget, item) {
+        const service = serviceOf(widget);
+        const state = entityState.get(widget.id) || {};
+        if (!state.controls || !actionsOn(widget, service.id) || typeof service.lineActions !== 'function') return [];
+        return service.lineActions(item, state.result || {}) || [];
     }
 
     function entityRow(dash, widget, item) {
@@ -546,14 +637,16 @@
         row.appendChild(name);
 
         let control = null;
-        if (item.control === 'toggle') {
+        // Actions off for this tile: the line reads its state, no button.
+        const canAct = actionsOn(widget, 'homeassistant');
+        if (canAct && item.control === 'toggle') {
             control = document.createElement('button');
             control.type = 'button';
             control.className = 'media-switch';
             control.dataset.haToggle = item.id;
             control.setAttribute('aria-pressed', String(!!item.on));
             control.setAttribute('aria-label', say(dash, widget, 'switchLabel', { title: item.title }));
-        } else if (item.control === 'run') {
+        } else if (canAct && item.control === 'run') {
             control = textBlock('button', 'media-run', say(dash, widget, 'start'));
             control.type = 'button';
             control.dataset.haRun = item.id;
@@ -596,7 +689,15 @@
         if (serviceOf(widget).art === false) row.classList.add('media-row--bare');
         else row.append(picture(item, 'poster'));
         row.append(text);
-        return row;
+        const actions = lineActions(widget, item);
+        if (!actions.length) return row;
+        // A button cannot hold buttons: the line and its actions side by side.
+        const line = document.createElement('div');
+        line.className = 'media-entity media-action-line';
+        row.classList.add('media-entity-name');
+        line.appendChild(row);
+        actions.forEach((spec) => line.appendChild(actionButton(dash, widget, spec, item.id, item.title, line)));
+        return line;
     }
 
     /*
@@ -1029,7 +1130,16 @@
         if (Number(totals.up) > 0) parts.push(`↑ ${speedText(dash, widget, totals.up)}`);
         if (Number(totals.active) > 0) parts.push(say(dash, widget, 'totalsActive', { n: totals.active }));
         if (Number(totals.paused) > 0) parts.push(say(dash, widget, 'totalsPaused', { n: totals.paused }));
-        return textBlock('p', 'media-totals', parts.join(' · '));
+        const line = textBlock('p', 'media-totals', parts.join(' · '));
+        const service = serviceOf(widget);
+        const state = entityState.get(widget.id) || {};
+        const spec = state.controls && actionsOn(widget, service.id) && typeof service.clientAction === 'function'
+            ? service.clientAction(totals) : null;
+        if (spec) {
+            line.classList.add('media-action-line');
+            line.appendChild(actionButton(dash, widget, spec, 'all', '', line.parentElement || line));
+        }
+        return line;
     }
 
     /** Names the control that has focus, so a redraw can give it back. */
@@ -1083,7 +1193,7 @@
             if (heldAt) wrap.appendChild(textBlock('p', 'media-stale', agoText(dash, widget, heldAt)));
         };
         const items = Array.isArray(result.items) ? result.items : [];
-        entityState.set(widget.id, { pageId, controls: result.controls === true,
+        entityState.set(widget.id, { pageId, controls: result.controls === true, result,
             redraw: () => render(body, widget, dash, service, { quiet: true }) });
         if (result.error && !items.length) {
             sayIn(body, 'dashboard-widget-empty', errorText(dash, widget, result.error));
@@ -1141,6 +1251,10 @@
         textBlock,
         wideOnly,
         itemButton,
+        // For a tile that draws its own controls (the DNS pause).
+        actionButton,
+        sendAction,
+        actionsOn,
         openDetail: (...args) => openDetail(...args),
     };
 })();

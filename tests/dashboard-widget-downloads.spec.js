@@ -114,8 +114,64 @@ test.describe('the download widgets', () => {
         for (const one of state) {
             expect(one.offered).toBe(true);
             expect(one.renderer).toBe('function');
-            expect(one.settings).toEqual(['filter', 'sort', 'hideCompleted', 'hideTotals', 'layout', 'click', 'target', 'rows', 'ttl']);
+            expect(one.settings).toEqual(['filter', 'sort', 'hideCompleted', 'hideTotals', 'actions', 'layout', 'click', 'target', 'rows', 'ttl']);
         }
+    });
+
+    // Actions on: a pause per busy line, a resume per paused one, none on a
+    // finished one, and one for the whole client on the totals line. Each
+    // click goes to the action route with the line's id or "all".
+    test('pause and resume buttons when actions are on', async ({ page }) => {
+        await open(page);
+        const base = answer();
+        const result = {
+            ...base,
+            controls: true,
+            items: [...base.items, { id: 't3', title: 'Example.Album', kind: 'download', library: 'Paused',
+                libraryId: 'paused', addedAt: Date.now(), progress: 0.5, size: 100 * MB, openUrl: 'http://qb.example:8080' }],
+            totals: { ...base.totals, paused: 1 },
+        };
+        let tile = await draw(page, { result, config: { layout: 'list' } });
+        await expect(tile.locator('[data-media-action]')).toHaveCount(0);
+
+        tile = await draw(page, { result, config: { layout: 'list', actions: true } });
+        await expect(tile.locator('[data-media-target="t1"][data-media-action="pause"]')).toBeVisible();
+        await expect(tile.locator('[data-media-target="t3"][data-media-action="resume"]')).toBeVisible();
+        await expect(tile.locator('[data-media-target="t2"]')).toHaveCount(0);
+        await expect(tile.locator('.media-totals [data-media-target="all"][data-media-action="pause"]')).toBeVisible();
+
+        // Done, the tile reads again: answered with the same lines.
+        await page.evaluate((result) => {
+            window.__dlSent = [];
+            window.__dlRealFetch = window.fetch;
+            window.fetch = async (url, init = {}) => {
+                const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                if (String(url).includes('/action')) {
+                    window.__dlSent.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+                    return json({ ok: true });
+                }
+                if (String(url).includes('/api/widgets/qbittorrent')) return json(result);
+                return window.__dlRealFetch(url, init);
+            };
+        }, result);
+        await tile.locator('[data-media-target="t1"]').click();
+        await tile.locator('.media-totals [data-media-target="all"]').click();
+        await expect.poll(() => page.evaluate(() => window.__dlSent.length)).toBe(2);
+        const sent = await page.evaluate(() => { window.fetch = window.__dlRealFetch; return window.__dlSent; });
+        expect(sent[0].url).toContain('/api/widgets/qbittorrent/action');
+        expect(sent[0].body).toEqual({ pageId: expect.anything(), id: 'w_downloads1', action: 'pause', target: 't1' });
+        expect(sent[1].body.target).toBe('all');
+    });
+
+    // A queue SABnzbd paused as a whole: one resume on top, none per line.
+    test('a paused SABnzbd queue resumes from the totals line only', async ({ page }) => {
+        await open(page);
+        const base = answer();
+        const result = { ...base, controls: true, totals: { ...base.totals, active: 0, paused: 1, clientPaused: true },
+            items: [{ ...base.items[0], libraryId: 'paused', library: 'Paused' }] };
+        const tile = await draw(page, { type: 'sabnzbd', result, config: { layout: 'list', actions: true } });
+        await expect(tile.locator('.media-list [data-media-action]')).toHaveCount(0);
+        await expect(tile.locator('.media-totals [data-media-action="resume"]')).toBeVisible();
     });
 
     test('totals on top, and a row with its bar, speed and time left', async ({ page }) => {

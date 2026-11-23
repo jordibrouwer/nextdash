@@ -46,6 +46,8 @@ func downloadWidgetFields() []widgetField {
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: downloadMinTTL, Max: 3600},
+		// Pausing from the tile; absent means off (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	}
 }
 

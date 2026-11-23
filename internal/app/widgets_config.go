@@ -97,6 +97,8 @@ func arrWidgetFields() []widgetField {
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+		// Searching from the tile; absent means off (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	}
 }
 
@@ -391,6 +393,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: homeAssistantMinTTL, Max: 3600},
+		// Switching from the tile; absent means on (see widgetActionsOn).
+		{Key: "actions", Kind: "bool"},
 	},
 	WidgetTypeSeerr: {
 		{Key: "server", Kind: "url"},
@@ -404,6 +408,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+		// Approving and declining from the tile; absent means off.
+		{Key: "actions", Kind: "bool"},
 	},
 	WidgetTypeJellyfin: {
 		{Key: "server", Kind: "url"},

@@ -94,7 +94,7 @@ test.describe('the Home Assistant widget', () => {
         });
         expect(state.offered).toBe(true);
         expect(state.renderer).toBe('function');
-        expect(state.settings).toEqual(['groupBy', 'showLastChanged', 'layout', 'click', 'target', 'rows', 'ttl']);
+        expect(state.settings).toEqual(['groupBy', 'showLastChanged', 'actions', 'layout', 'click', 'target', 'rows', 'ttl']);
     });
 
     test('a tab per room; values, a switch and a start button', async ({ page }) => {
@@ -136,12 +136,21 @@ test.describe('the Home Assistant widget', () => {
         await toggle.click();
         await expect(toggle).toHaveAttribute('aria-pressed', 'false');
         const sent = await page.evaluate(() => window.__haSent.filter((s) => s.body));
-        expect(sent[0].body).toEqual({ pageId: expect.any(Number), id: 'w_hass00000001', entity: 'light.ceiling' });
+        expect(sent[0].body).toEqual({ pageId: expect.any(Number), id: 'w_hass00000001', action: 'toggle', target: 'light.ceiling' });
 
         tile = await draw(page, { result: answer(), config: { layout: 'list' }, action: { status: 403, body: {} } });
         await tile.locator('[data-ha-toggle="light.ceiling"]').click();
         await expect(tile.locator('[data-ha-toggle="light.ceiling"]')).toHaveAttribute('aria-pressed', 'true');
         await expect(tile.locator('.media-stale')).toContainText(/could not switch ceiling light/i);
+    });
+
+    // Actions switched off in the tile's settings: each line reads its state
+    // and there is nothing to press.
+    test('actions off: values instead of buttons', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer(), config: { layout: 'list', actions: false } });
+        await expect(tile.locator('[data-ha-value="light.ceiling"]')).toHaveText('on');
+        await expect(tile.locator('[data-ha-toggle], [data-ha-run]')).toHaveCount(0);
     });
 
     test('a scene starts and says so', async ({ page }) => {

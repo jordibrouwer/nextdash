@@ -10,6 +10,12 @@
         id: 'seerr',
         name: 'Seerr',
         words: {},
+        // A request waiting for a decision can be approved or declined; the
+        // decline asks for a second click.
+        lineActions: (item) => (item.libraryId === 'pending'
+            ? [{ action: 'approve', glyph: '✓', label: 'approve' },
+                { action: 'decline', glyph: '✕', label: 'decline', confirm: true }]
+            : []),
         emptyGroup: {
             pending: ['dashboard.widgetSeerrNothingPending', 'No pending requests.'],
             approved: ['dashboard.widgetSeerrNothingApproved', 'Nothing approved is on its way.'],

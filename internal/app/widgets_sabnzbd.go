@@ -102,7 +102,7 @@ func (h *Handlers) fetchSABnzbd(ctx context.Context, spec downloadSpec) (MediaRe
 		return result, err
 	}
 	speed, _ := strconv.ParseFloat(queue.Queue.KBPerSec, 64)
-	totals := &MediaTotals{Down: int64(speed * 1024)}
+	totals := &MediaTotals{Down: int64(speed * 1024), ClientPaused: queue.Queue.Paused}
 	lines := newDownloadLines(spec)
 
 	type queued struct {

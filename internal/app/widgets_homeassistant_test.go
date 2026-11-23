@@ -369,7 +369,7 @@ func askHAAction(t *testing.T, h *Handlers, widgetID, entity, token string) *htt
 		req.Header.Set("X-NextDash-Token", token)
 	}
 	rec := httptest.NewRecorder()
-	h.homeAssistantActionHandler(rec, req)
+	h.widgetActionHandler(WidgetTypeHomeAssistant)(rec, req)
 	return rec
 }
 

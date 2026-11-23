@@ -28,6 +28,10 @@ type fakeQBittorrent struct {
 	logins   int
 	sid      string
 	torrents []byte
+	// v4 answers only the old pause and resume names, as qBittorrent 4 does.
+	v4 bool
+	// switched records each pause/resume as "path hashes=...".
+	switched []string
 }
 
 func readQBFixture(t *testing.T, name string) []byte {
@@ -77,6 +81,14 @@ func newFakeQBittorrent(t *testing.T) *fakeQBittorrent {
 			_, _ = w.Write(categories)
 		case "/api/v2/app/version":
 			_, _ = w.Write(version)
+		case "/api/v2/torrents/stop", "/api/v2/torrents/start", "/api/v2/torrents/pause", "/api/v2/torrents/resume":
+			old := strings.HasSuffix(r.URL.Path, "/pause") || strings.HasSuffix(r.URL.Path, "/resume")
+			if r.Method != http.MethodPost || old != fake.v4 {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			_ = r.ParseForm()
+			fake.switched = append(fake.switched, r.URL.Path+" hashes="+r.PostForm.Get("hashes"))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}

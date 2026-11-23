@@ -60,6 +60,27 @@ async function draw(page, { result, config = {}, width = 320 }) {
     return page.locator('#seerr-test');
 }
 
+/** Stands in for the service after a click: records actions, answers the redraw. */
+async function stubActions(page, type, result) {
+    await page.evaluate(({ type, result }) => {
+        window.__sent = [];
+        window.__realFetch = window.fetch;
+        window.fetch = async (url, init = {}) => {
+            const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            if (String(url).includes('/action')) {
+                window.__sent.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+                return json({ ok: true });
+            }
+            if (String(url).includes(`/api/widgets/${type}`)) return json(result);
+            return window.__realFetch(url, init);
+        };
+    }, { type, result });
+}
+
+async function unstubActions(page) {
+    return page.evaluate(() => { window.fetch = window.__realFetch; return window.__sent; });
+}
+
 test.describe('the Seerr widget', () => {
     test('offered, with a renderer and its settings', async ({ page }) => {
         await open(page);
@@ -75,7 +96,7 @@ test.describe('the Seerr widget', () => {
         });
         expect(state.offered).toContain('seerr');
         expect(state.renderer).toBe('function');
-        expect(state.settings).toEqual(['status', 'mediaType', 'layout', 'click', 'target', 'rows', 'ttl']);
+        expect(state.settings).toEqual(['status', 'mediaType', 'actions', 'layout', 'click', 'target', 'rows', 'ttl']);
     });
 
     test('a row names who asked, and the strip has a tab per status', async ({ page }) => {
@@ -143,5 +164,41 @@ test.describe('the Seerr widget', () => {
             const blocks = await (await send('/api/pages/1/blocks')).json();
             return (blocks.widgets || []).find((w) => w.type === 'seerr')?.config?.requestedBy ?? null;
         }), { timeout: 15_000 }).toBe('2');
+    });
+
+    // Requests waiting for a decision get approve and decline; decline asks
+    // twice. The other tabs' lines have neither.
+    test('approve and decline on pending requests when actions are on', async ({ page }) => {
+        await open(page);
+        const base = answer();
+        const result = {
+            ...base, controls: true,
+            items: [{ id: 'r9', title: 'Alien: Earth', subtitle: 'requested by Sam', kind: 'tv', year: 2025,
+                library: 'Pending', libraryId: 'pending', addedAt: Date.now(), poster: PNG,
+                openUrl: 'https://seerr.example/tv/1' }, ...base.items],
+        };
+        let tile = await draw(page, { result, config: {} });
+        await expect(tile.locator('[data-media-action]')).toHaveCount(0);
+
+        tile = await draw(page, { result, config: { actions: true } });
+        await expect(tile.locator('[data-media-target="r9"][data-media-action="approve"]')).toBeVisible();
+        await expect(tile.locator('[data-media-target="r9"][data-media-action="decline"]')).toBeVisible();
+        await expect(tile.locator('[data-media-target="r1"]')).toHaveCount(0);
+        await expect(tile.locator('[data-media-target="r2"]')).toHaveCount(0);
+
+        await stubActions(page, 'seerr', result);
+        await tile.locator('[data-media-target="r9"][data-media-action="approve"]').click();
+        await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(1);
+        // The first click on decline only arms it.
+        const decline = tile.locator('[data-media-target="r9"][data-media-action="decline"]');
+        await decline.click();
+        await expect(decline).toHaveText(/sure/i);
+        expect(await page.evaluate(() => window.__sent.length)).toBe(1);
+        await decline.click();
+        await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(2);
+        const sent = await unstubActions(page);
+        expect(sent[0].url).toContain('/api/widgets/seerr/action');
+        expect(sent[0].body).toEqual({ pageId: expect.anything(), id: 'w_seerr1', action: 'approve', target: 'r9' });
+        expect(sent[1].body).toMatchObject({ action: 'decline', target: 'r9' });
     });
 });

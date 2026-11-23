@@ -60,6 +60,27 @@ async function draw(page, { type = 'sonarr', result, config = {}, width = 320 })
     return page.locator('#arr-test');
 }
 
+/** Stands in for the service after a click: records actions, answers the redraw. */
+async function stubActions(page, type, result) {
+    await page.evaluate(({ type, result }) => {
+        window.__sent = [];
+        window.__realFetch = window.fetch;
+        window.fetch = async (url, init = {}) => {
+            const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            if (String(url).includes('/action')) {
+                window.__sent.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+                return json({ ok: true });
+            }
+            if (String(url).includes(`/api/widgets/${type}`)) return json(result);
+            return window.__realFetch(url, init);
+        };
+    }, { type, result });
+}
+
+async function unstubActions(page) {
+    return page.evaluate(() => { window.fetch = window.__realFetch; return window.__sent; });
+}
+
 test.describe('the Sonarr and Radarr widgets', () => {
     test('offered, with a renderer and their settings', async ({ page }) => {
         await open(page);
@@ -76,7 +97,7 @@ test.describe('the Sonarr and Radarr widgets', () => {
         });
         expect(state.offered).toEqual(expect.arrayContaining(['sonarr', 'radarr']));
         expect(state.renderers).toEqual(['function', 'function']);
-        expect(state.sonarr).toEqual(['show', 'days', 'layout', 'click', 'target', 'rows', 'ttl']);
+        expect(state.sonarr).toEqual(['show', 'days', 'actions', 'layout', 'click', 'target', 'rows', 'ttl']);
         expect(state.radarr).toEqual(state.sonarr);
     });
 
@@ -132,5 +153,26 @@ test.describe('the Sonarr and Radarr widgets', () => {
                 .every((el) => el.getBoundingClientRect().right <= edge + 1);
         });
         expect(inside).toBe(true);
+    });
+
+    // A search button on what is coming, none on the queue.
+    test('a search button on upcoming lines when actions are on', async ({ page }) => {
+        await open(page);
+        for (const type of ['sonarr', 'radarr']) {
+            const result = answer({ controls: true });
+            let tile = await draw(page, { type, result, config: {} });
+            await expect(tile.locator('[data-media-action]'), type).toHaveCount(0);
+
+            tile = await draw(page, { type, result, config: { actions: true } });
+            await expect(tile.locator('[data-media-target="e11"][data-media-action="search"]'), type).toBeVisible();
+            await expect(tile.locator('[data-media-target="q3"]'), type).toHaveCount(0);
+
+            await stubActions(page, type, result);
+            await tile.locator('[data-media-target="e11"]').click();
+            await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(1);
+            const sent = await unstubActions(page);
+            expect(sent[0].url).toContain(`/api/widgets/${type}/action`);
+            expect(sent[0].body).toEqual({ pageId: expect.anything(), id: 'w_arr1', action: 'search', target: 'e11' });
+        }
     });
 });

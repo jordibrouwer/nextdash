@@ -167,6 +167,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **improved — The Service overview on a phone.** Container chips, the hint under the timeline and long host names wrap instead of widening the sheet (`service-view.css`).
 - **improved — The Service overview leads with a summary.** One title bar carries the name, address and actions; a status line says "All good" or "Incident since 14:21", key figures follow, and only the sections that have something show: what is missing collapses into one "Not set up yet" card. In the Bookmarks panel the link has its own accent row under Open / Edit / Re-check. Update, Stop and Restart confirmations no longer close the page (`service-view.css`).
 
+### Widgets
+
+- **new — Actions in service widgets.** A tile can now act on its service, behind the write token and a per-widget switch in Config → Widgets that is off until you turn it on: **Seerr** approves or declines a pending request (decline asks for a second click), **Sonarr** and **Radarr** start a search for an upcoming episode or film, **qBittorrent** and **SABnzbd** pause and resume one download or the whole client (from the totals line), and **Pi-hole** and **AdGuard Home** pause blocking for 5 minutes, 30 minutes, an hour or until resumed. Home Assistant uses the same pattern; its switch is on unless you turn it off, so existing tiles keep switching. The server reads the address and key itself and only acts on a line the tile was shown; qBittorrent 4 and 5 are both handled (`POST /api/widgets/<type>/action`, `widgets_actions.go`).
+
 ## v1.32.0 — 19 November 2026
 
 Small homelab tools in the search panel, clean titles for the RSS widget and Watch feeds, and a round of Compose, widget and reminder fixes.

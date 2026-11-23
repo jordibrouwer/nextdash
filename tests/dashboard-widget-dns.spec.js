@@ -109,6 +109,27 @@ async function savedConfig(page, type) {
 const TYPES = ['adguard', 'pihole'];
 const LOOKS = ['pulse', 'leaders', 'tiles', 'mix'];
 
+/** Stands in for the service after a click: records actions, answers the redraw. */
+async function stubActions(page, type, result) {
+    await page.evaluate(({ type, result }) => {
+        window.__sent = [];
+        window.__realFetch = window.fetch;
+        window.fetch = async (url, init = {}) => {
+            const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            if (String(url).includes('/action')) {
+                window.__sent.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+                return json({ ok: true });
+            }
+            if (String(url).includes(`/api/widgets/${type}`)) return json(result);
+            return window.__realFetch(url, init);
+        };
+    }, { type, result });
+}
+
+async function unstubActions(page) {
+    return page.evaluate(() => { window.fetch = window.__realFetch; return window.__sent; });
+}
+
 test.describe('the DNS blocker widgets', () => {
     test('both offered under System, each with a renderer', async ({ page }) => {
         await open(page);
@@ -266,4 +287,37 @@ test.describe('the DNS blocker widgets', () => {
             loginPath: '/api/auth', password: 'pihole-pass-0123', tokenHeader: 'X-FTL-SID', tokenPath: 'session.sid' });
         await expect(panel.locator('[data-widget-setting="parts"], [data-widget-setting="look"]').first()).toBeVisible();
     });
+
+    // The pause control sits under the tile: Pause opens 5 min / 30 min / 1 hour
+    // / until resumed, and while protection is off there is Resume instead.
+    for (const type of TYPES) {
+        test(`${type}: pause with a chosen time, and resume`, async ({ page }) => {
+            await open(page);
+            const on = { ...answer(type), controls: true };
+            let tile = await draw(page, { type, result: on, config: {} });
+            await expect(tile.locator('[data-dns-controls]')).toHaveCount(0);
+            tile = await draw(page, { type, result: { ...on, controls: false }, config: { actions: true } });
+            await expect(tile.locator('[data-dns-controls]')).toHaveCount(0);
+
+            tile = await draw(page, { type, result: on, config: { actions: true } });
+            await expect(tile.locator('[data-media-action="resume"]')).toHaveCount(0);
+            await tile.locator('[data-dns-pause]').click();
+            await expect(tile.locator('[data-dns-controls] [data-media-action="pause"]')).toHaveCount(4);
+
+            const off = answer(type, { protection: false, pausedUntil: Date.now() + 5 * 60_000 });
+            await stubActions(page, type, { ...off, controls: true });
+            await tile.locator('[data-dns-controls] [data-media-action="pause"]').nth(1).click();
+            await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(1);
+            // Redrawn from the answer: protection is off, so Resume is offered.
+            const resume = tile.locator('[data-media-action="resume"]');
+            await expect(resume).toBeVisible();
+            await expect(tile.locator('[data-dns-controls]')).toContainText(/back on in/i);
+            await resume.click();
+            await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(2);
+            const sent = await unstubActions(page);
+            expect(sent[0].url).toContain(`/api/widgets/${type}/action`);
+            expect(sent[0].body).toMatchObject({ action: 'pause', target: 'all', arg: 1800 });
+            expect(sent[1].body).toMatchObject({ action: 'resume', target: 'all' });
+        });
+    }
 });

@@ -17387,6 +17387,9 @@ class DashboardConfig {
               ['queue', ['config.widgetArrShowQueue', 'What is downloading']],
           ] },
         { key: 'days', kind: 'int', min: 1, max: 30, label: ['config.widgetArrDays', 'Look ahead (days)'] },
+        // A search button on what is coming; off until the reader turns it on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsArr', 'Search from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['list', ['config.widgetMediaLayoutList', 'List with posters']],
@@ -17429,7 +17432,10 @@ class DashboardConfig {
               ['movie', ['config.widgetSeerrMediaTypeMovie', 'Films']],
               ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
           ] },
-        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
+        // Approve and decline buttons on requests waiting for a decision.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsSeerr', 'Approve and decline from the tile'] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days', 'actions'].includes(field.key)),
     ];
 
     /**
@@ -17456,6 +17462,10 @@ class DashboardConfig {
           ] },
         { key: 'showLastChanged', kind: 'bool',
           label: ['config.widgetHomeAssistantShowLastChanged', 'Show since when'] },
+        // Off draws each line's state without a button; the server refuses
+        // switching too. On by default: the tile switched before this existed.
+        { key: 'actions', kind: 'bool', defaultOn: true,
+          label: ['config.widgetActionsHomeAssistant', 'Switch from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['strip', ['config.widgetHomeAssistantLayoutStrip', 'A tab per group']],
@@ -17488,6 +17498,9 @@ class DashboardConfig {
           label: ['config.widgetDownloadsHideCompleted', 'Leave out what has finished'] },
         { key: 'hideTotals', kind: 'bool',
           label: ['config.widgetDownloadsHideTotals', 'Leave out the speeds on top'] },
+        // Pause and resume buttons; off until the reader turns them on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsDownloads', 'Pause and resume from the tile'] },
         { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
           options: [
               ['list', ['config.widgetDownloadsLayoutList', 'One list']],
@@ -17578,6 +17591,9 @@ class DashboardConfig {
     }
 
     static DNS_TAIL = [
+        // A pause and resume control for blocking; off until the reader turns it on.
+        { key: 'actions', kind: 'bool',
+          label: ['config.widgetActionsDns', 'Pause blocking from the tile'] },
         { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
           options: [
               ['detail', ['config.widgetDnsClickDetail', 'Shows the top ten first']],

@@ -8,17 +8,24 @@ import (
 	"time"
 )
 
+// arrAnswer is one Sonarr or Radarr tile's answer, through the shared media
+// cache. The widget route and the action check both read it.
+func (h *Handlers) arrAnswer(kind arrKind) func(ctx context.Context, pageID int, widget Widget, forced bool) MediaResult {
+	return func(ctx context.Context, pageID int, widget Widget, forced bool) MediaResult {
+		spec := arrSpecFrom(widget.Config)
+		ms := mediaSpec{Service: kind.Service, Server: spec.Server, CredentialID: spec.CredentialID,
+			Fingerprint: spec.fingerprint(), TTL: spec.TTL}
+		return h.mediaAnswer(ctx, pageID, widget.ID, ms, func(ctx context.Context, imageURL func(mediaImageRef) string) (MediaResult, map[mediaImageRef]bool, error) {
+			return h.fetchArr(ctx, kind, spec, time.Now(), imageURL)
+		}, forced)
+	}
+}
+
 // arrWidgetHandler answers what one Sonarr or Radarr tile should draw.
 func (h *Handlers) arrWidgetHandler(kind arrKind, widgetType WidgetType) http.HandlerFunc {
+	answer := h.arrAnswer(kind)
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.serveMediaWidget(w, r, widgetType, func(ctx context.Context, pageID int, widget Widget, forced bool) MediaResult {
-			spec := arrSpecFrom(widget.Config)
-			ms := mediaSpec{Service: kind.Service, Server: spec.Server, CredentialID: spec.CredentialID,
-				Fingerprint: spec.fingerprint(), TTL: spec.TTL}
-			return h.mediaAnswer(ctx, pageID, widget.ID, ms, func(ctx context.Context, imageURL func(mediaImageRef) string) (MediaResult, map[mediaImageRef]bool, error) {
-				return h.fetchArr(ctx, kind, spec, time.Now(), imageURL)
-			}, forced)
-		})
+		h.serveMediaWidget(w, r, widgetType, answer)
 	}
 }
 

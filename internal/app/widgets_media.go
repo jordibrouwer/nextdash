@@ -190,6 +190,9 @@ type MediaTotals struct {
 	Active int   `json:"active"`
 	Paused int   `json:"paused"`
 	Done   int   `json:"done"`
+	// ClientPaused is a client paused as a whole (SABnzbd's queue), not
+	// line by line.
+	ClientPaused bool `json:"clientPaused,omitempty"`
 }
 
 // MediaGroup is one tab of a tile: a library, or a part of a service.
@@ -447,7 +450,9 @@ func (h *Handlers) serveMediaWidget(w http.ResponseWriter, r *http.Request, widg
 	if forced && !h.requireWriteAccess(w, r) {
 		return
 	}
-	_ = json.NewEncoder(w).Encode(answer(r.Context(), pageID, *found, forced))
+	result := answer(r.Context(), pageID, *found, forced)
+	result.Controls = widgetControls(r, *found)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 // mediaRequest makes one GET to a service: the address checked against the

@@ -64,7 +64,13 @@ func newFakeSABnzbd(t *testing.T) *fakeSABnzbd {
 		}
 		switch q.Get("mode") {
 		case "queue":
+			if q.Get("name") != "" {
+				_, _ = w.Write([]byte(`{"status": true, "nzo_ids": ["` + q.Get("value") + `"]}`))
+				return
+			}
 			_, _ = w.Write(fake.queue)
+		case "pause", "resume":
+			_, _ = w.Write([]byte(`{"status": true}`))
 		case "history":
 			_, _ = w.Write(fake.history)
 		default:

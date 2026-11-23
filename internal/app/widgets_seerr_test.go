@@ -24,6 +24,8 @@ type fakeSeerr struct {
 	inFlight    int
 	maxInFlight int
 	missing     map[string]bool // detail paths that answer 404
+	posts       []string        // "path body" of every POST, e.g. an approval
+	requests    []byte          // when set, answers /api/v1/request instead of the fixture
 }
 
 func readSeerrFixture(t *testing.T, name string) []byte {
@@ -53,8 +55,20 @@ func newFakeSeerr(t *testing.T) *fakeSeerr {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		if r.Method == http.MethodPost {
+			fake.mu.Lock()
+			fake.posts = append(fake.posts, r.URL.Path+" "+readBody(r))
+			fake.mu.Unlock()
+			_, _ = w.Write([]byte("{}"))
+			return
+		}
 		switch {
 		case r.URL.Path == "/api/v1/request":
+			fake.mu.Lock()
+			if fake.requests != nil {
+				requests = fake.requests
+			}
+			fake.mu.Unlock()
 			_, _ = w.Write(requests)
 		case r.URL.Path == "/api/v1/status":
 			_, _ = w.Write(status)

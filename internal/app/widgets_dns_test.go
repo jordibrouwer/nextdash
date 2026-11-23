@@ -19,16 +19,30 @@ const (
 )
 
 func fakeAdguard(t *testing.T, stats string, protection string) *httptest.Server {
+	return fakeAdguardRecording(t, stats, protection, nil)
+}
+
+// fakeAdguardRecording also notes "path body" of every POST in posted.
+func fakeAdguardRecording(t *testing.T, stats string, protection string, posted *[]string) *httptest.Server {
 	t.Helper()
+	var mu sync.Mutex
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
 		if !ok || user != "admin" || pass != "secret" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		if r.Method == http.MethodPost {
+			mu.Lock()
+			if posted != nil {
+				*posted = append(*posted, r.URL.Path+" "+readBody(r))
+			}
+			mu.Unlock()
+			return
+		}
 		switch r.URL.Path {
 		case "/control/status":
-			_, _ = fmt.Fprintf(w, `{"version":"v0.107.52","running":true,"protection_enabled":%s}`, protection)
+			_, _ = fmt.Fprintf(w, `{"version":"v0.107.52","running":true,"protection_enabled":%s,"protection_disabled_duration":%d}`, protection, 90000)
 		case "/control/stats":
 			_, _ = w.Write([]byte(stats))
 		default:
@@ -108,6 +122,7 @@ type fakePihole struct {
 	logins   int
 	valid    string
 	blocking string
+	posts    []string // "path body" of every POST except the sign-in
 }
 
 func newFakePihole(t *testing.T) *fakePihole {
@@ -128,6 +143,10 @@ func newFakePihole(t *testing.T) *fakePihole {
 		}
 		if r.Header.Get("X-FTL-SID") != f.valid || f.valid == "" {
 			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if r.Method == http.MethodPost {
+			f.posts = append(f.posts, r.URL.Path+" "+readBody(r))
 			return
 		}
 		switch r.URL.Path {
@@ -153,6 +172,10 @@ func newFakePihole(t *testing.T) *fakePihole {
 		case "/api/stats/upstreams":
 			_, _ = w.Write([]byte(`{"upstreams":[{"ip":"blocklist","name":"blocklist","port":-1,"count":9320,"statistics":{"response":0,"variance":0}},{"ip":"cache","name":"cache","port":-1,"count":4000,"statistics":{"response":0,"variance":0}},{"ip":"1.1.1.1","name":null,"port":53,"count":22,"statistics":{"response":0.011}},{"ip":"10.0.0.2","name":"unbound.lan","port":53,"count":71,"statistics":{"response":0.006}}],"forwarded_queries":100}`))
 		case "/api/dns/blocking":
+			if f.blocking == "disabled" {
+				_, _ = w.Write([]byte(`{"blocking":"disabled","timer":300}`))
+				return
+			}
 			_, _ = fmt.Fprintf(w, `{"blocking":%q,"timer":null}`, f.blocking)
 		default:
 			w.WriteHeader(http.StatusNotFound)

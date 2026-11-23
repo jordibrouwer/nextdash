@@ -52,6 +52,11 @@
         nothing: ['dashboard.widgetDnsNothing', 'Nothing to show.'],
         detailTitle: ['dashboard.widgetDnsDetailTitle', '{name} · top 10'],
         none: ['dashboard.widgetDnsNone', 'Nothing in the last day.'],
+        pause5: ['dashboard.widgetDnsPause5', '5 min'],
+        pause30: ['dashboard.widgetDnsPause30', '30 min'],
+        pause60: ['dashboard.widgetDnsPause60', '1 hour'],
+        pauseUntil: ['dashboard.widgetDnsPauseUntil', 'Until resumed'],
+        pausedLeft: ['dashboard.widgetDnsPausedLeft', 'back on in {n} min'],
     };
 
     function el(tag, className, text) {
@@ -418,6 +423,42 @@
         open.focus();
     }
 
+    /* ---- pausing ---- */
+
+    const PAUSES = [['pause5', 300], ['pause30', 1800], ['pause60', 3600], ['pauseUntil', 0]];
+
+    /**
+     * The pause control, under the tile (a button cannot hold buttons): Pause
+     * opens the choices, Resume shows while protection is off. Drawn only
+     * when the server says this reader may act and the tile's switch is on.
+     */
+    function controls(dash, widget, dns, result) {
+        if (result?.controls !== true || !Tile.actionsOn(widget, dns.service) || typeof dns.protection !== 'boolean') return null;
+        const row = el('div', 'dns-controls');
+        row.dataset.dnsControls = '';
+        if (dns.protection === false) {
+            const left = Math.ceil((Number(dns.pausedUntil) - Date.now()) / 60000);
+            if (dns.pausedUntil && left > 0) {
+                row.appendChild(el('span', 'dns-foot', Tile.say(dash, widget, 'pausedLeft', { n: left })));
+            }
+            row.appendChild(Tile.actionButton(dash, widget, { action: 'resume', label: 'resume' }, 'all', '', row));
+            return row;
+        }
+        const open = el('button', 'media-run dns-pause', Tile.say(dash, widget, 'pause'));
+        open.type = 'button';
+        open.dataset.dnsPause = '';
+        open.addEventListener('click', () => {
+            open.remove();
+            PAUSES.forEach(([key, seconds]) => {
+                const label = Tile.say(dash, widget, key);
+                row.appendChild(Tile.actionButton(dash, widget,
+                    { action: 'pause', glyph: label, label: 'pause', arg: seconds }, 'all', label, row));
+            });
+        });
+        row.appendChild(open);
+        return row;
+    }
+
     /* ---- drawing ---- */
 
     function draw(wrap, dash, widget, items, result) {
@@ -459,6 +500,8 @@
         tile.setAttribute('aria-label', summary);
         if (!open) tile.setAttribute('aria-haspopup', 'dialog');
         wrap.appendChild(tile);
+        const pause = controls(dash, widget, dns, result);
+        if (pause) wrap.appendChild(pause);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};
