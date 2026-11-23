@@ -52,6 +52,7 @@ class DashboardConfig {
         'feed-watch',
         'structure',
         'behavior',
+        'timeline',
         'finders',
         'inbox',
         'data-backups',
@@ -81,6 +82,11 @@ class DashboardConfig {
     static OLD_WIDGETS_LINKS = ['config/widgets/catalogue', 'config/widgets/types', 'config/widgets/custom'];
 
     static SECTION_MODULES = {
+        timeline: {
+            file: 'js/dashboard/dashboard-config-timeline.js',
+            datasetKey: 'dashboardConfigTimeline',
+            ready: () => window.DashboardConfigTimelineReady === true,
+        },
         inbox: {
             file: 'js/dashboard/dashboard-config-inbox.js',
             datasetKey: 'dashboardConfigInbox',
@@ -259,7 +265,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch', 'timeline'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -2449,6 +2455,7 @@ class DashboardConfig {
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
+            timeline: ['config.sectionTimeline', 'Timeline'],
             about: ['config.sectionAbout', 'About'],
         };
         const [key, fallback] = map[section] || [section, section];
@@ -2860,6 +2867,8 @@ class DashboardConfig {
             void this.loadBackupData();
         } else if (this.section === 'logs') {
             this.bindLogsActions(container);
+        } else if (this.section === 'timeline') {
+            void this.bindTimelineSection?.(container);
         } else if (this.section === 'containers') {
             this.bindControlPanels(container, 'behavior');
             this.bindContainersSection(container);
@@ -3116,7 +3125,7 @@ class DashboardConfig {
 
     /** Footer hint on every page that is not a list (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs',
+        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs', 'timeline',
             'inbox', 'containers', 'help', 'status-page', 'unraid', 'glances', 'assistant', 'bookmarks']);
         if (!formSections.has(this.section)) return;
         // The Tags tab of Bookmarks is a list and has the list legend.
@@ -5597,6 +5606,9 @@ class DashboardConfig {
         }
         if (this.section === 'logs') {
             return this.renderLogsSection();
+        }
+        if (this.section === 'timeline') {
+            return this.renderTimelineSection?.() ?? '';
         }
         if (this.section === 'about') {
             return this.renderAbout();

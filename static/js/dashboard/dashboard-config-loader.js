@@ -25,6 +25,7 @@ class DashboardConfigLoader {
         'feed-watch',
         'structure',
         'behavior',
+        'timeline',
         'finders',
         'inbox',
         'data-backups',

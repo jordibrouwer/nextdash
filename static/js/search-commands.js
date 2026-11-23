@@ -340,6 +340,7 @@ class SearchCommandsComponent {
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
+        { id: 'timeline', labelKey: 'config.sectionTimeline', fallback: 'Timeline' },
         { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
