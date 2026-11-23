@@ -186,24 +186,26 @@ func TestAThemeCanPickItsBackdrop(t *testing.T) {
 // The Neutrals collection survived no colours save: the sanitiser dropped the
 // field and loading never put it back, so the chip showed nothing for good.
 func TestSavingColoursKeepsTheCollection(t *testing.T) {
-	var id string
-	var tc ThemeColors
-	for k, v := range getDefaultBuiltInThemes() {
-		if v.Collection != "" {
-			id, tc = k, v
-			break
+	// Every built-in that names a collection, not the first one a map happens to
+	// yield: picking one at random let a collection the sanitiser dropped
+	// ("classic") pass or fail by luck.
+	checked := 0
+	for id, tc := range getDefaultBuiltInThemes() {
+		if tc.Collection == "" {
+			continue
+		}
+		checked++
+		if got := sanitizeThemeColors(tc); got.Collection != tc.Collection {
+			t.Errorf("%s: collection %q after sanitising, want %q", id, got.Collection, tc.Collection)
+		}
+		stripped := tc
+		stripped.Collection = ""
+		if got := fillThemeCharacter(stripped, tc); got.Collection != tc.Collection {
+			t.Errorf("%s: an install already stripped is not repaired: %q", id, got.Collection)
 		}
 	}
-	if id == "" {
+	if checked == 0 {
 		t.Skip("no built-in theme has a collection")
-	}
-	if got := sanitizeThemeColors(tc); got.Collection != tc.Collection {
-		t.Fatalf("%s: collection %q after sanitising, want %q", id, got.Collection, tc.Collection)
-	}
-	stripped := tc
-	stripped.Collection = ""
-	if got := fillThemeCharacter(stripped, tc); got.Collection != tc.Collection {
-		t.Fatalf("an install already stripped is not repaired: %q", got.Collection)
 	}
 	if got := sanitizeThemeColors(ThemeColors{Name: "x", Collection: "made-up"}); got.Collection != "" {
 		t.Fatalf("an invented collection was kept: %q", got.Collection)
