@@ -460,7 +460,7 @@
             {
                 title: f('dashTourLettersTitle', 'More letters on a bookmark'),
                 visual: (() => {
-                    const keys = [['z', f('dashTourLetterRemind', 'remind me')], ['k', f('dashTourLetterRelated', 'related links')],
+                    const keys = [['z', f('dashTourLetterRemind', 'remind me')], ['o', f('dashTourLetterRelated', 'related links')],
                         ['b', f('dashTourLetterLabel', 'label above')], ['s', f('dashTourLetterShare', 'share')],
                         ['q', f('dashTourLetterQr', 'QR code')], ['w', f('dashTourLetterWatch', 'watch its feed')],
                         ['l', f('dashTourLetterService', 'service overview')]];
@@ -476,7 +476,7 @@
                     `, f('dashTourLettersAlt', 'A cursor on a bookmark, and the letters that act on it: remind me, related links, label above, share, QR code, watch its feed and service overview'));
                 })(),
                 body: `<p>${esc(f('dashTourLettersBody1',
-                    'With the cursor on a bookmark: z sets a reminder, k shows related links, b puts a label above it, s shares it, q shows a QR code, w watches its feed and l opens its service overview.'))}</p>
+                    'With the cursor on a bookmark: z sets a reminder, o shows related links, b puts a label above it, s shares it, q shows a QR code, w watches its feed and l opens its service overview.'))}</p>
                     <p>${esc(f('dashTourLettersBody2',
                     'The right-click menu lists the same actions with their keys. Shift+Q adds the bookmark to Quick launch, or takes it out.'))}</p>`,
             },

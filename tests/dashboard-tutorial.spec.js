@@ -137,9 +137,9 @@ test.describe('dashboard tour', () => {
         await expect(body).toContainText('circles');
         await expect(body).toContainText('Config → Appearance → Header → Quick launch');
         await stepTo('More letters on a bookmark');
-        for (const letter of ['z', 'k', 'b', 's', 'q', 'w', 'l']) await expect(body).toContainText(`${letter} `);
+        for (const letter of ['z', 'o', 'b', 's', 'q', 'w', 'l']) await expect(body).toContainText(`${letter} `);
         const keys = await page.locator('.dashboard-tutorial-scene svg .dtv-key-text').allTextContents();
-        for (const key of ['z', 'k', 'b', 'Shift+Q']) expect(keys).toContain(key);
+        for (const key of ['z', 'o', 'b', 'Shift+Q']) expect(keys).toContain(key);
     });
 
     test('respects enableSessionTips: false', async ({ page }) => {
