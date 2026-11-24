@@ -222,7 +222,7 @@
         const full = liveAdded().length >= count();
         html += `<div class="quick-launch-foot">
             ${plusTile ? '' : `<button type="button" class="quick-launch-add"${full ? ' disabled' : ''} title="${esc(full
-                ? label('quickLaunchFull', { n: count() }, 'Quick launch holds {n} bookmarks. Remove one, or raise the number in Config.')
+                ? label('quickLaunchFull', { n: count() }, 'Quick launch holds {n} bookmarks. Remove one first.')
                 : label('quickLaunchAddTitle', {}, 'Add a bookmark'))}">
                 <span aria-hidden="true">+</span> ${esc(label('quickLaunchAddLabel', {}, 'Add a bookmark'))}
             </button>`}
@@ -439,7 +439,7 @@
                 ? label('quickLaunchToastAddedPushed', { name, pushed }, 'Added \u201C{name}\u201D to Quick launch (pushed out: {pushed})')
                 : label('quickLaunchToastAdded', { name }, 'Added \u201C{name}\u201D to Quick launch'),
             removed: label('quickLaunchToastRemoved', { name }, 'Removed \u201C{name}\u201D from Quick launch'),
-            full: label('quickLaunchFull', { n: count() }, 'Quick launch holds {n} bookmarks. Remove one, or raise the number in Config.'),
+            full: label('quickLaunchFull', { n: count() }, 'Quick launch holds {n} bookmarks. Remove one first.'),
         }[result];
         // A stray key is easy to take back: a notice with Undo, as for pin.
         const undo = result === 'full' ? undefined : () => {
