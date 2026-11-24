@@ -330,7 +330,7 @@ test.describe('install', () => {
         await page.keyboard.press('Enter');
         const tour = page.locator('#app-modal.show .dashboard-tutorial-modal');
         await tour.waitFor({ timeout: 15_000 });
-        await page.locator('.dashboard-tutorial-progress', { hasText: 'Step 1 of 10' }).waitFor();
+        await page.locator('.dashboard-tutorial-progress', { hasText: 'Step 1 of 13' }).waitFor();
         // Pacing for the capture, not a condition: the drawing of the step finishes.
         await page.waitForTimeout(1_500);
         await shot(page, 'install/new-1.jpg');

@@ -11,7 +11,7 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 10;
+const STEPS = 13;
 const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
@@ -99,10 +99,13 @@ test.describe('dashboard tour', () => {
         }
         expect(titles).toEqual([
             'The action bar',
+            'The header, the bell and the mode strip',
             'Pages, categories, bookmarks',
             'With the mouse',
+            'Quick launch',
             'Start typing',
             'Two keys to open, one letter to act',
+            'More letters on a bookmark',
             'Edit mode: change it right here',
             'Adding: paste, + or the extension',
             'Tags: the cloud and a view per tag',
@@ -112,6 +115,31 @@ test.describe('dashboard tour', () => {
         await next(page).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
         expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(true);
+    });
+
+    test('the new slides say what was missing: the header and bell, Quick launch and the other letters', async ({ page }) => {
+        await loadWithTourPending(page);
+        await expect(modal(page)).toBeVisible({ timeout: 10_000 });
+        const body = page.locator('.dashboard-tutorial-step-body');
+        const title = page.locator('.dashboard-tutorial-step-title');
+        const stepTo = async (name) => {
+            for (let i = 0; i < STEPS; i += 1) {
+                if ((await title.textContent())?.trim() === name) return;
+                await next(page).click();
+            }
+            throw new Error(`no slide called ${name}`);
+        };
+        await stepTo('The header, the bell and the mode strip');
+        await expect(body).toContainText('Shift+N');
+        await expect(body).toContainText('Shift+S');
+        await stepTo('Quick launch');
+        await expect(body).toContainText('Shift+Q');
+        await expect(body).toContainText('circles');
+        await expect(body).toContainText('Config → Appearance → Header → Quick launch');
+        await stepTo('More letters on a bookmark');
+        for (const letter of ['z', 'k', 'b', 's', 'q', 'w', 'l']) await expect(body).toContainText(`${letter} `);
+        const keys = await page.locator('.dashboard-tutorial-scene svg .dtv-key-text').allTextContents();
+        for (const key of ['z', 'k', 'b', 'Shift+Q']) expect(keys).toContain(key);
     });
 
     test('respects enableSessionTips: false', async ({ page }) => {

@@ -32,7 +32,7 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
     await expect(page.locator('.dashboard-tutorial-scene')).toBeVisible();
     const worst = [];
     for (let step = 1; step <= 10; step += 1) {
-        await expect(page.locator('.dashboard-tutorial-progress')).toHaveText(`Step ${step} of 10`);
+        await expect(page.locator('.dashboard-tutorial-progress')).toHaveText(`Step ${step} of 13`);
         const res = await page.evaluate((themes) => {
             // Any CSS colour -- oklch included -- through a canvas pixel.
             const cv = document.createElement('canvas'); cv.width = cv.height = 1;

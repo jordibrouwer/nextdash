@@ -178,6 +178,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **fix — A moved bookmark does not remind twice.** Moving a bookmark to another page from its edit form or the tag filter, after its reminder had gone out, could send the reminder a second time. The move now keeps the reminder as the server has it.
 
+- **new — The dashboard tour has three new slides.** *The header, the bell and the mode strip*, *Quick launch* and *More letters on a bookmark* (z, k, b, s, q, w, l and Shift+Q), so the tour is thirteen steps. New row keys: `K` opens Related links and `B` puts a label above, both with a chip in the right-click menu.
+
 ## v1.33.1 — 24 November 2026
 
 The per-host certificate warning shows for every bookmark whose certificate was checked, and a host can be set to never warn — held back from the What's new window (`hideFromModal`), so v1.33.0 keeps leading it.

@@ -295,6 +295,39 @@
                     <p>${esc(f('dashTourBarBody2',
                     'By default it stands in a column on the right and slides into the edge after two seconds; the \' key, or Shift+O, brings it back. Choose the buttons and where the bar stands in Config → Appearance → Action bar. A hidden button keeps its key.'))}</p>`,
             },
+            // 0b — the header: the time, the pages, the bell and the mode strip
+            {
+                title: f('dashTourHeaderTitle', 'The header, the bell and the mode strip'),
+                visual: svg(`
+                    <rect x="12" y="8" width="456" height="44" rx="8" class="dtv-panel"/>
+                    ${label(24, 36, '21:42', 'dtv-value')}
+                    ${label(78, 26, f('dashTourHeaderGreeting', 'Good evening'), 'dtv-title')}
+                    ${label(78, 41, f('dashTourHeaderWeather', '19°C · Leiden'))}
+                    ${pillFlow(214, 20, 120, [['1', 'active'], ['2', 'plain'], ['3', 'plain']], { gap: 6 })}
+                    ${headerIcon(332, 16, 'inbox', 2, 'warn')}
+                    <g>
+                        <rect x="400" y="16" width="28" height="28" rx="14" class="dtv-icon-box"/>
+                        <path d="M408,32 h12 l-2,-3 v-4 a4,4 0 0 0 -8,0 v4 z" class="dtv-icon"/>
+                        <g class="dtv-pill is-bad dtv-anim dtv-a-bump">
+                            <rect x="418" y="8" width="18" height="16" rx="8" class="dtv-pill-box"/>
+                            <text x="427" y="20" text-anchor="middle" class="dtv-pill-text">3</text>
+                        </g>
+                    </g>
+                    <rect x="12" y="66" width="270" height="22" rx="5" class="dtv-box"/>
+                    ${label(22, 81, f('dashTourHeaderStrip', 'Search · type to find'), 'dtv-mono')}
+                    ${keycap(296, 67, 'Shift+S')}${label(370, 81, f('dashTourHeaderStripKey', 'strip on / off'))}
+                    <g class="dtv-anim dtv-a-panel">
+                        <rect x="316" y="96" width="152" height="46" rx="7" class="dtv-panel"/>
+                        ${row(322, 100, 140, f('dashTourHeaderOutage', 'Router is down'), { dot: 'bad' })}
+                        ${row(322, 120, 140, f('dashTourHeaderRemind', 'Reminder: Gitea'), { dot: 'accent' })}
+                    </g>
+                    ${keycap(12, 100, 'Shift+N')}${label(88, 114, f('dashTourHeaderBellKey', 'opens the bell'))}
+                `, f('dashTourHeaderAlt', 'The header with the time, the weather, the page numbers and the bell, the mode strip below it, and the bell open')),
+                body: `<p>${esc(f('dashTourHeaderBody1',
+                    'The top of the page shows the time, the weather and your pages. The icons beside the page numbers open the other views. The bell collects what needs you: an outage, a reminder, news from a feed you watch, a tip. Shift+N opens it.'))}</p>
+                    <p>${esc(f('dashTourHeaderBody2',
+                    'Under the page name a small strip says what your keys do right now: type to search, or the letters for the bookmark under the cursor. Shift+S switches it off.'))}</p>`,
+            },
             // 1 — pages, categories, bookmarks, and moving them
             {
                 title: f('dashTour4PagesTitle', 'Pages, categories, bookmarks'),
@@ -345,6 +378,40 @@
                     <p>${esc(f('dashTourMouseBody2',
                     'Right-click a category title to add a bookmark, rename it, find tags or switch between rows and tiles. Choose Select in a bookmark\'s menu to act on several at once.'))}</p>`,
             },
+            // 2b — Quick launch
+            {
+                title: f('dashTourQuickTitle', 'Quick launch'),
+                visual: (() => {
+                    const tiles = [['Plex', 'ok'], ['Router', 'ok'], ['Gitea', 'plain'], ['Mail', 'plain'], ['Unraid', 'ok'], ['Wiki', 'plain'], ['Radarr', 'bad']];
+                    return svg(`
+                        <g class="dtv-anim dtv-a-zoom">
+                            <rect x="12" y="8" width="262" height="134" rx="9" class="dtv-panel"/>
+                            ${label(24, 28, f('dashTourQuickPanel', 'Quick launch'), 'dtv-title')}
+                            ${tiles.map(([name, dot], i) => {
+        const x = 22 + (i % 4) * 62;
+        const y = 40 + Math.floor(i / 4) * 50;
+        return `<rect x="${x}" y="${y}" width="54" height="42" rx="6" class="dtv-box"/>
+                                <circle cx="${x + 27}" cy="${y + 14}" r="6" class="dtv-dot is-${dot}"/>
+                                ${label(x + 27, y + 34, name, 'dtv-sub', 'middle')}`;
+    }).join('')}
+                            <rect x="84" y="90" width="54" height="42" rx="6" class="dtv-landing-box"/>
+                            ${label(111, 116, '+', 'dtv-value', 'middle')}
+                        </g>
+                        <rect x="438" y="8" width="32" height="32" rx="7" class="dtv-icon-box"/>
+                        <rect x="444" y="14" width="9" height="9" rx="2" class="dtv-bar is-accent"/>
+                        <rect x="455" y="14" width="9" height="9" rx="2" class="dtv-bar is-ok"/>
+                        <rect x="444" y="25" width="9" height="9" rx="2" class="dtv-bar is-warn"/>
+                        <rect x="455" y="25" width="9" height="9" rx="2" class="dtv-bar is-accent"/>
+                        ${keycap(292, 14, 'Shift+Q')}${label(366, 28, f('dashTourQuickOpens', 'opens it'))}
+                        ${line('M392,100 C392,64 330,64 330,92 C330,118 372,118 372,94 C372,76 348,78 348,92', { delay: 0.2 })}
+                        ${label(292, 134, f('dashTourQuickCircles', 'or draw circles'), 'dtv-caption')}
+                    `, f('dashTourQuickAlt', 'The Quick launch panel with its tiles and a plus tile, the corner element, the key and a circle drawn with the mouse'));
+                })(),
+                body: `<p>${esc(f('dashTourQuickBody1',
+                    'Quick launch is a panel in the middle of the screen with the bookmarks you added, the ones you pinned and the ones you open most. Open it with Shift+Q, with the corner element at the top right, or by drawing circles with the mouse.'))}</p>
+                    <p>${esc(f('dashTourQuickBody2',
+                    'Add a bookmark with the + tile, with Shift+Q while the cursor is on it, or in its right-click menu; the × takes one out. Config → Appearance → Header → Quick launch sets the circles, the automatic close and where the tiles come from.'))}</p>`,
+            },
             // 3 — start typing
             {
                 title: f('dashTour4SearchTitle', 'Start typing'),
@@ -388,6 +455,30 @@
                     'The arrow keys start a cursor on the grid. With the cursor on a bookmark, its actions are plain letters: e edits, m moves, t tags, p pins. Esc hands the letters back to the search. The right-click menu shows them all.'))}</p>
                     ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
                         .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
+            },
+            // 3a — the other letters on a bookmark
+            {
+                title: f('dashTourLettersTitle', 'More letters on a bookmark'),
+                visual: (() => {
+                    const keys = [['z', f('dashTourLetterRemind', 'remind me')], ['k', f('dashTourLetterRelated', 'related links')],
+                        ['b', f('dashTourLetterLabel', 'label above')], ['s', f('dashTourLetterShare', 'share')],
+                        ['q', f('dashTourLetterQr', 'QR code')], ['w', f('dashTourLetterWatch', 'watch its feed')],
+                        ['l', f('dashTourLetterService', 'service overview')]];
+                    return svg(`
+                        ${category(12, 10, 190, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', ''], ['GitLab', 'ok', ''], ['MDN', 'ok', '']])}
+                        <rect x="17" y="60" width="180" height="24" rx="5" class="dtv-select dtv-anim dtv-a-cursor"/>
+                        ${keys.map(([k, l], i) => {
+        const x = 232 + (i % 2) * 124;
+        const y = 14 + Math.floor(i / 2) * 32;
+        return `${keycap(x, y, k, i === 0 ? anim('press', 0) : NONE)}${label(x + keyWidth(k) + 6, y + 14, l)}`;
+    }).join('')}
+                        ${keycap(232, 112, 'Shift+Q')}${label(232 + keyWidth('Shift+Q') + 6, 126, f('dashTourLetterQuick', 'Quick launch'))}
+                    `, f('dashTourLettersAlt', 'A cursor on a bookmark, and the letters that act on it: remind me, related links, label above, share, QR code, watch its feed and service overview'));
+                })(),
+                body: `<p>${esc(f('dashTourLettersBody1',
+                    'With the cursor on a bookmark: z sets a reminder, k shows related links, b puts a label above it, s shares it, q shows a QR code, w watches its feed and l opens its service overview.'))}</p>
+                    <p>${esc(f('dashTourLettersBody2',
+                    'The right-click menu lists the same actions with their keys. Shift+Q adds the bookmark to Quick launch, or takes it out.'))}</p>`,
             },
             // 3b — edit mode
             {
