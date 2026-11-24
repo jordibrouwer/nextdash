@@ -656,7 +656,9 @@ class StatusMonitor {
             const rowUrl = String(bookmarkUrl || target.getAttribute?.('data-bookmark-url') || '').trim();
             // The row's own bookmark first: two bookmarks can share a URL on one
             // page, and an ignore on one is not an ignore on the other.
-            const rowIndex = Number(target.getAttribute?.('data-bookmark-index'));
+            // No attribute is no index: Number(null) is 0, the first bookmark on the page.
+            const rawIndex = target.getAttribute?.('data-bookmark-index');
+            const rowIndex = rawIndex == null || rawIndex === '' ? NaN : Number(rawIndex);
             const atIndex = Number.isInteger(rowIndex) && rowIndex >= 0
                 ? window.dashboardInstance?.bookmarks?.[rowIndex] : null;
             const copy = atIndex && atIndex.url === rowUrl ? atIndex : (rowUrl ? this.findBookmarkCopy(rowUrl) : null);

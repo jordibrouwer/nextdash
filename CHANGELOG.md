@@ -163,6 +163,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Bookmark errors
 
 - **fix — Ignore this error only where it works.** The right-click menu no longer offers to ignore or report again an error on a row from another page, such as in a collection, where the choice did nothing.
+- **fix — Ignored error on the right bookmark.** A tile without its own position on the page no longer reads the ignore of the first bookmark on the page.
 
 ## v1.33.1 — 24 November 2026
 
