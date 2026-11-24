@@ -10980,7 +10980,7 @@ class DashboardConfig {
                     { field: 'quickLaunchTurns', type: 'select',
                         label: t('config.quickLaunchTurnsLabel', 'Circles needed'),
                         options: [1, 1.5, 2, 2.5, 3].map((n) => opt(n, String(n))) },
-                    { field: 'quickLaunchSource', type: 'select',
+                    { field: 'quickLaunchSource', type: 'select', special: 'chrome',
                         label: t('config.quickLaunchSourceLabel', 'Beyond the ones you add, show'),
                         options: [
                             opt('mix', t('config.quickLaunchSourceMix', 'Pinned, then most opened')),
