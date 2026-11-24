@@ -1813,8 +1813,15 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	// Network checks are the server's: a new row has none, and a row that moves
 	// brings the ones its stored source holds, never what the client sent.
 	request.Bookmark.Checks = nil
+	// Whether a reminder's push went out is the server's to say too. A row that
+	// moves keeps its stored reminder: the tab's copy may predate the push, and a
+	// reminder that came back unsent would be pushed a second time.
+	request.Bookmark.RemindSentAt = 0
 	if request.AllowDuplicate {
 		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.MovedFromPage, request.Page)
+		if src, ok := storedMovedRow(h.store, request.MovedFrom, request.MovedFromPage, request.Page); ok {
+			request.Bookmark.RemindAt, request.Bookmark.RemindSentAt = src.RemindAt, src.RemindSentAt
+		}
 	}
 
 	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)
