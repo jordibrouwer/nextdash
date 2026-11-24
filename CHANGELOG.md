@@ -163,6 +163,8 @@ The per-host certificate warning shows for every bookmark whose certificate was 
 ### Docs
 
 - **docs — Specs.** The specs that failed in CI (a quiet live stream, waits, the rail and text changes) and the Help planner case that needs the pre-split commit are fixed; nothing changes for users.
+- **docs — Manual, Help and translations.** Manual §Certificates and the Help text on certificates name *Never warn*, and the manual has a picture of the field (`12-cert-never.jpg`); the note under the per-host choice and `config.certWarnNever` are in Dutch, German, French, Spanish and Chinese.
+- **docs — `static/data/whats-new/v1.33.1.json` and its index entry**, held back from the window; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v383`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
