@@ -394,7 +394,7 @@ test.describe('Quick launch', () => {
         await expect(page.locator(`${PANEL} .quick-launch-search`)).toBeVisible();
     });
 
-    test('K opens the related links and B puts a label above, for the bookmark under the cursor', async ({ page }) => {
+    test('O opens the related links and B puts a label above, for the bookmark under the cursor', async ({ page }) => {
         await loadDashboard(page);
         await page.keyboard.press('ArrowDown');
         await page.evaluate(() => {
@@ -405,7 +405,7 @@ test.describe('Quick launch', () => {
             window.DashboardCategoryDividers.slotAbove = () => ({ categoryId: 'c1', index: 2 });
             window.DashboardCategoryDividers.add = (dash, categoryId, index) => { window.__keys.push(`label ${categoryId} ${index}`); };
         });
-        await page.keyboard.press('k');
+        await page.keyboard.press('o');
         await page.keyboard.press('b');
         const keys = await page.evaluate(() => window.__keys);
         expect(keys).toHaveLength(2);
@@ -415,7 +415,7 @@ test.describe('Quick launch', () => {
         await page.keyboard.press('Escape');
         await page.locator('#dashboard-layout .bookmark-open').first().click({ button: 'right' });
         const menu = page.locator('.context-menu, [role="menu"]').first();
-        await expect(menu.locator('text=Related links').locator('..')).toContainText('K');
+        await expect(menu.locator('text=Related links').locator('..')).toContainText('O');
     });
 
     test('the circle recognizer: circles in both directions count, shakes, lines and wobbles do not', async ({ page }) => {

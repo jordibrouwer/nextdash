@@ -607,7 +607,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l', 'k', 'b']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l', 'o', 'b']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -875,7 +875,8 @@ class KeyboardNavigation {
             // Remind me of this link: the Inbox's Z (snooze), for a bookmark.
             case 'z': this.openReminderMenuForCurrent(); break;
             // Related links of this bookmark: the context menu's entry, as a key.
-            case 'k': this.openRelatedMenuForCurrent(); break;
+            // Not k: j and k move the cursor down and up.
+            case 'o': this.openRelatedMenuForCurrent(); break;
             // A label row above this bookmark, where its category is in manual order.
             case 'b': this.addLabelAboveForCurrent(); break;
             // Watch the feed of this bookmark .
@@ -3041,7 +3042,7 @@ class KeyboardNavigation {
         d.reminders.openMenu({ bookmark, pageId: Number(bookmark.pageId) || Number(d.currentPageId) }, row);
     }
 
-    /** K — the links related to the selected bookmark. */
+    /** O — the links related to the selected bookmark (k is up, with j). */
     openRelatedMenuForCurrent() {
         const row = this._resolveActionPopoverRow();
         const bookmark = this.getSelectedBookmark();

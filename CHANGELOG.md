@@ -161,6 +161,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — Quick launch corner element follows changes.** The four small tiles update when you pin a bookmark or change what the panel shows in Config, not only when you open the panel.
 - **fix — Shift + Q puts a hidden bookmark back for real.** One you had taken out of Quick launch and since unpinned said *Added* but did not appear; it now goes in as one of yours.
 
+### Row keys
+
+- **new — `o` and `b` on a bookmark.** With the cursor on a bookmark, `o` opens its related links and `b` puts a label row above it (where its category is in manual order), as the right-click menu does. Related links first had `k`, which is the key that moves the cursor up; `j` and `k` move again on every row.
+
 ### Bookmark errors
 
 - **fix — Ignore this error only where it works.** The right-click menu no longer offers to ignore or report again an error on a row from another page, such as in a collection, where the choice did nothing.

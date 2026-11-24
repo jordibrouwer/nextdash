@@ -329,7 +329,7 @@ class DashboardContextMenu {
                 label: this.t('dashboard.contextMenuRelated', 'Related links…'),
                 icon: '\u21C4',
                 submenu: false,
-                key: 'K',
+                key: 'O',
             },
             {
                 id: 'remind',
