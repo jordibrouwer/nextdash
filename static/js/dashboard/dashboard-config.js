@@ -20701,17 +20701,17 @@ class DashboardConfig {
     static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
 
     /** The Health filters, with the Health module's meaning (matchesFilter). */
-    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'healthy'];
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'ignored', 'healthy'];
 
     /**
-     * Every health filter the list can be narrowed by: the rail's nine, and the
+     * Every health filter the list can be narrowed by: the rail's ten, and the
      * kinds only Collection health, the overview and :health name (drift, a
      * missing preview, a shortcut conflict...). The rail draws the first set;
      * an address, a tile or a command may carry any of these, and one left
      * out here was dropped on the way in -- the list then opened unfiltered.
      */
     static HEALTH_FILTER_KEYS = [...DashboardConfig.HEALTH_FILTERS,
-        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
+        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category'];
 
     static isHealthFilterKey(key) {
         return DashboardConfig.HEALTH_FILTER_KEYS.includes(String(key || ''));
@@ -20761,7 +20761,10 @@ class DashboardConfig {
     bookmarkHealthState(b) {
         const issue = this.bmHealthIssue?.(b);
         if (issue) {
-            if (Number(issue.monitorStats?.downSince) > 0) return 'down';
+            // Told to stop reporting its failure: the row is not red, the panel says why.
+            const ignored = (Array.isArray(issue.ignoredFlags) ? issue.ignoredFlags : [])
+                .some((e) => e && (e.flag === 'broken' || e.flag === 'content'));
+            if (!ignored && Number(issue.monitorStats?.downSince) > 0) return 'down';
             if (issue.status === 'broken') return 'broken';
             return issue.lastChecked ? 'healthy' : 'unchecked';
         }

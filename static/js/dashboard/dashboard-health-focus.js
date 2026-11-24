@@ -1255,8 +1255,8 @@ class DashboardHealthFocus {
                     <span class="health-focus-foot-label">${this.esc(this.t('dashboard.healthFocusNotNow', 'Not now:'))}</span>
                     <div class="health-focus-foot-actions">
                         ${canKeep ? `<button type="button" class="health-focus-link" data-focus="keep"
-                            title="${this.esc(this.t('dashboard.healthFocusKeepHint', 'Fine as it is — do not ask about this again'))}">${this.esc(
-                            this.t('dashboard.healthFocusKeep', 'Keep'))}${key('y')}</button>` : ''}
+                            title="${this.esc(this.t('dashboard.healthFocusIgnoreForGoodHint', 'Fine as it is — never report this for this bookmark again'))}">${this.esc(
+                            this.t('dashboard.healthFocusIgnoreForGood', 'Ignore for good'))}${key('y')}</button>` : ''}
                         ${canKeep ? `<button type="button" class="health-focus-link" data-focus="snooze">${this.esc(
                             this.t('dashboard.healthFocusSnooze', 'Ignore {days}d',
                                 { days: this.health.constructor.SNOOZE_DAYS }))}${key('z')}</button>` : ''}
