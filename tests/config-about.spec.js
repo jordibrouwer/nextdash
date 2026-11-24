@@ -57,10 +57,10 @@ test.describe('config about', () => {
         for (const href of expected) expect(hrefs.filter((h) => h === href), href).toHaveLength(1);
         expect(hrefs.some((h) => h.includes('discussions'))).toBe(false);
 
-        // jordibrw.nl is the maker card's, once in the whole pane.
+        // brewedbits.dev is the maker card's, once in the whole pane.
         const pane = page.locator('#config-section-panel');
-        await expect(pane.locator('a[href*="jordibrw.nl"]')).toHaveCount(1);
-        await expect(page.locator('[data-about-card="maker"] a[href*="jordibrw.nl"]')).toHaveCount(1);
+        await expect(pane.locator('a[href*="brewedbits.dev"]')).toHaveCount(1);
+        await expect(page.locator('[data-about-card="maker"] a[href*="brewedbits.dev"]')).toHaveCount(1);
 
         // Opening someone else's site in this tab would take the dashboard with
         // it, and rel is what keeps the new tab from reaching back.

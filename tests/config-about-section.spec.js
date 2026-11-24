@@ -54,7 +54,7 @@ test.describe('About in the rail', () => {
         await expect(page.locator('.help-about-mark img')).toBeVisible();
         await expect(page.locator('.config-about-hero a[href="https://nextdash.cc"]')).toHaveCount(1);
         await expect(page.locator('.config-about-hero a[href="https://github.com/jordibrouwer/nextDash"]')).toHaveCount(1);
-        await expect(page.locator('#config-section-panel a[href*="jordibrw.nl"]')).toHaveCount(1);
+        await expect(page.locator('#config-section-panel a[href*="brewedbits.dev"]')).toHaveCount(1);
     });
 });
 

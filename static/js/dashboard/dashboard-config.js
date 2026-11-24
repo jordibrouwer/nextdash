@@ -25734,9 +25734,9 @@ class DashboardConfig {
                 <section class="config-panel config-about-card" data-about-card="maker">
                     <h3 class="config-panel-title">${esc(this.t('config.aboutMakerTitle', 'About the maker'))}</h3>
                     <!-- DRAFT copy for Jordi to review -->
-                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is built by Jordi Brouwer, who writes about it and other projects on his own site.'))}</p>
+                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is made by Jordi Brouwer. Brewed bits is his dev blog, where he writes up how nextDash gets built and what else he is tinkering with.'))}</p>
                     <div class="config-about-linkrow">
-                        ${btn('https://jordibrw.nl', this.t('config.helpSiteAuthor', 'jordibrw.nl'))}
+                        ${btn('https://brewedbits.dev', this.t('config.helpSiteAuthor', 'brewedbits.dev'))}
                     </div>
                 </section>
                 <section class="config-panel config-about-card" data-about-card="roadmap">
