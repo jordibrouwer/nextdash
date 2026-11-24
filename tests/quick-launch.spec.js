@@ -358,13 +358,16 @@ test.describe('Quick launch', () => {
         const box = await panel.boundingBox();
         // The mouse where the key left it never starts the clock; inside the panel it stops it.
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        // About time itself: the panel must still be open after the auto-close time has passed with the pointer inside it.
         await page.waitForTimeout(3600);
         await expect(panel).toBeVisible();
         // Outside: it closes after three seconds.
         await page.mouse.move(30, 450);
         await page.mouse.move(40, 460);
+        // About time itself: the auto-close time has not passed yet, so the panel must still be open.
         await page.waitForTimeout(1500);
         await expect(panel).toBeVisible();
+        // About time itself: now the auto-close time has passed, so it closes.
         await page.waitForTimeout(2200);
         await expect(panel).toBeHidden();
         // A key press while outside gives the reader the time back.
@@ -372,8 +375,10 @@ test.describe('Quick launch', () => {
         await expect(panel).toBeVisible();
         await page.mouse.move(30, 450);
         await page.mouse.move(40, 460);
+        // About time itself: part of the auto-close time passes before the key press that gives it back.
         await page.waitForTimeout(2000);
         await page.keyboard.press('ArrowRight');
+        // About time itself: the full time since the first move has passed, but the key press gave it back, so the panel stays.
         await page.waitForTimeout(2500);
         await expect(panel).toBeVisible();
     });
@@ -384,12 +389,14 @@ test.describe('Quick launch', () => {
         await page.keyboard.press('Shift+Q');
         await page.mouse.move(30, 450);
         await page.mouse.move(40, 460);
+        // About time itself: the picker is open, and the auto-close time passes without closing it.
         await page.waitForTimeout(3600);
         await expect(page.locator(PANEL)).toBeVisible();
         await page.evaluate(() => { window.dashboardInstance.settings.quickLaunchAutoClose = 3; });
         await page.locator(ADD).first().click();
         await page.mouse.move(30, 450);
         await page.mouse.move(40, 460);
+        // About time itself: the auto-close time passes, and the panel in picker mode must not close.
         await page.waitForTimeout(3600);
         await expect(page.locator(`${PANEL} .quick-launch-search`)).toBeVisible();
     });

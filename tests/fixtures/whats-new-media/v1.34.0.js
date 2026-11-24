@@ -46,8 +46,10 @@ module.exports = {
                 // Pacing for the recording, not a condition: the panel is shown for a moment before the pointer moves.
                 await page.waitForTimeout(1200);
                 await tiles.nth(1).hover();
+                // Pacing for the recording, not a condition: the pointer rests on the tile so the frame shows its hover state.
                 await page.waitForTimeout(900);
                 await tiles.nth(4).hover();
+                // Pacing for the recording, not a condition: the last frame stays long enough to read.
                 await page.waitForTimeout(1200);
             },
         },

@@ -43,6 +43,7 @@ test('the note points at the corner element and stays until it is put away', asy
     await expect(note(page)).toContainText('Shift+Q');
     await expect(note(page)).toContainText('Config → Appearance → Header');
     await expect(page.locator('#quick-launch-button')).toHaveClass(/coach-note-anchor-ring/);
+    // Guards that something does not happen: the note stays when no time-based rule takes it away.
     await page.waitForTimeout(1500);
     await expect(note(page)).toBeVisible();
     await note(page).getByRole('button', { name: 'Got it' }).click();
@@ -50,6 +51,7 @@ test('the note points at the corner element and stays until it is put away', asy
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('1');
     // Asked again, it does not come back.
     await page.evaluate((id) => window.CoachNote.schedule(id), ID);
+    // Guards that something does not happen: asked again, the note must not come back.
     await page.waitForTimeout(2500);
     await expect(note(page)).toHaveCount(0);
 });
@@ -71,6 +73,7 @@ test('without the corner element there is no note, and it is not counted as seen
     await load(page);
     await page.evaluate(() => { window.dashboardInstance.settings.quickLaunchButton = false; window.QuickLaunch.sync(); });
     await ask(page);
+    // Guards that something does not happen: the note must not show, however long we wait.
     await page.waitForTimeout(4500);
     await expect(note(page)).toHaveCount(0);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBeNull();
@@ -79,6 +82,7 @@ test('without the corner element there is no note, and it is not counted as seen
 test('in a narrow window the corner element is not drawn, so there is no note either', async ({ page }) => {
     await load(page, 900);
     await ask(page);
+    // Guards that something does not happen: the note must not show, however long we wait.
     await page.waitForTimeout(4500);
     await expect(note(page)).toHaveCount(0);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBeNull();
