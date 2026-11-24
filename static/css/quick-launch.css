@@ -52,16 +52,10 @@
         outline-offset: -3px;
     }
 
-    /* The header leaves room when the margin beside the grid is too thin for it. */
-    body[data-active-view="bookmarks"][data-quick-launch-button="true"] .dashboard-section.section-controls .header-top {
-        padding-right: max(0px, calc(3.6rem - (max(0px, (100vw - var(--dashboard-container-max, 1600px)) / 2) + var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem)))));
-    }
-    /* Tight raises the container's ceiling to 2200 px (dashboard.css), so the gap beside it starts later. */
-    body[data-active-view="bookmarks"][data-quick-launch-button="true"][data-side-margin="tight"] .dashboard-section.section-controls .header-top {
-        padding-right: max(0px, calc(3.6rem - (max(0px, (100vw - max(var(--dashboard-container-max, 1600px), 2200px)) / 2) + var(--dashboard-side-margin, clamp(0.5rem, 1.2vw, 1.75rem)))));
-    }
-    body[data-active-view="bookmarks"][data-quick-launch-button="true"][data-side-margin="full"] .dashboard-section.section-controls .header-top {
-        padding-right: max(0px, calc(3.6rem - var(--dashboard-side-margin, 0.25rem)));
+    /* The header always leaves the corner its own room, so the bell and the other
+       buttons stand one step to the left of it, whatever the margin beside the grid. */
+    body[data-quick-launch-button="true"] .dashboard-section.section-controls .header-top {
+        padding-right: 4rem;
     }
 }
 

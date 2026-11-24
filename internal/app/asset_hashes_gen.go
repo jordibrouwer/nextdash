@@ -67,7 +67,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/nd-chart.css":                                       "3d0d43e2b920",
 	"css/net-tools.css":                                      "574af695671d",
 	"css/notification-bell.css":                              "2bbbc4601138",
-	"css/quick-launch.css":                                   "3b54b78d090e",
+	"css/quick-launch.css":                                   "bdad4ed426c2",
 	"css/radius-tokens.css":                                  "1cd00b5d64e2",
 	"css/reduced-motion.css":                                 "793991a1cdac",
 	"css/reorder.css":                                        "969f6cf7519f",
