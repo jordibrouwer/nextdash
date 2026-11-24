@@ -159,6 +159,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — Quick launch keeps bookmarks added from other pages.** Adding one with `Shift + Q` or the right-click menu before the other pages had loaded saved the list without the ones from those pages.
 - **fix — Quick launch search with an input method.** Typing Chinese or Japanese in the panel's search no longer throws away the character being composed.
 - **fix — Quick launch corner element follows changes.** The four small tiles update when you pin a bookmark or change what the panel shows in Config, not only when you open the panel.
+- **fix — Shift + Q puts a hidden bookmark back for real.** One you had taken out of Quick launch and since unpinned said *Added* but did not appear; it now goes in as one of yours.
 
 ### Bookmark errors
 

@@ -381,7 +381,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/pwa-install-hint.js":                                 "16ba5cd6a9c5",
 	"js/quick-add.js":                                        "779150a5f009",
 	"js/quick-launch-core.js":                                "02482a577c31",
-	"js/quick-launch.js":                                     "8e605f745ade",
+	"js/quick-launch.js":                                     "53fb029f37df",
 	"js/reminder-bell-source.js":                             "c3e039c5a67b",
 	"js/reorder.js":                                          "4994b66b559a",
 	"js/scroll-lock.js":                                      "efa8c7224af1",

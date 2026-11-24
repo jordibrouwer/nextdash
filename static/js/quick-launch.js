@@ -418,7 +418,9 @@
         } else if (wasHidden) {
             // Taken out by hand before: the same key puts it back.
             void save({ quickLaunchHidden: listOf('quickLaunchHidden').filter((u) => u !== url) });
-            result = 'added';
+            // Back only if it still belongs among the automatic tiles (still pinned,
+            // opened at all); otherwise it goes in by hand, or "Added" is a tile that never comes.
+            result = holds(bookmark) || addBookmark(bookmark) ? 'added' : 'full';
         } else if (holds(bookmark)) {
             hide(bookmark);
             result = 'removed';

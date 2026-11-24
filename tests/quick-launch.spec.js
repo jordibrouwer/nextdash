@@ -179,6 +179,27 @@ test.describe('Quick launch', () => {
         expect(out).toEqual({ first: 'removed', second: 'added', hidden: false, added: false });
     });
 
+    test('Shift+Q on one hidden and since unpinned puts it in by hand, so it is really there', async ({ page }) => {
+        await loadDashboard(page);
+        await page.keyboard.press('ArrowDown');
+        const url = await page.evaluate(() => {
+            const b = window.dashboardInstance.keyboardNavigation.getSelectedBookmark();
+            b.pinned = true;
+            return b.url;
+        });
+        await page.keyboard.press('Shift+Q');
+        expect(await page.evaluate((u) => window.dashboardInstance.settings.quickLaunchHidden.includes(u), url)).toBe(true);
+        // Unpinned since, never opened: no longer one of the automatic tiles.
+        await page.evaluate(() => {
+            const b = window.dashboardInstance.keyboardNavigation.getSelectedBookmark();
+            b.pinned = false;
+            b.openCount = 0;
+        });
+        await page.keyboard.press('Shift+Q');
+        const shown = await page.evaluate((u) => window.QuickLaunch.list().some((e) => e.bookmark.url === u), url);
+        expect(shown).toBe(true);
+    });
+
     test('+ finds a bookmark by name and puts it first; the cross takes it out again', async ({ page, request }) => {
         await loadDashboard(page);
         const target = await page.evaluate(() => {
