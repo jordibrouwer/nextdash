@@ -195,6 +195,33 @@ test('12 a domain date typed by hand', async ({ page }) => {
     await snap(page, section, '12-domain-date.jpg', { pad: 8 });
 });
 
+test('12 a certificate warning set to never', async ({ page }) => {
+    await prepare(page);
+    await page.route('**/api/bookmark-health**', async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        for (const issue of body.issues || []) {
+            if (String(issue.url).includes('jwt.io')) issue.certHost = 'jwt.io';
+        }
+        await route.fulfill({ response, json: body });
+    });
+    await openBookmarksView(page);
+    await page.evaluate(() => { window.dashboardInstance.settings.certWarnByHost = { 'jwt.io': -2 }; });
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'JWT debugger' }).first().click();
+    const panel = page.locator('[data-lvs-drawer-panel]').first();
+    await panel.waitFor({ state: 'visible' });
+    await page.keyboard.press('2');
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
+    await page.waitForTimeout(1_200);
+    const section = panel.locator('details.config-bm-acc', { hasText: 'Expectations' }).first();
+    await section.locator('summary').click();
+    await section.locator('[data-cert-warn]').waitFor();
+    await section.locator('[data-cert-warn]').scrollIntoViewIfNeeded();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
+    await page.waitForTimeout(400);
+    await snap(page, section.locator('.health-expect-field', { has: page.locator('[data-cert-warn]') }), '12-cert-never.jpg', { pad: 10 });
+});
+
 test('16 the Timer widget', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
