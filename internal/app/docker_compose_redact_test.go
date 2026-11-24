@@ -261,3 +261,24 @@ func TestRedactEnvFileFailsClosed(t *testing.T) {
 		t.Errorf("reveal 1PASS = %q, %v", v, ok)
 	}
 }
+
+// Short secret names are masked as a word of their own, and only then: the
+// files view is readable without the write token, so a miss here is a leak.
+func TestRedactComposeYAMLShortSecretNames(t *testing.T) {
+	src := "services:\n  db:\n    environment:\n      DB_PW: hunter2\n      WIFI_PSK: wpa-secret\n      ADMIN_PIN: \"4321\"\n      SPINDOWN: \"20\"\n      SPWEIGHT: \"5\"\n"
+	out, _, yerr := redactComposeYAML([]byte(src))
+	if yerr != nil {
+		t.Fatalf("yaml error: %+v", yerr)
+	}
+	got := string(out)
+	for _, leak := range []string{"hunter2", "wpa-secret", "4321"} {
+		if strings.Contains(got, leak) {
+			t.Errorf("%q leaked:\n%s", leak, got)
+		}
+	}
+	for _, keep := range []string{`SPINDOWN: "20"`, `SPWEIGHT: "5"`} {
+		if !strings.Contains(got, keep) {
+			t.Errorf("%q must stay:\n%s", keep, got)
+		}
+	}
+}

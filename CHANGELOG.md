@@ -170,6 +170,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — Ignore this error only where it works.** The right-click menu no longer offers to ignore or report again an error on a row from another page, such as in a collection, where the choice did nothing.
 - **fix — Ignored error on the right bookmark.** A tile without its own position on the page no longer reads the ignore of the first bookmark on the page.
 
+### Compose
+
+- **fix — Short secret names are hidden too.** In a compose file, values under names such as `DB_PW`, `WIFI_PSK` or `ADMIN_PIN` were shown in full in the Containers view, also without the write token. They are masked like any password now; names that only contain those letters, such as `SPINDOWN`, stay visible.
+
 ## v1.33.1 — 24 November 2026
 
 The per-host certificate warning shows for every bookmark whose certificate was checked, and a host can be set to never warn — held back from the What's new window (`hideFromModal`), so v1.33.0 keeps leading it.
