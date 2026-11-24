@@ -111,7 +111,6 @@ class Dashboard {
             quickLaunchGesture: true,
             quickLaunchTurns: 1.5,
             quickLaunchSource: 'mix',
-            quickLaunchCount: 8,
             quickLaunchAutoClose: 5,
             quickLaunchHidden: [],
             quickLaunchAdded: [],

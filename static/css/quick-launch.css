@@ -182,28 +182,40 @@
     font-weight: var(--font-weight-semibold, 600);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    text-align: center;
     color: var(--text-tertiary);
 }
 
 .quick-launch-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-2, 0.5rem);
+    /* Rows are laid out in quick-launch.js (as even as possible); each row sits in the middle. */
+    --ql-gap: var(--space-2, 0.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ql-gap);
+}
+
+.quick-launch-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--ql-gap);
 }
 
 @media (max-width: 560px) {
     .quick-launch-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        --ql-per-row: 2;
     }
 }
 
 .quick-launch-cell {
     position: relative;
     min-width: 0;
+    flex: 0 0 calc((100% - (var(--ql-per-row, 4) - 1) * var(--ql-gap, 0.5rem)) / var(--ql-per-row, 4));
 }
 
 .quick-launch-tile {
     position: relative;
+    box-sizing: border-box;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -224,6 +236,29 @@
     border-color: var(--accent-primary);
     outline: none;
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.quick-launch-tile--add {
+    justify-content: center;
+    cursor: pointer;
+    font: inherit;
+    color: var(--accent-primary);
+    background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+.quick-launch-tile--add:hover,
+.quick-launch-tile--add:focus-visible {
+    border-style: solid;
+}
+
+.quick-launch-add-plus {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.quick-launch-tile--add .quick-launch-name {
+    color: var(--text-secondary);
 }
 
 .quick-launch-key {
@@ -309,6 +344,7 @@
 
 .quick-launch-empty,
 .quick-launch-more {
+    text-align: center;
     margin: var(--space-3, 0.75rem) 0;
     color: var(--text-secondary);
     font-size: var(--font-size-small, 0.85rem);

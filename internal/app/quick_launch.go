@@ -14,10 +14,10 @@ const (
 	quickLaunchSourceTop    = "top"    // most opened only
 
 	maxQuickLaunchHidden = 100
-	maxQuickLaunchAdded  = 24
+	// The most the panel holds: the ones put in by hand come first, the rest fill what is left.
+	maxQuickLaunch = 12
 
 	defaultQuickLaunchTurns = 1.5
-	defaultQuickLaunchCount = 8
 	// Seconds the pointer may rest outside the panel before it closes itself.
 	defaultQuickLaunchAutoClose = 5
 )
@@ -38,12 +38,7 @@ func normalizeQuickLaunch(s *Settings) {
 		s.QuickLaunchAutoClose = defaultQuickLaunchAutoClose
 	}
 	s.QuickLaunchHidden = cleanQuickLaunchURLs(s.QuickLaunchHidden, maxQuickLaunchHidden)
-	s.QuickLaunchAdded = cleanQuickLaunchURLs(s.QuickLaunchAdded, maxQuickLaunchAdded)
-	switch s.QuickLaunchCount {
-	case 4, 6, 8:
-	default:
-		s.QuickLaunchCount = defaultQuickLaunchCount
-	}
+	s.QuickLaunchAdded = cleanQuickLaunchURLs(s.QuickLaunchAdded, maxQuickLaunch)
 	t := s.QuickLaunchTurns
 	if !(t >= 1) { // also catches NaN and 0
 		t = defaultQuickLaunchTurns

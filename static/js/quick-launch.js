@@ -51,9 +51,9 @@
         return current.concat(others);
     }
 
+    /** The most the panel holds. The ones put in by hand come first; the rest fill what is left. */
     function count() {
-        const n = Number(settings().quickLaunchCount);
-        return n === 4 || n === 6 ? n : 8;
+        return 12;
     }
 
     /** The addresses put in by hand that still belong to a bookmark: a deleted or edited one is dead weight. */
@@ -140,7 +140,7 @@
             : label('quickLaunchHide', { name }, 'Hide {name} from Quick launch');
         return `<div class="quick-launch-cell" data-index="${index}">
             <a class="quick-launch-tile" href="${esc(href || '#')}" data-index="${index}"${newTab ? ' target="_blank" rel="noopener noreferrer"' : ''}>
-                <span class="quick-launch-key" aria-hidden="true">${index + 1}</span>
+                <span class="quick-launch-key" aria-hidden="true">${index < 9 ? index + 1 : ''}</span>
                 <span class="quick-launch-icon-slot"></span>
                 <span class="quick-launch-name">${esc(name)}</span>
                 ${opensNote}
@@ -148,6 +148,32 @@
             <button type="button" class="quick-launch-remove" data-index="${index}" aria-label="${esc(removeText)}" title="${esc(added
                 ? label('quickLaunchRemoveTitle', {}, 'Remove from Quick launch')
                 : label('quickLaunchHideTitle', {}, 'Hide from Quick launch'))}">×</button>
+        </div>`;
+    }
+
+    /** Tiles per row: four, two in a narrow window. The width of a tile does not change with the row. */
+    function perRow() {
+        return global.matchMedia?.('(max-width: 560px)').matches ? 2 : 4;
+    }
+
+    /**
+     * How many cells go in each row: as few rows as the per-row maximum allows, then
+     * as even as possible, the longer rows first (5 is 3+2, 7 is 4+3, 9 is 3+3+3).
+     */
+    function balancedRows(cells, max) {
+        if (cells <= 0) return [];
+        const rows = Math.ceil(cells / max);
+        const base = Math.floor(cells / rows);
+        const extra = cells % rows;
+        return Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
+    }
+
+    function addTileHtml() {
+        return `<div class="quick-launch-cell quick-launch-cell--add">
+            <button type="button" class="quick-launch-tile quick-launch-tile--add" aria-label="${esc(label('quickLaunchAddTitle', {}, 'Add a bookmark'))}" title="${esc(label('quickLaunchAddTitle', {}, 'Add a bookmark'))}">
+                <span class="quick-launch-add-plus" aria-hidden="true">+</span>
+                <span class="quick-launch-name">${esc(label('quickLaunchAddShort', {}, 'Add'))}</span>
+            </button>
         </div>`;
     }
 
@@ -160,12 +186,25 @@
             ['top', label('quickLaunchMostOpened', {}, 'Most opened')],
         ];
         let html = '';
+        // A plus tile closes the last group while there is room: it is the way in, so the
+        // footer needs no second button for it.
+        const plusTile = shown.length > 0 && shown.length < count();
+        const lastGroup = groups.map(([group]) => group).filter((group) => shown.some((entry) => entry.group === group)).pop();
+        const max = perRow();
         groups.forEach(([group, title]) => {
             const entries = shown.map((entry, index) => ({ entry, index })).filter((x) => x.entry.group === group);
             if (!entries.length) return;
+            const cells = entries.map((x) => tileHtml(x.entry, x.index));
+            if (plusTile && group === lastGroup) cells.push(addTileHtml());
+            let at = 0;
+            const rows = balancedRows(cells.length, max).map((n) => {
+                const row = cells.slice(at, at + n).join('');
+                at += n;
+                return `<div class="quick-launch-row">${row}</div>`;
+            }).join('');
             html += `<section class="quick-launch-group" data-group="${group}">
                 <h3 class="quick-launch-group-title">${esc(title)}</h3>
-                <div class="quick-launch-grid">${entries.map((x) => tileHtml(x.entry, x.index)).join('')}</div>
+                <div class="quick-launch-grid">${rows}</div>
             </section>`;
         });
         if (!shown.length) {
@@ -174,12 +213,12 @@
         }
         const full = liveAdded().length >= count();
         html += `<div class="quick-launch-foot">
-            <button type="button" class="quick-launch-add"${full ? ' disabled' : ''} title="${esc(full
+            ${plusTile ? '' : `<button type="button" class="quick-launch-add"${full ? ' disabled' : ''} title="${esc(full
                 ? label('quickLaunchFull', { n: count() }, 'Quick launch holds {n} bookmarks. Remove one, or raise the number in Config.')
                 : label('quickLaunchAddTitle', {}, 'Add a bookmark'))}">
                 <span aria-hidden="true">+</span> ${esc(label('quickLaunchAddLabel', {}, 'Add a bookmark'))}
-            </button>
-            <span class="quick-launch-foot-keys">${esc(label('quickLaunchFootKeys', { max: Math.max(1, shown.length) }, '1–{max} opens · Esc closes'))}</span>
+            </button>`}
+            <span class="quick-launch-foot-keys">${esc(label('quickLaunchFootKeys', { max: Math.min(9, Math.max(1, shown.length)) }, '1–{max} opens · Esc closes'))}</span>
             ${hidden ? `<button type="button" class="quick-launch-unhide" title="${esc(label('quickLaunchRestoreTitle', { n: hidden }, 'Put back the {n} bookmark(s) you took out of the automatic part of Quick launch. They are not deleted.'))}">${esc(label('quickLaunchRestoreHidden', { n: hidden }, 'Restore hidden ({n})'))}</button>` : ''}
         </div>`;
         return html;
@@ -214,6 +253,7 @@
             });
         });
         content.querySelector('.quick-launch-add')?.addEventListener('click', () => fillPicker());
+        content.querySelector('.quick-launch-tile--add')?.addEventListener('click', () => fillPicker());
         content.querySelector('.quick-launch-unhide')?.addEventListener('click', () => {
             unhideAll();
             fill();
@@ -613,7 +653,7 @@
             return;
         }
         if (!isOpen() || picking || typing(event.target)) return;
-        if (!event.shiftKey && /^[1-8]$/.test(event.key)) {
+        if (!event.shiftKey && /^[1-9]$/.test(event.key)) {
             const tile = document.querySelector('.modal.' + MODAL_CLASS + ' .quick-launch-tile[data-index="' + (Number(event.key) - 1) + '"]');
             if (!tile) return;
             event.preventDefault();

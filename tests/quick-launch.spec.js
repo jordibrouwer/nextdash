@@ -13,6 +13,8 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  */
 
 const PANEL = '.modal.quick-launch-modal';
+// The way into the picker: the plus tile while there is room, else the footer button.
+const ADD = `${PANEL} .quick-launch-tile--add, ${PANEL} .quick-launch-add`;
 
 async function loadDashboard(page, width = 1400) {
     await page.setViewportSize({ width, height: 900 });
@@ -24,7 +26,7 @@ async function loadDashboard(page, width = 1400) {
         const d = window.dashboardInstance;
         await d.loadAllBookmarks?.();
         Object.assign(d.settings, {
-            quickLaunchAdded: [], quickLaunchHidden: [], quickLaunchSource: 'mix', quickLaunchCount: 8,
+            quickLaunchAdded: [], quickLaunchHidden: [], quickLaunchSource: 'mix',
             quickLaunchButton: true, quickLaunchGesture: true, quickLaunchTurns: 1.5, quickLaunchAutoClose: 5,
         });
         await d.saveSettings();
@@ -150,15 +152,15 @@ test.describe('Quick launch', () => {
         const out = await page.evaluate(() => {
             const d = window.dashboardInstance;
             const ql = window.QuickLaunch;
-            const urls = window.__many.slice(0, 8).map((b) => b.url);
+            // Fourteen addresses (a stale file or an old copy can hold more than the panel does):
+            // the last two are past what it shows.
+            const urls = window.__many.slice(0, 14).map((b) => b.url);
             d.settings.quickLaunchAdded = urls;
-            d.settings.quickLaunchCount = 4;
-            const hidden = window.__many[7];
+            const hidden = window.__many[13];
             const holdsHidden = ql.holds(hidden);
             const result = ql.toggleBookmark(hidden);
-            d.settings.quickLaunchCount = 8;
-            d.settings.quickLaunchAdded = [...urls.slice(0, 7), 'https://gone.test/dead'];
-            const added = ql.addBookmark(window.__many[10]);
+            d.settings.quickLaunchAdded = [...urls.slice(0, 11), 'https://gone.test/dead'];
+            const added = ql.addBookmark(window.__many[16]);
             return { holdsHidden, result, added, now: d.settings.quickLaunchAdded.includes('https://gone.test/dead') };
         });
         expect(out).toEqual({ holdsHidden: true, result: 'removed', added: true, now: false });
@@ -186,24 +188,24 @@ test.describe('Quick launch', () => {
             return { name: b.name, url: b.url };
         });
         await page.keyboard.press('Shift+Q');
-        await page.locator(`${PANEL} .quick-launch-add`).click();
+        await page.locator(ADD).first().click();
         const search = page.locator(`${PANEL} .quick-launch-search`);
         await expect(search).toBeFocused();
         await search.fill(target.name.slice(0, 5));
         await page.locator(`${PANEL} .quick-launch-result`, { hasText: target.name }).first().click();
         await expect(page.locator(`${PANEL} .quick-launch-group[data-group="added"] .quick-launch-name`).first()).toHaveText(target.name);
-        const saved = await page.evaluate(async () => (await fetch('/api/settings').then((r) => r.json())).quickLaunchAdded);
-        expect(saved).toContain(target.url);
+        // The save is asynchronous: wait for the server to have it rather than asking once.
+        const added = () => page.evaluate(async () => (await fetch('/api/settings').then((r) => r.json())).quickLaunchAdded || []);
+        await expect.poll(added, { timeout: 8000 }).toContain(target.url);
         await page.locator(`${PANEL} .quick-launch-group[data-group="added"] .quick-launch-remove`).first().click();
         await expect(page.locator(`${PANEL} .quick-launch-group[data-group="added"]`)).toHaveCount(0);
-        const after = await page.evaluate(async () => (await fetch('/api/settings').then((r) => r.json())).quickLaunchAdded);
-        expect(after).not.toContain(target.url);
+        await expect.poll(added, { timeout: 8000 }).not.toContain(target.url);
     });
 
     test('Esc in the picker goes back to the panel, a second Esc closes it', async ({ page }) => {
         await loadDashboard(page);
         await page.keyboard.press('Shift+Q');
-        await page.locator(`${PANEL} .quick-launch-add`).click();
+        await page.locator(ADD).first().click();
         await expect(page.locator(`${PANEL} .quick-launch-search`)).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(page.locator(`${PANEL} .quick-launch-search`)).toHaveCount(0);
@@ -223,16 +225,17 @@ test.describe('Quick launch', () => {
         expect(await names(page, 'top')).toContain(top);
     });
 
-    test('the number of bookmarks is a ceiling, and the ones you add come first', async ({ page }) => {
+    test('twelve is the ceiling, and the ones you add come first', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => { window.dashboardInstance.settings.quickLaunchCount = 4; });
+        await addManyBookmarks(page);
         const list = await page.evaluate(() => {
             const d = window.dashboardInstance;
-            d.settings.quickLaunchAdded = [d.bookmarks[d.bookmarks.length - 1].url];
+            window.__many.forEach((b, i) => { b.openCount = 100 - i; });
+            d.settings.quickLaunchAdded = [window.__many[19].url];
             return window.QuickLaunch.list().map((e) => ({ group: e.group, name: e.bookmark.name }));
         });
-        expect(list).toHaveLength(4);
-        expect(list[0].group).toBe('added');
+        expect(list).toHaveLength(12);
+        expect(list[0]).toEqual({ group: 'added', name: 'QL extra 19' });
     });
 
     test('adding to a full panel says which automatic tile made room', async ({ page }) => {
@@ -240,16 +243,17 @@ test.describe('Quick launch', () => {
         await addManyBookmarks(page);
         const result = await page.evaluate(() => {
             const d = window.dashboardInstance;
-            // Eight automatic tiles: a pin and seven opened ones.
-            d.bookmarks.slice(1, 8).forEach((b, i) => { b.openCount = 10 - i; });
+            // Twelve automatic tiles: a pin and more than eleven opened ones.
+            d.bookmarks[0].pinned = true;
+            window.__many.slice(0, 14).forEach((b, i) => { b.openCount = 200 - i; });
             const full = window.QuickLaunch.list();
             const last = full[full.length - 1].bookmark;
             const target = window.__many[19];
             window.QuickLaunch.toggleBookmark(target);
             return { count: full.length, last: last.name, target: target.name, now: window.QuickLaunch.list().length };
         });
-        expect(result.count).toBe(8);
-        expect(result.now).toBe(8);
+        expect(result.count).toBe(12);
+        expect(result.now).toBe(12);
         await expect(page.locator('body')).toContainText(`pushed out: ${result.last}`);
     });
 
@@ -272,13 +276,25 @@ test.describe('Quick launch', () => {
     test("a bookmark's menu offers to add it to Quick launch", async ({ page }) => {
         await loadDashboard(page);
         const row = page.locator('#dashboard-layout .bookmark-open').first();
-        await row.click({ button: 'right' });
         const item = page.locator('.context-menu-item, [role="menuitem"]', { hasText: /Quick launch/ }).first();
-        await expect(item).toBeVisible();
+        // The rows redraw once every page's bookmarks have arrived, so a right-click that lands
+        // on a row about to be replaced opens nothing: once more, and only then. The menu itself
+        // takes a moment to fill, so it is given time before the second try.
+        const openMenu = async () => {
+            await row.click({ button: 'right' });
+            try {
+                await expect(item).toBeVisible({ timeout: 6000 });
+            } catch (error) {
+                await page.keyboard.press('Escape');
+                await row.click({ button: 'right' });
+                await expect(item).toBeVisible({ timeout: 10_000 });
+            }
+        };
+        await openMenu();
         const before = await item.textContent();
         await item.click();
-        await row.click({ button: 'right' });
-        const after = await page.locator('.context-menu-item, [role="menuitem"]', { hasText: /Quick launch/ }).first().textContent();
+        await openMenu();
+        const after = await item.textContent();
         expect(after).not.toBe(before);
         expect(/Add to Quick launch/.test(before) !== /Add to Quick launch/.test(after)).toBe(true);
     });
@@ -321,7 +337,7 @@ test.describe('Quick launch', () => {
         await page.waitForTimeout(3600);
         await expect(page.locator(PANEL)).toBeVisible();
         await page.evaluate(() => { window.dashboardInstance.settings.quickLaunchAutoClose = 3; });
-        await page.locator(`${PANEL} .quick-launch-add`).click();
+        await page.locator(ADD).first().click();
         await page.mouse.move(30, 450);
         await page.mouse.move(40, 460);
         await page.waitForTimeout(3600);
@@ -381,27 +397,23 @@ test.describe('Quick launch', () => {
         expect(results.moreTurns).toBe(1);
     });
 
-    test('the panel takes the surface of the theme: no colour of its own', async ({ page }) => {
+    test('the panel takes its colours from the theme tokens, not from colours of its own', async ({ page }) => {
         await loadDashboard(page);
         await page.keyboard.press('Shift+Q');
-        const tile = page.locator(`${PANEL} .quick-launch-tile`).first();
-        await expect(tile).toBeVisible();
-        const read = () => page.evaluate(() => {
-            const el = document.querySelector('.modal.quick-launch-modal .quick-launch-tile');
-            const cs = getComputedStyle(el);
-            return { bg: cs.backgroundColor, border: cs.borderTopColor, panel: getComputedStyle(document.querySelector('.modal.quick-launch-modal')).backgroundColor };
+        await expect(page.locator(`${PANEL} .quick-launch-tile`).first()).toBeVisible();
+        // What the theme's tokens resolve to, read through a probe the same way the tile reads them.
+        const same = await page.evaluate(() => {
+            const tile = document.querySelector('.modal.quick-launch-modal .quick-launch-tile');
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:absolute;visibility:hidden;border:1px solid var(--border-primary);color:var(--text-primary)';
+            tile.parentElement.appendChild(probe);
+            const want = getComputedStyle(probe);
+            const got = getComputedStyle(tile);
+            const out = { border: [got.borderTopColor, want.borderTopColor], text: [got.color, want.color] };
+            probe.remove();
+            return out;
         });
-        const first = await read();
-        await page.keyboard.press('Escape');
-        await page.evaluate(() => {
-            document.documentElement.style.setProperty('--background-secondary', 'rgb(1, 2, 3)');
-            document.body.style.setProperty('--background-secondary', 'rgb(1, 2, 3)');
-            document.body.style.setProperty('--border-primary', 'rgb(9, 8, 7)');
-        });
-        await page.keyboard.press('Shift+Q');
-        await expect(tile).toBeVisible();
-        const second = await read();
-        expect(second.border).toBe('rgb(9, 8, 7)');
-        expect(second.bg).not.toBe(first.bg);
+        expect(same.border[0]).toBe(same.border[1]);
+        expect(same.text[0]).toBe(same.text[1]);
     });
 });

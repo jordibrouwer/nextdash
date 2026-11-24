@@ -504,7 +504,6 @@ type Settings struct {
 	QuickLaunchGesture            bool     `json:"quickLaunchGesture"`   // circling the mouse opens it
 	QuickLaunchTurns              float64  `json:"quickLaunchTurns"`     // circles needed, 1 to 3 in halves
 	QuickLaunchSource             string   `json:"quickLaunchSource"`    // mix | pinned | top
-	QuickLaunchCount              int      `json:"quickLaunchCount"`     // tiles: 4, 6 or 8
 	QuickLaunchHidden             []string `json:"quickLaunchHidden"`    // bookmark addresses kept out of the panel
 	QuickLaunchAdded              []string `json:"quickLaunchAdded"`     // bookmark addresses put in the panel by hand, first
 	QuickLaunchAutoClose          int      `json:"quickLaunchAutoClose"` // seconds the pointer may stay outside the panel before it closes; 0 never
@@ -1968,7 +1967,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			QuickLaunchGesture:              true,
 			QuickLaunchTurns:                defaultQuickLaunchTurns,
 			QuickLaunchSource:               quickLaunchSourceMix,
-			QuickLaunchCount:                defaultQuickLaunchCount,
 			QuickLaunchAutoClose:            defaultQuickLaunchAutoClose,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -4746,7 +4744,6 @@ func (fs *FileStore) getSettingsShared() Settings {
 			QuickLaunchGesture:              true,
 			QuickLaunchTurns:                defaultQuickLaunchTurns,
 			QuickLaunchSource:               quickLaunchSourceMix,
-			QuickLaunchCount:                defaultQuickLaunchCount,
 			QuickLaunchAutoClose:            defaultQuickLaunchAutoClose,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,

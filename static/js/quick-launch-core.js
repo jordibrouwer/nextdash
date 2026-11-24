@@ -42,7 +42,7 @@
      */
     function buildList(bookmarks, options) {
         const source = options?.source === 'pinned' || options?.source === 'top' ? options.source : 'mix';
-        const count = Math.max(1, Math.min(8, Math.floor(Number(options?.count)) || 8));
+        const count = Math.max(1, Math.min(12, Math.floor(Number(options?.count)) || 12));
         const hidden = new Set((options?.hidden || []).map((url) => String(url).trim()));
         const addedUrls = (options?.added || []).map((url) => String(url).trim()).filter(Boolean);
         const addedSet = new Set(addedUrls);
