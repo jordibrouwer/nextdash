@@ -727,6 +727,8 @@
       "navWhatsNew": "Abrir las notas de versión (novedades)",
       "bmRemind": "Recuérdame el marcador enfocado: elige una hora",
       "cnRemind": "Poner un recordatorio en un marcador (:remind tomorrow, :remind clear)",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "Listar los enlaces relacionados con un marcador"
     },
     "searchPrefix": ">",

@@ -773,6 +773,8 @@
       "navWhatsNew": "Open what's new release notes",
       "bmRemind": "Remind me of the focused bookmark: pick a time",
       "cnRemind": "Set a reminder on a bookmark (:remind tomorrow, :remind clear)",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "List the links that belong with a bookmark"
     },
     "searchPrefix": ">",

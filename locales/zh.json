@@ -727,6 +727,8 @@
       "navWhatsNew": "打开新功能发布说明",
       "bmRemind": "提醒我当前书签：选择一个时间",
       "cnRemind": "为书签设置提醒（:remind tomorrow、:remind clear）",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "列出与某个书签相关的链接"
     },
     "searchPrefix": ">",

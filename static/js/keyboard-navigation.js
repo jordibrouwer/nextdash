@@ -607,7 +607,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l', 'k', 'b']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -874,6 +874,10 @@ class KeyboardNavigation {
             case 's': this.shareCurrent(); break;
             case 'q': this.qrCurrent(); break;
             // Remind me of this link: the Inbox's Z (snooze), for a bookmark.
+            // Related links of this bookmark: the context menu's entry, as a key.
+            case 'k': this.openRelatedMenuForCurrent(); break;
+            // A label row above this bookmark, where its category is in manual order.
+            case 'b': this.addLabelAboveForCurrent(); break;
             case 'z': this.openReminderMenuForCurrent(); break;
             // Watch the feed of this bookmark .
             case 'w': void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() }); break;
@@ -3037,6 +3041,23 @@ class KeyboardNavigation {
     }
 
     /**
+    /** K — the links related to the selected bookmark. */
+    openRelatedMenuForCurrent() {
+        const row = this._resolveActionPopoverRow();
+        const bookmark = this.getSelectedBookmark();
+        if (!row || !bookmark) return;
+        void this.dashboard?.related?.openMenu(bookmark, row);
+    }
+
+    /** B — put a label above the selected bookmark. Only where its category is in manual order: elsewhere the menu has no such entry either. */
+    addLabelAboveForCurrent() {
+        const d = this.dashboard;
+        const row = this._resolveActionPopoverRow();
+        if (!d || !row) return;
+        const slot = window.DashboardCategoryDividers?.slotAbove?.(d, row);
+        if (slot) window.DashboardCategoryDividers.add(d, slot.categoryId, slot.index);
+    }
+
      * Shift+R — show the selected bookmark's row in the Bookmarks view.
      *
      * Shift+H and :health open the view but carry no bookmark, so landing on

@@ -321,12 +321,14 @@ class DashboardContextMenu {
             },
             {
                 id: 'remind',
+                key: 'B',
                 label: Number(bookmarkRef.bookmark?.remindAt) > 0
                     ? this.t('dashboard.contextMenuReminderSet', 'Reminder: {time}…', { time: d.reminders?.formatWhen?.(bookmarkRef.bookmark.remindAt) || '' })
                     : this.t('dashboard.contextMenuRemind', 'Remind me…'),
                 icon: 'remind',
                 key: 'Z',
             },
+                key: 'K',
             {
                 id: 'feed-watch',
                 label: d.feedWatch?.isWatched?.(bookmarkRef.bookmark)

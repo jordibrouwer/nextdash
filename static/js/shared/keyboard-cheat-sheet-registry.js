@@ -183,6 +183,8 @@
                 { keys: 'F', cheatKey: 'bmFilterTag', fallback: 'Filter the grid to the focused bookmark\u2019s tag; several tags open the picker', print: true },
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
                 { keys: 'V', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
+                { keys: 'K', cheatKey: 'bmRelated', fallback: 'Related links of the focused bookmark: the links that belong with it' },
+                { keys: 'B', cheatKey: 'bmLabelAbove', fallback: 'Put a label above the focused bookmark, where its category is in manual order' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
                 { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark — confirm in the popover beside it; with a selection open, deletes everything selected' },
                 { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, QR code, edit, pin, tags, move, checking, Show in list, select, delete (Shift + right-click for the browser menu)', printFallback: 'Row menu: open, copy, edit, tags, move, delete' },

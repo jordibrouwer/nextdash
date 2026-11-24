@@ -727,6 +727,8 @@
       "navWhatsNew": "Öffne die Release Notes (Was ist neu)",
       "bmRemind": "Erinnere mich an das fokussierte Lesezeichen: Zeit wählen",
       "cnRemind": "Erinnerung an einem Lesezeichen setzen (:remind tomorrow, :remind clear)",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "Die Links zeigen, die zu einem Lesezeichen gehören"
     },
     "searchPrefix": ">",

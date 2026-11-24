@@ -727,6 +727,8 @@
       "navWhatsNew": "Ouvrir les notes de version (nouveautés)",
       "bmRemind": "Me rappeler le favori ciblé : choisir un moment",
       "cnRemind": "Définir un rappel sur un favori (:remind tomorrow, :remind clear)",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "Lister les liens associés à un favori"
     },
     "searchPrefix": ">",

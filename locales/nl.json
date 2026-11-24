@@ -743,6 +743,8 @@
       "navWhatsNew": "Open de release notes van wat er nieuw is",
       "bmRemind": "Herinner me aan de gerichte bookmark: kies een tijd",
       "cnRemind": "Zet een herinnering op een bookmark (:remind tomorrow, :remind clear)",
+      "bmRelated": "Related links of the focused bookmark: the links that belong with it",
+      "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
       "cnRelated": "Toon de links die bij een bookmark horen"
     },
     "searchPrefix": ">",
