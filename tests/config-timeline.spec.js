@@ -7,8 +7,11 @@ const { waitForConfigReady } = require('./e2e-helpers');
  * same on every machine: Sonarr went down a minute after its auto-update, and
  * a Glances incident has nothing before it.
  */
+// Midday today, pinned in the page as well, so no minute of the day moves a row to another day.
+const NOW = (() => { const d = new Date(); d.setHours(12, 0, 0, 0); return d.getTime(); })();
+
 function response() {
-    const now = Date.now();
+    const now = NOW;
     const at = (min) => now - min * 60_000;
     const update = {
         id: 'u1', at: at(61), source: 'update', kind: 'update', by: 'auto', from: '4.0.9', to: '4.0.10',
@@ -39,6 +42,8 @@ async function mockTimeline(page, seen) {
 }
 
 test.describe('Config → Timeline', () => {
+    test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(NOW); });
+
     test('the section file and the data wait until the section is opened', async ({ page }) => {
         const files = [];
         const seen = [];
@@ -66,6 +71,58 @@ test.describe('Config → Timeline', () => {
         await expect(page.locator('.tl-item', { hasText: 'Tower' }).locator('.tl-cause--none')).toBeVisible();
         // The update is a row of its own as well, without a cause line.
         await expect(page.locator('.tl-item').filter({ has: page.locator('.tl-text', { hasText: /^sonarr auto-updated/ }) }).locator('.tl-cause')).toHaveCount(0);
+    });
+
+    test('the cause is a chain, and each day opens with a strip of its events', async ({ page }) => {
+        await mockTimeline(page, []);
+        await page.goto('/#config/timeline');
+        await waitForConfigReady(page);
+        const outage = page.locator('.tl-item', { hasText: 'Sonarr down' });
+        await expect(outage).toHaveClass(/tl-item--outage/);
+        const chain = outage.locator('.tl-chain');
+        await expect(chain).toHaveClass(/tl-c-update/);
+        await expect(chain.locator('.tl-chain-line')).toHaveText('1 min');
+        // The cause came first, so it is on the left.
+        await expect(chain.locator('.tl-chain-node').first()).not.toHaveClass(/tl-chain-node--out/);
+        // The update is what caused a shown outage, so it carries the ring.
+        await expect(page.locator('.tl-item.tl-c-update')).toHaveClass(/tl-item--trigger/);
+        // One tick per event of the day, an outage full height.
+        const day = page.locator('.tl-day').first();
+        await expect(day.locator('.tl-tick')).toHaveCount(await day.locator('.tl-item').count());
+        await expect(day.locator('.tl-tick--out')).toHaveCount(await day.locator('.tl-item--outage').count());
+        await expect(day.locator('.tl-day-sum')).toContainText(/outage/);
+        // 11:00 for 14 minutes of a 24 hour day.
+        const tick = day.locator('.tl-tick--out[style*="left:45.83%"]');
+        await expect(tick).toHaveAttribute('style', /width:0\.97%/);
+        await expect(page.locator('[data-tl-source="docker"]')).toHaveClass(/tl-c-docker/);
+    });
+
+    test('a cause that came after the outage sits on its right, and an ongoing outage runs up to now', async ({ page }) => {
+        await page.route('**/api/timeline*', (route) => {
+            const body = response();
+            body.events[0].causes[0].gapMs = -60_000;
+            body.events[0].ongoing = true;
+            delete body.events[0].end;
+            body.events[0].at = NOW - 120 * 60_000;
+            return route.fulfill({ json: body });
+        });
+        await page.goto('/#config/timeline');
+        await waitForConfigReady(page);
+        const nodes = page.locator('.tl-item', { hasText: 'Sonarr down' }).locator('.tl-chain-node');
+        await expect(nodes.first()).toHaveClass(/tl-chain-node--out/);
+        // 10:00 to now (12:00) is a twelfth of the day.
+        await expect(page.locator('.tl-tick--out[style*="left:41.67%"]')).toHaveAttribute('style', /width:8\.33%/);
+    });
+
+    test('an update is not ringed for an outage that is not on screen', async ({ page }) => {
+        await page.route('**/api/timeline*', (route) => {
+            const body = response();
+            body.events = body.events.filter((e) => e.id !== 'd1');
+            return route.fulfill({ json: body });
+        });
+        await page.goto('/#config/timeline');
+        await waitForConfigReady(page);
+        await expect(page.locator('.tl-item.tl-c-update')).not.toHaveClass(/tl-item--trigger/);
     });
 
     test('the filters ask the route, and are kept', async ({ page }) => {

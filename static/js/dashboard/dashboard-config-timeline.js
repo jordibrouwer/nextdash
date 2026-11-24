@@ -31,6 +31,20 @@
         start: 'ok', healthy: 'ok',
     };
 
+    // One small outline icon per source; the colour comes from the .tl-c-<source> class.
+    const GLYPHS = {
+        docker: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+        update: '<path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M18 2v4h-4M6 22v-4h4"/>',
+        health: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+        check: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>',
+        glances: '<path d="M4 18a9 9 0 1 1 16 0"/><path d="M12 14l4-5"/>',
+        unraid: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+        alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+    };
+    function glyph(name) {
+        return `<svg class="tl-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${GLYPHS[name] || GLYPHS.health}</svg>`;
+    }
+    
     function readFilters() {
         const base = { days: 7, view: 'all', sources: SOURCES.map((s) => s[0]) };
         try {
@@ -53,7 +67,7 @@
         const esc = (v) => this.dash.escapeHtml(v);
         if (!this._timeline) this._timeline = { filters: readFilters(), data: null, error: false, loading: false };
         const f = this._timeline.filters;
-        const chips = SOURCES.map(([id, key, text]) => `<button type="button" class="tl-chip" data-tl-source="${id}" aria-pressed="${f.sources.includes(id)}">${esc(this.t(key, text))}</button>`).join('');
+        const chips = SOURCES.map(([id, key, text]) => `<button type="button" class="tl-chip tl-c-${id}" data-tl-source="${id}" aria-pressed="${f.sources.includes(id)}">${glyph(id)}<span>${esc(this.t(key, text))}</span></button>`).join('');
         const views = VIEWS.map(([id, key, text]) => `<label class="tl-radio"><input type="radio" name="tl-view" value="${id}"${f.view === id ? ' checked' : ''}> <span>${esc(this.t(key, text))}</span></label>`).join('');
         const days = [[1, 'config.timelineDay1', 'Last 24 hours'], [7, 'config.timelineDays7', 'Last 7 days'], [30, 'config.timelineDays30', 'Last 30 days']]
             .map(([n, key, text]) => `<option value="${n}"${f.days === n ? ' selected' : ''}>${esc(this.t(key, text))}</option>`).join('');
@@ -205,6 +219,7 @@
         }
         const data = st.data;
         const byId = new Map([...data.events, ...data.related].map((e) => [e.id, e]));
+        const shown = new Set(data.events.map((e) => e.id));
 
         // Where a source cannot reach as far back as the period, say so.
         const notes = [];
@@ -248,32 +263,57 @@
             return dayFmt.format(new Date(ms));
         };
 
-        let html = '';
-        let current = null;
+        // Events come newest first, so the days do too.
+        const days = new Map();
         for (const e of data.events) {
             const day = startOfDay(e.at);
-            if (day !== current) {
-                if (current !== null) html += '</ol></section>';
-                current = day;
-                html += `<section class="tl-day"><h3 class="tl-day-title">${esc(dayLabel(e.at))}</h3><ol class="tl-items">`;
-            }
-            html += this.timelineRowHtml(e, byId, timeFmt);
+            if (!days.has(day)) days.set(day, []);
+            days.get(day).push(e);
         }
-        if (current !== null) html += '</ol></section>';
+        list.classList.toggle('tl-list--compact', st.filters.days === 30);
+        let html = '';
+        for (const [day, evs] of days) {
+            const outages = evs.filter((e) => e.outage).length;
+            const bits = [];
+            if (outages) {
+                bits.push(outages === 1
+                    ? this.t('config.timelineOutageOne', '1 outage')
+                    : this.t('config.timelineOutages', '{n} outages').replace('{n}', String(outages)));
+            }
+            bits.push(evs.length === 1
+                ? this.t('config.timelineCountOne', '1 event')
+                : this.t('config.timelineCount', '{n} events').replace('{n}', String(evs.length)));
+            // A local day is 23 or 25 hours on a DST change, so measure it.
+            const dayLen = startOfDay(day + 30 * 36e5) - day;
+            const ticks = evs.map((e) => {
+                const left = Math.max(0, Math.min(99.3, (e.at - day) / dayLen * 100));
+                // An ongoing outage runs up to now, and none runs past the end of its day.
+                const end = e.ongoing ? Math.min(Date.now(), day + dayLen) : e.end;
+                const width = end > e.at ? Math.max(0.7, Math.min(100 - left, (end - e.at) / dayLen * 100)) : 0.7;
+                return `<span class="tl-tick tl-c-${esc(e.source)}${e.outage ? ' tl-tick--out' : ''}" style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%"></span>`;
+            }).join('');
+            html += `<section class="tl-day">
+                <div class="tl-day-head"><h3 class="tl-day-title">${esc(dayLabel(day))}</h3><span class="tl-day-sum${outages ? ' tl-day-sum--out' : ''}">${esc(bits.join(' · '))}</span></div>
+                <div class="tl-strip" aria-hidden="true">${ticks}</div>
+                <div class="tl-hours" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+                <ol class="tl-items">`;
+            for (const e of evs) html += this.timelineRowHtml(e, byId, timeFmt, shown);
+            html += '</ol></section>';
+        }
         if (data.truncated) {
             html += `<p class="tl-more">${esc(this.t('config.timelineTruncated', 'Older events are left out. Pick a shorter period or a source to see fewer.'))}</p>`;
         }
         list.innerHTML = html;
     },
 
-    timelineRowHtml(e, byId, timeFmt) {
+    timelineRowHtml(e, byId, timeFmt, shown) {
         const esc = (v) => this.dash.escapeHtml(v);
         const tone = e.outage ? 'warn' : (ICONS[e.kind] || 'neutral');
         const iso = new Date(e.at).toISOString();
         let tail = '';
-        if (e.ongoing) tail = ` · ${this.t('config.timelineOngoing', 'ongoing')}`;
-        else if (e.durationMs) tail = ` · ${this.timelineMinutes(e.durationMs)}`;
-        if (e.count > 1 && e.kind === 'down') tail += ` · ${this.t('config.timelineTimes', '{n} times').replace('{n}', String(e.count))}`;
+        if (e.ongoing) tail = ` \u00b7 ${this.t('config.timelineOngoing', 'ongoing')}`;
+        else if (e.durationMs) tail = ` \u00b7 ${this.timelineMinutes(e.durationMs)}`;
+        if (e.count > 1 && e.kind === 'down') tail += ` \u00b7 ${this.t('config.timelineTimes', '{n} times').replace('{n}', String(e.count))}`;
         let cause = '';
         if (e.outage) {
             const parts = (e.causes || []).map((c) => ({ c, ev: byId.get(c.eventId) })).filter((p) => p.ev);
@@ -286,20 +326,34 @@
                 const others = rest.length
                     ? `<span class="tl-also">${esc(this.t('config.timelineAlso', 'Also nearby'))}: ${rest.map((p) => esc(this.timelineText(p.ev))).join('; ')}</span>`
                     : '';
-                cause = `<div class="tl-cause"><span>${esc(label)}: ${esc(this.timelineCauseSentence(main.c, main.ev))}${link}</span>${others}</div>`;
+                // The chain: what came before, how long before, the outage.
+                // Read left to right in time: a cause that came after the outage goes on its right.
+                const causeNode = `<span class="tl-chain-node">${glyph(main.ev.source)}</span>`;
+                const outNode = `<span class="tl-chain-node tl-chain-node--out">${glyph('alert')}</span>`;
+                const line = `<span class="tl-chain-line"><span>${esc(this.timelineMinutes(main.c.gapMs))}</span></span>`;
+                const chain = `<span class="tl-chain tl-c-${esc(main.ev.source)}" aria-hidden="true">${main.c.gapMs >= 0 ? causeNode + line + outNode : outNode + line + causeNode}</span>`;
+                cause = `<div class="tl-cause">${chain}<span class="tl-cause-text">${esc(label)}: ${esc(this.timelineCauseSentence(main.c, main.ev))}${link}</span>${others}</div>`;
             } else {
                 cause = `<div class="tl-cause tl-cause--none">${esc(this.t('config.timelineNoCause', 'No cause found'))}</div>`;
             }
         }
         const text = esc(this.timelineText(e));
         const body = e.link ? `<a class="tl-text" href="${esc(e.link)}">${text}</a>` : `<span class="tl-text">${text}</span>`;
-        return `<li class="tl-item tl-item--${tone}">
-            <div class="tl-row">
-                <time class="tl-time" datetime="${esc(iso)}">${esc(timeFmt.format(new Date(e.at)))}</time>
-                <span class="tl-dot" aria-hidden="true"></span>
-                <span class="tl-main">${body}<span class="tl-tail">${esc(tail)}</span></span>
-                <span class="tl-src">${esc(this.timelineSourceLabel(e))}</span>
-            </div>${cause}</li>`;
+        const cls = [
+            `tl-item tl-item--${tone} tl-c-${esc(e.source)}`,
+            e.outage ? 'tl-item--outage' : '',
+            // causeOf is set before the filters run: ring only an outage that is on screen.
+            (e.causeOf || []).some((id) => shown.has(id)) ? 'tl-item--trigger' : '',
+        ].filter(Boolean).join(' ');
+        return `<li class="${cls}">
+            <span class="tl-node" aria-hidden="true">${glyph(e.outage ? 'alert' : e.source)}</span>
+            <div class="tl-card">
+                <div class="tl-row">
+                    <time class="tl-time" datetime="${esc(iso)}">${esc(timeFmt.format(new Date(e.at)))}</time>
+                    <span class="tl-main">${body}<span class="tl-tail">${esc(tail)}</span></span>
+                    <span class="tl-src">${esc(this.timelineSourceLabel(e))}</span>
+                </div>${cause}
+            </div></li>`;
     },
 
     });
