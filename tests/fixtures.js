@@ -165,7 +165,7 @@ const test = base.test.extend({
                 sessionStorage.setItem('e2e-coach-notes-seeded', '1');
                 // The window that says the keys moved, too: it holds the page for an
                 // install the server counts as existing, and the coach notes wait behind it.
-                ['nextdash:bell-intro-seen', 'nextdash:action-bar-intro-seen', 'nextdash:mode-strip-intro-seen', 'nextdash:shortcuts-changed-seen']
+                ['nextdash:bell-intro-seen', 'nextdash:action-bar-intro-seen', 'nextdash:mode-strip-intro-seen', 'nextdash:quick-launch-intro-seen', 'nextdash:shortcuts-changed-seen']
                     .forEach((key) => localStorage.setItem(key, '1'));
             } catch { /* storage refused: the specs that care set it themselves */ }
         });

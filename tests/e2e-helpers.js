@@ -91,6 +91,8 @@ async function markWhatsNewSeen(page, options = {}) {
             // And the note that introduces the mode strip: it ringed the strip and held
             // it awake, and queued ahead of the bell's note in a fresh browser.
             localStorage.setItem('nextdash:mode-strip-intro-seen', '1');
+            // And the one that points at the Quick launch corner element, over the top-right corner.
+            localStorage.setItem('nextdash:quick-launch-intro-seen', '1');
             if (confirmCheatsheet) {
                 localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
             }

@@ -11,7 +11,7 @@
  * What it holds is quick-launch-core.js. Putting a bookmark in, or taking one
  * out, works three ways: the + in the panel (a picker), Shift+Q with a bookmark
  * under the cursor, and the bookmark's context menu. Where it works: the
- * dashboard view, on a computer. The corner element only shows at 992 px and
+ * views of the app, on a computer. The corner element only shows at 992 px and
  * wider with a real mouse (quick-launch.css); the key and the gesture are left
  * to the keyboard and the mouse that have them.
  */
@@ -88,7 +88,7 @@
     /** Whether something else owns the screen: another panel, the search, a field. */
     function busy() {
         const d = dash();
-        if (!d || !d.isBookmarksView?.()) return true;
+        if (!d) return true;
         if (isOpen()) return false;
         if (d.isModalOpen?.()) return true;
         if (d.searchComponent?.isActive?.()) return true;
@@ -469,7 +469,7 @@
         if (!global.AppModal || !d || busy()) return false;
         if (isOpen()) return true;
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
-        global.ModalOrigin?.remember?.(document.getElementById('quick-launch-button'));
+        hookModal();
         picking = false;
         global.AppModal.show({
             title: label('quickLaunchTitle', {}, 'Quick launch'),
@@ -485,6 +485,7 @@
             },
         });
         document.getElementById('quick-launch-button')?.setAttribute('aria-expanded', 'true');
+        unfold();
         startWatching();
         const header = document.querySelector('.modal.' + MODAL_CLASS + ' .modal-header');
         if (header && !header.querySelector('.quick-launch-modal-key')) {
@@ -528,6 +529,100 @@
 
     function close() {
         if (isOpen()) global.AppModal.hide();
+    }
+
+    /*
+     * The panel travels. It unfolds out of the corner element into the middle of the
+     * screen, and on the way out folds back into it, the same road in reverse. Both
+     * are Web Animations on the panel, measured from where the element stands, so the
+     * journey is right at any window size; with reduced motion, with animations off
+     * or with no corner element on screen the panel simply appears and goes.
+     */
+    function motionOff() {
+        return Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+            || document.body.classList.contains('no-view-animations')
+            || document.body.classList.contains('no-animations');
+    }
+
+    /** How far the corner element is from the middle of the screen, in pixels. */
+    function journey() {
+        const corner = document.getElementById('quick-launch-button');
+        const overlay = document.getElementById('app-modal');
+        if (!corner || !overlay) return null;
+        const c = corner.getBoundingClientRect();
+        if (!c.width || !c.height) return null;
+        const o = overlay.getBoundingClientRect();
+        return { dx: c.left + c.width / 2 - (o.left + o.width / 2), dy: c.top + c.height / 2 - (o.top + o.height / 2) };
+    }
+
+    /** Animation speed (Appearance → Animation speed) scales the trip like every other modal. */
+    function tripMs(base) {
+        const scale = parseFloat(global.getComputedStyle(document.body).getPropertyValue('--enter-scale'));
+        return Math.round(base * ((Number.isFinite(scale) && scale > 0 ? scale : 0.5) / 0.5));
+    }
+
+    const FOLDED = (trip) => `translate(${trip.dx}px, ${trip.dy}px) scale(0.08)`;
+
+    function unfold() {
+        if (motionOff()) return;
+        const panel = document.querySelector('.modal.' + MODAL_CLASS);
+        const trip = journey();
+        if (!panel || !trip || !panel.animate) return;
+        panel.animate(
+            [{ transform: FOLDED(trip), opacity: 0, transformOrigin: 'center' }, { transform: 'none', opacity: 1, transformOrigin: 'center' }],
+            { duration: tripMs(380), easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' },
+        );
+    }
+
+    let closing = false;
+
+    /** What a finished fold leaves behind is cleared before anything else uses the panel. */
+    function clearLeftover() {
+        document.querySelector('#app-modal .modal')?.getAnimations?.().forEach((a) => a.cancel());
+    }
+
+    /**
+     * AppModal.hide, but with the fold first while Quick launch is the panel on screen.
+     * Every way out goes through hide() (Esc, a click beside it, the key, a tile), so
+     * the hook is here and not in each of them.
+     */
+    function hookModal() {
+        const modal = global.AppModal;
+        if (!modal || modal.__quickLaunchHooked) return;
+        modal.__quickLaunchHooked = true;
+        const hide = modal.hide.bind(modal);
+        const show = modal.show.bind(modal);
+        modal.show = function (options) {
+            clearLeftover();
+            return show(options);
+        };
+        modal.hide = function (...args) {
+            if (closing) return undefined;
+            const panel = isOpen() ? document.querySelector('.modal.' + MODAL_CLASS) : null;
+            const trip = panel && !motionOff() ? journey() : null;
+            if (!panel || !trip || !panel.animate) return hide(...args);
+            closing = true;
+            const fold = panel.animate(
+                [{ transform: 'none', opacity: 1, transformOrigin: 'center' }, { transform: FOLDED(trip), opacity: 0, transformOrigin: 'center' }],
+                { duration: tripMs(300), easing: 'cubic-bezier(0.5, 0, 0.75, 0)', fill: 'forwards' },
+            );
+            // Once: a fold that was cancelled later (to clear it away) must not hide whatever
+            // panel is up by then.
+            let finished = false;
+            const done = () => {
+                if (finished) return;
+                finished = true;
+                fold.onfinish = null;
+                fold.oncancel = null;
+                closing = false;
+                hide(...args);
+                // Held folded while the screen behind it fades back, then let go.
+                setTimeout(clearLeftover, 500);
+            };
+            fold.onfinish = done;
+            fold.oncancel = done;
+            return undefined;
+        };
     }
 
     /*

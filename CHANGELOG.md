@@ -155,7 +155,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### Quick launch
 
-- **new — Quick launch.** A panel in the middle of the screen with the bookmarks you add, the ones you pinned and the ones you open most. `Shift + Q` opens and closes it, so does a corner element at the top right and drawing circles with the mouse (1.5 by default, 1 to 3 under Config → Appearance → Header → Quick launch). The panel takes the material of the active theme and unfolds from the corner element. Add a bookmark with **+** in the panel, with `Shift + Q` on a bookmark or in its right-click menu (*Add to Quick launch*); take one out with the **×** on its tile, which also hides an automatic one. The corner element shows only in a window of 992 px or more with a mouse; on a tablet or phone the key and the panel still work where there is a keyboard.
+- **new — Quick launch.** A panel in the middle of the screen with the bookmarks you add, the ones you pinned and the ones you open most. `Shift + Q` opens and closes it, so does a corner element at the top right and drawing circles with the mouse (1.5 by default, 1 to 3 under Config → Appearance → Header → Quick launch). The panel takes the material of the active theme and unfolds from the corner element. Add a bookmark with **+** in the panel, with `Shift + Q` on a bookmark or in its right-click menu (*Add to Quick launch*); take one out with the **×** on its tile, which also hides an automatic one. The corner element shows in every view, but only in a window of 992 px or more with a mouse; on a tablet or phone the key and the panel still work where there is a keyboard.
+- **new — A note and a tour slide for Quick launch.** A one-time balloon points at the corner element: *Got it*, or *Customize*, which opens Config → Appearance → Header with the Quick launch group open. The corner element breathes quietly at rest, and under the pointer its four tiles shuffle one place round while the arrow turns, all inside the button; both stop with reduced motion and with animations off. The panel unfolds out of the corner element and folds back into it. It also shows in every view now, Config included.
+- **new — The dashboard tour has three new slides.** *The header, the bell and the mode strip*, *Quick launch* and *More letters on a bookmark* (z, o, b, s, q, w, l and Shift+Q), so the tour is thirteen steps.
 - **fix — Quick launch keeps bookmarks added from other pages.** Adding one with `Shift + Q` or the right-click menu before the other pages had loaded saved the list without the ones from those pages.
 - **fix — Quick launch search with an input method.** Typing Chinese or Japanese in the panel's search no longer throws away the character being composed.
 - **fix — Quick launch corner element follows changes.** The four small tiles update when you pin a bookmark or change what the panel shows in Config, not only when you open the panel.
@@ -177,8 +179,6 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Reminders
 
 - **fix — A moved bookmark does not remind twice.** Moving a bookmark to another page from its edit form or the tag filter, after its reminder had gone out, could send the reminder a second time. The move now keeps the reminder as the server has it.
-
-- **new — The dashboard tour has three new slides.** *The header, the bell and the mode strip*, *Quick launch* and *More letters on a bookmark* (z, k, b, s, q, w, l and Shift+Q), so the tour is thirteen steps. New row keys: `K` opens Related links and `B` puts a label above, both with a chip in the right-click menu.
 
 ## v1.33.1 — 24 November 2026
 

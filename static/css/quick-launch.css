@@ -6,7 +6,8 @@
  * overlay look from theme-overlays.css, the corner element stands like the
  * action bar, on the surface of the page. Nothing here sets a colour of its own.
  *
- * The corner element shows only on a computer: a window of 992 px or more and a
+ * The corner element shows in every view (the dashboard, the Bookmarks view, the Inbox,
+ * Containers and Config), and only on a computer: a window of 992 px or more and a
  * pointer that hovers. Below that, or on a touch screen, it is not drawn; the
  * key and the gesture are left to the keyboard and the mouse that have them.
  */
@@ -16,7 +17,7 @@
 }
 
 @media (min-width: 992px) and (hover: hover) and (pointer: fine) {
-    body[data-active-view="bookmarks"][data-quick-launch-button="true"] .quick-launch-corner {
+    body[data-quick-launch-button="true"] .quick-launch-corner {
         display: grid;
         place-items: center;
         position: fixed;
@@ -34,6 +35,8 @@
         border-left: 1px solid var(--border-primary);
         border-bottom: 1px solid var(--border-primary);
         border-bottom-left-radius: var(--layout-radius-md, 14px);
+        /* Every motion of the button stays inside it. */
+        overflow: hidden;
         box-shadow: 0 6px 18px -8px color-mix(in srgb, black 55%, transparent);
         transition: border-color 0.15s ease, background 0.15s ease;
     }
@@ -494,5 +497,106 @@
     .quick-launch-remove,
     .quick-launch-tile {
         transition: none;
+    }
+}
+
+/* Motion, all of it inside the button. At rest the four tiles breathe, one after the
+   other, and the arrow nudges now and then: enough to say the corner is alive, not
+   enough to pull the eye from the page. Under the pointer (or the keyboard) the tiles
+   shuffle: each moves one place round, clockwise, and springs a little past it, while
+   the arrow turns a quarter. Nothing leaves the button. Both stop while the panel is
+   open, with reduced motion and with the animations switched off. */
+.quick-launch-minis {
+    /* One tile and one gap: how far a tile travels to the next place. */
+    --ql-step: calc(1.15rem + 3px);
+}
+
+@keyframes ql-breathe {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes ql-nudge {
+    0%, 72%, 100% { transform: translate(0, 0); }
+    82% { transform: translate(1.5px, -1.5px); }
+    92% { transform: translate(0, 0); }
+}
+
+@keyframes ql-shuffle-right {
+    0% { transform: translate(0, 0); }
+    55% { transform: translate(calc(var(--ql-step) * 1.08), 0); }
+    100% { transform: translate(var(--ql-step), 0); }
+}
+
+@keyframes ql-shuffle-down {
+    0% { transform: translate(0, 0); }
+    55% { transform: translate(0, calc(var(--ql-step) * 1.08)); }
+    100% { transform: translate(0, var(--ql-step)); }
+}
+
+@keyframes ql-shuffle-left {
+    0% { transform: translate(0, 0); }
+    55% { transform: translate(calc(var(--ql-step) * -1.08), 0); }
+    100% { transform: translate(calc(var(--ql-step) * -1), 0); }
+}
+
+@keyframes ql-shuffle-up {
+    0% { transform: translate(0, 0); }
+    55% { transform: translate(0, calc(var(--ql-step) * -1.08)); }
+    100% { transform: translate(0, calc(var(--ql-step) * -1)); }
+}
+
+@keyframes ql-tick {
+    from { transform: rotate(0); }
+    to { transform: rotate(90deg); }
+}
+
+.quick-launch-corner:not([aria-expanded="true"]) .quick-launch-mini {
+    animation: ql-breathe 5.5s ease-in-out infinite;
+}
+
+.quick-launch-corner:not([aria-expanded="true"]) .quick-launch-mini:nth-child(2) { animation-delay: 0.6s; }
+.quick-launch-corner:not([aria-expanded="true"]) .quick-launch-mini:nth-child(3) { animation-delay: 1.2s; }
+.quick-launch-corner:not([aria-expanded="true"]) .quick-launch-mini:nth-child(4) { animation-delay: 1.8s; }
+
+.quick-launch-corner:not([aria-expanded="true"]) .quick-launch-arrow {
+    animation: ql-nudge 5.5s ease-in-out infinite;
+}
+
+/* Places in the 2 x 2: 1 top left, 2 top right, 3 bottom left, 4 bottom right. */
+.quick-launch-corner:not([aria-expanded="true"]):hover .quick-launch-mini:nth-child(1),
+.quick-launch-corner:not([aria-expanded="true"]):focus-visible .quick-launch-mini:nth-child(1) {
+    animation: ql-shuffle-right 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.quick-launch-corner:not([aria-expanded="true"]):hover .quick-launch-mini:nth-child(2),
+.quick-launch-corner:not([aria-expanded="true"]):focus-visible .quick-launch-mini:nth-child(2) {
+    animation: ql-shuffle-down 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 0.04s both;
+}
+
+.quick-launch-corner:not([aria-expanded="true"]):hover .quick-launch-mini:nth-child(4),
+.quick-launch-corner:not([aria-expanded="true"]):focus-visible .quick-launch-mini:nth-child(4) {
+    animation: ql-shuffle-left 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 0.08s both;
+}
+
+.quick-launch-corner:not([aria-expanded="true"]):hover .quick-launch-mini:nth-child(3),
+.quick-launch-corner:not([aria-expanded="true"]):focus-visible .quick-launch-mini:nth-child(3) {
+    animation: ql-shuffle-up 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 0.12s both;
+}
+
+.quick-launch-corner:not([aria-expanded="true"]):hover .quick-launch-arrow,
+.quick-launch-corner:not([aria-expanded="true"]):focus-visible .quick-launch-arrow {
+    animation: ql-tick 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+body.no-animations .quick-launch-mini,
+body.no-animations .quick-launch-arrow {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quick-launch-mini,
+    .quick-launch-arrow {
+        animation: none !important;
     }
 }
