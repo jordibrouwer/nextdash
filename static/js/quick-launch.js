@@ -315,7 +315,11 @@
         });
         content.querySelector('.quick-launch-back')?.addEventListener('click', () => { fill(); focusFirst(); });
         const input = content.querySelector('.quick-launch-search');
-        input?.addEventListener('input', () => {
+        // Redrawn per keystroke, field and all: mid-composition that throws away what an
+        // input method (pinyin, kana) is still putting together, so wait for it to finish.
+        input?.addEventListener('compositionend', () => input.dispatchEvent(new Event('input')));
+        input?.addEventListener('input', (event) => {
+            if (event.isComposing) return;
             const caret = input.selectionStart;
             fillPicker(input.value);
             const again = contentEl()?.querySelector('.quick-launch-search');
