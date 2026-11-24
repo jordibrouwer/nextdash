@@ -659,9 +659,12 @@ test('the strip stands in the same place whatever the name and the clock do', as
      */
     const centred = await page.evaluate(() => {
         const mid = (el) => { const r = el.getBoundingClientRect(); return r.x + r.width / 2; };
-        return Math.round(
-            mid(document.querySelector('.header-track')) - mid(document.querySelector('.header-top')),
-        );
+        // The middle of the row between its paddings: the Quick launch button keeps the
+        // corner its own room (padding on the right), and the strip centres in what is left.
+        const row = document.querySelector('.header-top');
+        const cs = window.getComputedStyle(row);
+        const inside = mid(row) + (parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) / 2;
+        return Math.round(mid(document.querySelector('.header-track')) - inside);
     });
     expect(Math.abs(centred), `the strip sits ${centred}px off the centre of the row`).toBe(0);
 
