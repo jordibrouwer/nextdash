@@ -121,6 +121,7 @@ func defaultMainPage() PageWithBookmarks {
 			seedLink("DevDocs", "https://devdocs.io", "", "development", "dev", "docs"),
 			seedLink("regex101", "https://regex101.com", "", "development", "dev", "regex"),
 			seedLink("Can I use", "https://caniuse.com", "", "development", "dev", "web"),
+			seedLink("Brewed bits", "https://brewedbits.dev", "BB", "development", "dev", "blog"),
 
 			checked(seedLink("Docker Hub", "https://hub.docker.com", "D", "docker", "docker", "containers")),
 			seedLink("Docker Docs", "https://docs.docker.com", "DD", "docker", "docker", "docs"),
@@ -305,6 +306,7 @@ func minimalMainPage() PageWithBookmarks {
 			{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
 			{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 			{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+			{Name: "Brewed bits", URL: "https://brewedbits.dev", Shortcut: "BB", Category: "development", CheckStatus: false, Tags: []string{"dev", "blog"}},
 			{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
 			{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
 			{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
