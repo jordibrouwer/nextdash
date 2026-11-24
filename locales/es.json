@@ -536,6 +536,7 @@
       "navHealthView": "Abrir la vista Marcadores, la lista completa",
       "navSettingsView": "Abrir la configuración: ajustes, páginas y marcadores",
       "navThemeBrowser": "Abrir el explorador de temas: elige o previsualiza un tema sin abrir la configuración",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "Repetir el recorrido del panel",
       "navAllTags": "Abrir la vista de etiquetas de todos los marcadores: sin marcador enfocado; sobre un marcador, T abre sus etiquetas",
       "cbHealthPage": "Abrir la vista Marcadores en una página",
@@ -726,9 +727,9 @@
       "cbCheckup": "Una ronda por lo que conviene ordenar: marcadores rotos, duplicados y sin usar, categorías vacías, widgets que fallan",
       "navWhatsNew": "Abrir las notas de versión (novedades)",
       "bmRemind": "Recuérdame el marcador enfocado: elige una hora",
-      "cnRemind": "Poner un recordatorio en un marcador (:remind tomorrow, :remind clear)",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "Poner un recordatorio en un marcador (:remind tomorrow, :remind clear)",
       "cnRelated": "Listar los enlaces relacionados con un marcador"
     },
     "searchPrefix": ">",

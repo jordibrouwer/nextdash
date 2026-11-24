@@ -295,6 +295,15 @@ class DashboardContextMenu {
                 icon: 'pin',
                 key: 'P',
             },
+            // Quick launch: in by hand or out, the same key as on the row.
+            ...(window.QuickLaunch ? [{
+                id: 'quick-launch',
+                label: window.QuickLaunch.holds(bookmarkRef.bookmark)
+                    ? this.t('dashboard.contextMenuQuickLaunchRemove', 'Remove from Quick launch')
+                    : this.t('dashboard.contextMenuQuickLaunchAdd', 'Add to Quick launch'),
+                icon: '\u2197',
+                key: 'Shift+Q',
+            }] : []),
             {
                 id: 'tags',
                 label: this.t('dashboard.contextMenuTags', 'Tags…'),
@@ -312,23 +321,23 @@ class DashboardContextMenu {
                 id: 'add-label-above',
                 label: this.t('dashboard.contextMenuAddLabelAbove', 'Add label above'),
                 icon: '—',
+                key: 'B',
             }] : []),
             {
                 id: 'related',
                 label: this.t('dashboard.contextMenuRelated', 'Related links…'),
                 icon: '\u21C4',
                 submenu: false,
+                key: 'K',
             },
             {
                 id: 'remind',
-                key: 'B',
                 label: Number(bookmarkRef.bookmark?.remindAt) > 0
                     ? this.t('dashboard.contextMenuReminderSet', 'Reminder: {time}…', { time: d.reminders?.formatWhen?.(bookmarkRef.bookmark.remindAt) || '' })
                     : this.t('dashboard.contextMenuRemind', 'Remind me…'),
                 icon: 'remind',
                 key: 'Z',
             },
-                key: 'K',
             {
                 id: 'feed-watch',
                 label: d.feedWatch?.isWatched?.(bookmarkRef.bookmark)
@@ -1046,6 +1055,9 @@ class DashboardContextMenu {
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
+                break;
+            case 'quick-launch':
+                window.QuickLaunch?.toggleBookmark?.(bookmarkRef.bookmark);
                 break;
             case 'pin': {
                 // Through the palette's persistence path, so pin has one writer

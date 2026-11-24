@@ -73,6 +73,8 @@ class DashboardSetup {
         document.body.setAttribute('data-show-cheatsheet-button', d.settings.showCheatSheetButton !== false);
         document.body.setAttribute('data-show-edit-mode-button', d.settings.showEditModeButton !== false);
         document.body.setAttribute('data-show-theme-studio-button', d.settings.showThemeStudioButton !== false);
+        // Quick launch: the corner element and the gesture; the key always works.
+        window.QuickLaunch?.sync?.();
         document.body.setAttribute('data-show-collapse-all-button', d.settings.showCollapseAllButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', d.settings.showAddBookmarkButton !== false);
         document.body.setAttribute('data-show-search-button', d.settings.showSearchButton);

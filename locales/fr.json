@@ -536,6 +536,7 @@
       "navHealthView": "Ouvrir la vue Favoris, la liste complète",
       "navSettingsView": "Ouvrir la configuration : réglages, pages et favoris",
       "navThemeBrowser": "Ouvrir le navigateur de thèmes : choisir ou prévisualiser un thème sans ouvrir la configuration",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "Refaire la visite du tableau de bord",
       "navAllTags": "Ouvrir la vue des tags de tous les favoris : sans favori ciblé ; sur un favori, T ouvre ses tags",
       "cbHealthPage": "Ouvrir la vue Favoris sur une page",
@@ -726,9 +727,9 @@
       "cbCheckup": "Une tournée de ce qui mérite d’être rangé : favoris cassés, en double et inutilisés, catégories vides, widgets en échec",
       "navWhatsNew": "Ouvrir les notes de version (nouveautés)",
       "bmRemind": "Me rappeler le favori ciblé : choisir un moment",
-      "cnRemind": "Définir un rappel sur un favori (:remind tomorrow, :remind clear)",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "Définir un rappel sur un favori (:remind tomorrow, :remind clear)",
       "cnRelated": "Lister les liens associés à un favori"
     },
     "searchPrefix": ">",

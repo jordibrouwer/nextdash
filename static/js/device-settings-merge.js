@@ -24,6 +24,9 @@
         'customFontPath',
         'fontPreset',
         'collections',
+        // Which bookmarks Quick launch holds or leaves out: content, not look.
+        'quickLaunchAdded',
+        'quickLaunchHidden',
         // Where a built-in or per-tag collection shows (desktop or phone): meant for every device.
         'collectionVisibleOn',
         'tagRules',

@@ -1,0 +1,462 @@
+/*
+ * Quick launch: the corner element and the panel it opens.
+ *
+ * Everything takes its colour, rim and corner from the theme's own tokens, so a
+ * material draws it as it draws the rest: the panel is an AppModal and gets the
+ * overlay look from theme-overlays.css, the corner element stands like the
+ * action bar, on the surface of the page. Nothing here sets a colour of its own.
+ *
+ * The corner element shows only on a computer: a window of 992 px or more and a
+ * pointer that hovers. Below that, or on a touch screen, it is not drawn; the
+ * key and the gesture are left to the keyboard and the mouse that have them.
+ */
+
+.quick-launch-corner {
+    display: none;
+}
+
+@media (min-width: 992px) and (hover: hover) and (pointer: fine) {
+    body[data-active-view="bookmarks"][data-quick-launch-button="true"] .quick-launch-corner {
+        display: grid;
+        place-items: center;
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: var(--layer-floating-chrome, 900);
+        width: 3.6rem;
+        height: 3.6rem;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        color: var(--text-primary);
+        background: var(--background-secondary);
+        border: 0;
+        border-left: 1px solid var(--border-primary);
+        border-bottom: 1px solid var(--border-primary);
+        border-bottom-left-radius: var(--layout-radius-md, 14px);
+        box-shadow: 0 6px 18px -8px color-mix(in srgb, black 55%, transparent);
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    body[data-quick-launch-button="true"] .quick-launch-corner:hover,
+    body[data-quick-launch-button="true"] .quick-launch-corner[aria-expanded="true"] {
+        border-left-color: var(--accent-primary);
+        border-bottom-color: var(--accent-primary);
+    }
+
+    body[data-quick-launch-button="true"] .quick-launch-corner:focus-visible {
+        outline: 2px solid var(--accent-primary);
+        outline-offset: -3px;
+    }
+
+    /* The header leaves room when the margin beside the grid is too thin for it. */
+    body[data-active-view="bookmarks"][data-quick-launch-button="true"] .dashboard-section.section-controls .header-top {
+        padding-right: max(0px, calc(3.6rem - (max(0px, (100vw - var(--dashboard-container-max, 1600px)) / 2) + var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem)))));
+    }
+    /* Tight raises the container's ceiling to 2200 px (dashboard.css), so the gap beside it starts later. */
+    body[data-active-view="bookmarks"][data-quick-launch-button="true"][data-side-margin="tight"] .dashboard-section.section-controls .header-top {
+        padding-right: max(0px, calc(3.6rem - (max(0px, (100vw - max(var(--dashboard-container-max, 1600px), 2200px)) / 2) + var(--dashboard-side-margin, clamp(0.5rem, 1.2vw, 1.75rem)))));
+    }
+    body[data-active-view="bookmarks"][data-quick-launch-button="true"][data-side-margin="full"] .dashboard-section.section-controls .header-top {
+        padding-right: max(0px, calc(3.6rem - var(--dashboard-side-margin, 0.25rem)));
+    }
+}
+
+.quick-launch-minis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+
+.quick-launch-mini {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 0.3rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    display: grid;
+    place-items: center;
+}
+
+.quick-launch-mini.is-empty {
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+}
+
+.quick-launch-mini .quick-launch-icon,
+.quick-launch-mini .quick-launch-icon img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.quick-launch-mini .quick-launch-icon-letter {
+    font-size: 0.6rem;
+    line-height: 1;
+}
+
+.quick-launch-arrow {
+    position: absolute;
+    right: 0.3rem;
+    bottom: 0.3rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    transition: transform 0.2s ease;
+}
+
+.quick-launch-arrow svg {
+    width: 0.62rem;
+    height: 0.62rem;
+}
+
+.quick-launch-corner[aria-expanded="true"] .quick-launch-arrow {
+    transform: rotate(45deg);
+}
+
+/* The ring around the pointer while a circle is being drawn. */
+.quick-launch-ring {
+    position: fixed;
+    z-index: var(--layer-chrome-hint, 1002);
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    background: conic-gradient(var(--accent-primary) calc(var(--p, 0) * 1%), transparent 0);
+    -webkit-mask: radial-gradient(circle, transparent 17px, #000 18px);
+    mask: radial-gradient(circle, transparent 17px, #000 18px);
+}
+
+.quick-launch-ring.on {
+    opacity: 0.9;
+}
+
+/* ── The panel ───────────────────────────────────────────────────────────── */
+
+.modal.quick-launch-modal {
+    padding-bottom: var(--space-4, 1rem);
+}
+
+.quick-launch-modal .modal-actions {
+    display: none;
+}
+
+.quick-launch-modal-key {
+    margin-left: 0.5rem;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-tertiary);
+}
+
+.quick-launch-modal-close {
+    margin-left: auto;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.quick-launch-modal-close:hover {
+    color: var(--text-primary);
+}
+
+.quick-launch-loading {
+    min-height: 8rem;
+}
+
+.quick-launch-group + .quick-launch-group {
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.quick-launch-group-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.75rem);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.quick-launch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 560px) {
+    .quick-launch-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.quick-launch-cell {
+    position: relative;
+    min-width: 0;
+}
+
+.quick-launch-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    height: 100%;
+    padding: 0.8rem 0.4rem 0.6rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 10px);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.quick-launch-tile:hover,
+.quick-launch-tile:focus-visible {
+    border-color: var(--accent-primary);
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.quick-launch-key {
+    position: absolute;
+    left: 0.4rem;
+    top: 0.3rem;
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+}
+
+.quick-launch-icon {
+    width: 1.9rem;
+    height: 1.9rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    flex: none;
+}
+
+.quick-launch-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.quick-launch-icon-letter {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--background-primary);
+    background: var(--accent-primary);
+}
+
+.quick-launch-name {
+    max-width: 100%;
+    font-size: var(--font-size-small, 0.8rem);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-launch-opens {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+}
+
+/* The way out of a tile: there while the pointer or the keyboard is on it. */
+.quick-launch-remove {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.25rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    font-size: 0.9rem;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.quick-launch-cell:hover .quick-launch-remove,
+.quick-launch-cell:focus-within .quick-launch-remove {
+    opacity: 1;
+}
+
+.quick-launch-remove:hover,
+.quick-launch-remove:focus-visible {
+    color: var(--accent-error, var(--text-primary));
+    border-color: var(--accent-error, var(--accent-primary));
+    outline: none;
+}
+
+.quick-launch-empty,
+.quick-launch-more {
+    margin: var(--space-3, 0.75rem) 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.quick-launch-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-top: var(--space-4, 1rem);
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-tertiary);
+}
+
+.quick-launch-foot-keys {
+    margin-left: auto;
+}
+
+.quick-launch-add,
+.quick-launch-unhide,
+.quick-launch-back {
+    cursor: pointer;
+    font: inherit;
+    color: var(--accent-primary);
+    background: none;
+    border: 1px dashed color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    padding: 0.3rem 0.7rem;
+}
+
+/* Show hidden: a quiet pill like the add button, solid where that one is dashed. */
+.quick-launch-unhide {
+    border-style: solid;
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+}
+
+.quick-launch-unhide:hover,
+.quick-launch-unhide:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.quick-launch-add:hover:not([disabled]),
+.quick-launch-add:focus-visible,
+.quick-launch-back:hover,
+.quick-launch-back:focus-visible {
+    border-style: solid;
+    outline: none;
+}
+
+.quick-launch-add[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* The picker */
+.quick-launch-picker-bar {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.quick-launch-back {
+    border-style: solid;
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
+    padding: 0.3rem 0.8rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.quick-launch-search {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    padding: 0.4rem 0.7rem;
+}
+
+.quick-launch-search:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+.quick-launch-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.quick-launch-result {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: var(--text-primary);
+    background: none;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
+.quick-launch-result:hover,
+.quick-launch-result:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.quick-launch-result .quick-launch-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+}
+
+.quick-launch-result-name {
+    flex: none;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-launch-result-url {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quick-launch-arrow,
+    .quick-launch-corner,
+    .quick-launch-ring,
+    .quick-launch-remove,
+    .quick-launch-tile {
+        transition: none;
+    }
+}

@@ -552,6 +552,7 @@
       "navHealthView": "De weergave Bookmarks openen, de hele lijst",
       "navSettingsView": "Open config: instellingen, pagina's en bookmarks",
       "navThemeBrowser": "Open de themabrowser: kies of bekijk een thema zonder config te openen",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "De rondleiding door het dashboard opnieuw doen",
       "navAllTags": "De tagweergave van alle bookmarks openen: zonder gefocuste bookmark; op een bookmark opent T de tags",
       "cbHealthPage": "De weergave Bookmarks openen op één pagina",
@@ -742,9 +743,9 @@
       "cbCheckup": "Een ronde langs wat opruimen waard is: kapotte, dubbele en ongebruikte bookmarks, lege categorieën, widgets die falen",
       "navWhatsNew": "Open de release notes van wat er nieuw is",
       "bmRemind": "Herinner me aan de gerichte bookmark: kies een tijd",
-      "cnRemind": "Zet een herinnering op een bookmark (:remind tomorrow, :remind clear)",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "Zet een herinnering op een bookmark (:remind tomorrow, :remind clear)",
       "cnRelated": "Toon de links die bij een bookmark horen"
     },
     "searchPrefix": ">",

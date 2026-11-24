@@ -536,6 +536,7 @@
       "navHealthView": "打开书签视图（完整列表）",
       "navSettingsView": "打开配置：设置、页面和书签",
       "navThemeBrowser": "打开主题浏览器：无需打开配置即可选择或预览主题",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "重新看一遍仪表板导览",
       "navAllTags": "打开所有书签的标签视图：未聚焦书签时；聚焦书签时 T 打开其标签",
       "cbHealthPage": "在书签视图中打开单个页面",
@@ -726,9 +727,9 @@
       "cbCheckup": "一轮整理：失效、重复和未使用的书签、空分类、出错的小组件",
       "navWhatsNew": "打开新功能发布说明",
       "bmRemind": "提醒我当前书签：选择一个时间",
-      "cnRemind": "为书签设置提醒（:remind tomorrow、:remind clear）",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "为书签设置提醒（:remind tomorrow、:remind clear）",
       "cnRelated": "列出与某个书签相关的链接"
     },
     "searchPrefix": ">",

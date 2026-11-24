@@ -49,14 +49,15 @@ test.describe('the chrome toggles are grouped', () => {
     test('the chrome toggles are one panel per tab, and every toggle kept', async ({ page }) => {
         await openToolbarTab(page);
 
-        // The Header tab also carries the clock's placement and the browser
-        // tab's title, each under a heading of its own; those are not chrome
-        // toggles, so they are left out of the count.
+        // The Header tab also carries the clock's placement, the browser
+        // tab's title and Quick launch, each under a heading of its own; those
+        // are not chrome toggles, so they are left out of the count.
         const panels = await page.evaluate(() => [
             ...window.dashboardInstance.config.panelsFor('appearance', 'header'),
             ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
         ].map((p) => ({ title: p.title, fields: p.controls.flatMap((c) => window.dashboardInstance.config.controlFields(c)) }))
-            .filter((p) => !p.fields.includes('headerClockPlacement') && !p.fields.includes('showPageInTitle')));
+            .filter((p) => !p.fields.includes('headerClockPlacement') && !p.fields.includes('showPageInTitle')
+                && !p.fields.includes('quickLaunchGesture')));
 
         expect(panels).toHaveLength(2);
         // One panel for the header strip, one for the actions in it. The

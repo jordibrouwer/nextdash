@@ -536,6 +536,7 @@
       "navHealthView": "Die Lesezeichen-Ansicht öffnen, die ganze Liste",
       "navSettingsView": "Konfiguration öffnen: Einstellungen, Seiten und Lesezeichen",
       "navThemeBrowser": "Den Theme-Browser öffnen: ein Theme wählen oder ansehen, ohne die Konfiguration zu öffnen",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "Die Dashboard-Tour noch einmal starten",
       "navAllTags": "Die Tag-Ansicht aller Lesezeichen öffnen: ohne fokussiertes Lesezeichen; auf einem Lesezeichen öffnet T dessen Tags",
       "cbHealthPage": "Die Lesezeichen-Ansicht für eine Seite öffnen",
@@ -726,9 +727,9 @@
       "cbCheckup": "Eine Runde durch alles, was sich aufzuräumen lohnt: kaputte, doppelte und ungenutzte Lesezeichen, leere Kategorien, Widgets mit Fehlern",
       "navWhatsNew": "Öffne die Release Notes (Was ist neu)",
       "bmRemind": "Erinnere mich an das fokussierte Lesezeichen: Zeit wählen",
-      "cnRemind": "Erinnerung an einem Lesezeichen setzen (:remind tomorrow, :remind clear)",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "Erinnerung an einem Lesezeichen setzen (:remind tomorrow, :remind clear)",
       "cnRelated": "Die Links zeigen, die zu einem Lesezeichen gehören"
     },
     "searchPrefix": ">",

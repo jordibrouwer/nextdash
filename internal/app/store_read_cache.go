@@ -150,6 +150,8 @@ func cloneSettings(in Settings) Settings {
 	out.DismissedTagSuggestions = slices.Clone(in.DismissedTagSuggestions)
 	out.ThemeIconStyling = maps.Clone(in.ThemeIconStyling)
 	out.DockerHiddenContainers = slices.Clone(in.DockerHiddenContainers)
+	out.QuickLaunchHidden = slices.Clone(in.QuickLaunchHidden)
+	out.QuickLaunchAdded = slices.Clone(in.QuickLaunchAdded)
 	out.DiscoveryIgnored = slices.Clone(in.DiscoveryIgnored)
 	out.DockerWebUIs = maps.Clone(in.DockerWebUIs)
 	out.DockerBookmarkLinks = maps.Clone(in.DockerBookmarkLinks)

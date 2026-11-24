@@ -637,6 +637,7 @@
       "navUnsortedView": "Open the Bookmarks view on Unsorted: kept links waiting for a page",
       "navSettingsView": "Open config: settings, pages, and bookmarks",
       "navThemeBrowser": "Open the theme browser to pick or preview a theme without opening config",
+      "navQuickLaunch": "Quick launch: your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark",
       "navDashboardTour": "Take the dashboard tour again",
       "navAllTags": "Open the tag view of every bookmark (with no bookmark focused); on a bookmark T opens its tags",
       "cbHealthPage": "Open the Bookmarks view on one page",
@@ -772,9 +773,9 @@
       "cnGlances": "Open the Glances page or one of its sections; :glances host, record, pause, resume, track and untrack change what it shows or records",
       "navWhatsNew": "Open what's new release notes",
       "bmRemind": "Remind me of the focused bookmark: pick a time",
-      "cnRemind": "Set a reminder on a bookmark (:remind tomorrow, :remind clear)",
       "bmRelated": "Related links of the focused bookmark: the links that belong with it",
       "bmLabelAbove": "Put a label above the focused bookmark, where its category is in manual order",
+      "cnRemind": "Set a reminder on a bookmark (:remind tomorrow, :remind clear)",
       "cnRelated": "List the links that belong with a bookmark"
     },
     "searchPrefix": ">",

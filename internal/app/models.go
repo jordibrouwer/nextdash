@@ -498,56 +498,66 @@ type Settings struct {
 	ShowCheatSheetButton            bool           `json:"showCheatSheetButton"`
 	ShowEditModeButton              bool           `json:"showEditModeButton"`
 	ShowThemeStudioButton           bool           `json:"showThemeStudioButton"`
-	ShowCollapseAllButton           bool           `json:"showCollapseAllButton"`
-	ShowStatus                      bool           `json:"showStatus"`
-	ColorizeStatus                  bool           `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
-	MonitorEmphasis                 string         `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
-	ShowPing                        bool           `json:"showPing"`
-	ShowStatusLoading               bool           `json:"showStatusLoading"`
-	SkipFastPing                    bool           `json:"skipFastPing"`
-	StatusOfflineRetries            int            `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
-	StatusOfflineRetryDelayMs       int            `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
-	StatusRecheckIntervalMinutes    int            `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
-	GlobalShortcuts                 bool           `json:"globalShortcuts"`                         // Use shortcuts from all pages
-	HyprMode                        bool           `json:"hyprMode"`                                // Launcher mode for PWA usage
-	LockLayout                      bool           `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
-	AnimationsEnabled               bool           `json:"animationsEnabled"`                       // Enable or disable animations globally
-	AnimationSpeed                  string         `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
-	ViewAnimationsEnabled           bool           `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
-	EnableCustomTitle               bool           `json:"enableCustomTitle"`                       // Enable custom page title
-	CustomTitle                     string         `json:"customTitle"`                             // Custom page title
-	ShowPageInTitle                 bool           `json:"showPageInTitle"`                         // Show current page name in title
-	ShowPageNamesInTabs             bool           `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
-	MaxPageTabs                     int            `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-11)
-	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
-	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
-	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
-	GreetingName                    string         `json:"greetingName,omitempty"`                  // Name the header greets by ("Good evening, Jordi"); empty greets without one
-	PageSwitcherStyle               string         `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
-	ActionBarPosition               string         `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
-	ActionBarEnabled                bool           `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
-	ActionBarAutoHideSeconds        int            `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
-	ShowActionKeys                  bool           `json:"showActionKeys"`                          // The key chip on each action button
-	ActionBarIntroStyle             string         `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
-	ActionBarSize                   string         `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
-	HeaderButtonStyle               string         `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
-	EnableCustomFavicon             bool           `json:"enableCustomFavicon"`                     // Enable custom favicon
-	CustomFaviconPath               string         `json:"customFaviconPath"`                       // Path to custom favicon file
-	EnableCustomFont                bool           `json:"enableCustomFont"`                        // Enable custom font
-	CustomFontPath                  string         `json:"customFontPath"`                          // Path to custom font file
-	Language                        string         `json:"language"`                                // Language code, e.g., "en" or "es"
-	InterleaveMode                  bool           `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
-	ShowPageTabs                    bool           `json:"showPageTabs"`                            // Show page navigation tabs
-	AlwaysCollapseCategories        bool           `json:"alwaysCollapseCategories"`                // Always collapse categories on load
-	HideEmptyCategories             bool           `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
-	HideEmptyCategoriesMigrated     bool           `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
-	ShortcutDisplayAlwaysMigrated   bool           `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
-	EnableFuzzySuggestions          bool           `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
-	FuzzySuggestionsStartWith       bool           `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
-	KeepSearchOpenWhenEmpty         bool           `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
-	ShowIcons                       bool           `json:"showIcons"`                               // Show bookmark icons
-	ShowLinkPreviewCards            bool           `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
+	// Quick launch: a corner element, Shift+Q and a circling mouse open one
+	// centred panel of pinned and most-opened bookmarks. See quick_launch.go.
+	QuickLaunchButton             bool     `json:"quickLaunchButton"`    // the corner element; the key and the gesture work without it
+	QuickLaunchGesture            bool     `json:"quickLaunchGesture"`   // circling the mouse opens it
+	QuickLaunchTurns              float64  `json:"quickLaunchTurns"`     // circles needed, 1 to 3 in halves
+	QuickLaunchSource             string   `json:"quickLaunchSource"`    // mix | pinned | top
+	QuickLaunchCount              int      `json:"quickLaunchCount"`     // tiles: 4, 6 or 8
+	QuickLaunchHidden             []string `json:"quickLaunchHidden"`    // bookmark addresses kept out of the panel
+	QuickLaunchAdded              []string `json:"quickLaunchAdded"`     // bookmark addresses put in the panel by hand, first
+	QuickLaunchAutoClose          int      `json:"quickLaunchAutoClose"` // seconds the pointer may stay outside the panel before it closes; 0 never
+	ShowCollapseAllButton         bool     `json:"showCollapseAllButton"`
+	ShowStatus                    bool     `json:"showStatus"`
+	ColorizeStatus                bool     `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
+	MonitorEmphasis               string   `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
+	ShowPing                      bool     `json:"showPing"`
+	ShowStatusLoading             bool     `json:"showStatusLoading"`
+	SkipFastPing                  bool     `json:"skipFastPing"`
+	StatusOfflineRetries          int      `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs     int      `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes  int      `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
+	GlobalShortcuts               bool     `json:"globalShortcuts"`                         // Use shortcuts from all pages
+	HyprMode                      bool     `json:"hyprMode"`                                // Launcher mode for PWA usage
+	LockLayout                    bool     `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
+	AnimationsEnabled             bool     `json:"animationsEnabled"`                       // Enable or disable animations globally
+	AnimationSpeed                string   `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
+	ViewAnimationsEnabled         bool     `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
+	EnableCustomTitle             bool     `json:"enableCustomTitle"`                       // Enable custom page title
+	CustomTitle                   string   `json:"customTitle"`                             // Custom page title
+	ShowPageInTitle               bool     `json:"showPageInTitle"`                         // Show current page name in title
+	ShowPageNamesInTabs           bool     `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	MaxPageTabs                   int      `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	MaxHeaderActions              int      `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-11)
+	PageSwitcherTextMigrated      bool     `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
+	PageSwitcherClassicMigrated   bool     `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
+	HeaderClockPlacement          string   `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	GreetingName                  string   `json:"greetingName,omitempty"`                  // Name the header greets by ("Good evening, Jordi"); empty greets without one
+	PageSwitcherStyle             string   `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
+	ActionBarPosition             string   `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
+	ActionBarEnabled              bool     `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
+	ActionBarAutoHideSeconds      int      `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
+	ShowActionKeys                bool     `json:"showActionKeys"`                          // The key chip on each action button
+	ActionBarIntroStyle           string   `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
+	ActionBarSize                 string   `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
+	HeaderButtonStyle             string   `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
+	EnableCustomFavicon           bool     `json:"enableCustomFavicon"`                     // Enable custom favicon
+	CustomFaviconPath             string   `json:"customFaviconPath"`                       // Path to custom favicon file
+	EnableCustomFont              bool     `json:"enableCustomFont"`                        // Enable custom font
+	CustomFontPath                string   `json:"customFontPath"`                          // Path to custom font file
+	Language                      string   `json:"language"`                                // Language code, e.g., "en" or "es"
+	InterleaveMode                bool     `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
+	ShowPageTabs                  bool     `json:"showPageTabs"`                            // Show page navigation tabs
+	AlwaysCollapseCategories      bool     `json:"alwaysCollapseCategories"`                // Always collapse categories on load
+	HideEmptyCategories           bool     `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated   bool     `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
+	ShortcutDisplayAlwaysMigrated bool     `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
+	EnableFuzzySuggestions        bool     `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
+	FuzzySuggestionsStartWith     bool     `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
+	KeepSearchOpenWhenEmpty       bool     `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
+	ShowIcons                     bool     `json:"showIcons"`                               // Show bookmark icons
+	ShowLinkPreviewCards          bool     `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
 	// LinkPreviewMode is how the card is reached: "off", "hover" or
 	// "keyboard". Some people want what the card says and not a panel
 	// appearing under the pointer, and their only answer used to be off —
@@ -1954,6 +1964,12 @@ func (fs *FileStore) initializeDefaultFiles() {
 			FeedStatsEnabled:                true,
 			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
+			QuickLaunchButton:               true,
+			QuickLaunchGesture:              true,
+			QuickLaunchTurns:                defaultQuickLaunchTurns,
+			QuickLaunchSource:               quickLaunchSourceMix,
+			QuickLaunchCount:                defaultQuickLaunchCount,
+			QuickLaunchAutoClose:            defaultQuickLaunchAutoClose,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -4146,6 +4162,7 @@ func clampBookmarkSettings(s *Settings) {
 	if !actionBarSizes[s.ActionBarSize] {
 		s.ActionBarSize = defaultActionBarSize
 	}
+	normalizeQuickLaunch(s)
 	switch s.HeaderButtonStyle {
 	case headerButtonsPlain, headerButtonsPlated:
 	default:
@@ -4725,6 +4742,12 @@ func (fs *FileStore) getSettingsShared() Settings {
 			FeedStatsEnabled:                true,
 			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
+			QuickLaunchButton:               true,
+			QuickLaunchGesture:              true,
+			QuickLaunchTurns:                defaultQuickLaunchTurns,
+			QuickLaunchSource:               quickLaunchSourceMix,
+			QuickLaunchCount:                defaultQuickLaunchCount,
+			QuickLaunchAutoClose:            defaultQuickLaunchAutoClose,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -4937,6 +4960,9 @@ func (fs *FileStore) getSettingsShared() Settings {
 	if !actionBarSizes[settings.ActionBarSize] {
 		settings.ActionBarSize = defaultActionBarSize
 	}
+	// A file from before Quick launch has no turns, source or count: the settings
+	// answer carries the defaults, so Config does not show empty selects.
+	normalizeQuickLaunch(&settings)
 
 	var rawSettings map[string]json.RawMessage
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
@@ -4953,6 +4979,17 @@ func (fs *FileStore) getSettingsShared() Settings {
 		}
 		if _, ok := rawSettings["showThemeStudioButton"]; !ok {
 			settings.ShowThemeStudioButton = true
+		}
+		// On unless turned off: a file written before Quick launch existed never answered.
+		if _, ok := rawSettings["quickLaunchButton"]; !ok {
+			settings.QuickLaunchButton = true
+		}
+		if _, ok := rawSettings["quickLaunchGesture"]; !ok {
+			settings.QuickLaunchGesture = true
+		}
+		// 0 means never, so only a file that never answered gets the default.
+		if _, ok := rawSettings["quickLaunchAutoClose"]; !ok {
+			settings.QuickLaunchAutoClose = defaultQuickLaunchAutoClose
 		}
 		// On unless turned off: it only fires when push is on and a feed is watched.
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {

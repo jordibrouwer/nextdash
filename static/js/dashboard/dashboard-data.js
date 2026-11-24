@@ -276,6 +276,11 @@ class DashboardData {
             if (typeof d.settings.showThemeStudioButton === 'undefined') {
                 d.settings.showThemeStudioButton = true;
             }
+            if (typeof d.settings.quickLaunchButton === 'undefined') d.settings.quickLaunchButton = true;
+            if (typeof d.settings.quickLaunchGesture === 'undefined') d.settings.quickLaunchGesture = true;
+            if (typeof d.settings.quickLaunchAutoClose === 'undefined') d.settings.quickLaunchAutoClose = 5;
+            if (!Array.isArray(d.settings.quickLaunchHidden)) d.settings.quickLaunchHidden = [];
+            if (!Array.isArray(d.settings.quickLaunchAdded)) d.settings.quickLaunchAdded = [];
             if (typeof d.settings.showCollapseAllButton === 'undefined') {
                 d.settings.showCollapseAllButton = true;
             }

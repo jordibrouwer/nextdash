@@ -132,6 +132,7 @@
     <link rel="stylesheet" href="{{asset "css/feed-watch.css"}}">
     <link rel="stylesheet" href="{{asset "css/title-rewrite-field.css"}}">
     <link rel="stylesheet" href="{{asset "css/notification-bell.css"}}">
+    <link rel="stylesheet" href="{{asset "css/quick-launch.css"}}">
     <link rel="stylesheet" href="{{asset "css/coach-note.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
@@ -251,6 +252,17 @@
             {{end}}
         </div>
     </noscript>
+    <!--
+        Quick launch: a corner element, fixed to the top right of the screen and
+        only drawn on a computer (quick-launch.css). The four tiles are the first
+        of what the panel holds, filled in by quick-launch.js.
+    -->
+    <button type="button" id="quick-launch-button" class="quick-launch-corner" aria-haspopup="dialog" aria-expanded="false" data-i18n-aria="dashboard.quickLaunchAria" aria-label="Quick launch (Shift+Q)" title="Quick launch (Shift+Q)">
+        <span id="quick-launch-minis" class="quick-launch-minis" aria-hidden="true"></span>
+        <span class="quick-launch-arrow" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 12L12 4M5.5 4H12v6.5"/></svg>
+        </span>
+    </button>
     <!-- Container 1: Date, tabs, config button -->
     <div class="dashboard-section section-controls">
         <div class="container">
@@ -893,6 +905,8 @@
     <script src="{{asset "js/shared/keyboard-cheat-sheet-registry.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-ui-helpers.js"}}" defer></script>
     <script src="{{asset "js/dashboard/action-bar-autohide.js"}}" defer></script>
+    <script src="{{asset "js/quick-launch-core.js"}}" defer></script>
+    <script src="{{asset "js/quick-launch.js"}}" defer></script>
     <script src="{{asset "js/dashboard/action-key-hint.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-setup.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-persistence.js"}}" defer></script>
