@@ -87,7 +87,7 @@
             let detail = f?.uptime24h != null
                 ? t('mobile.status.uptime', '{pct}% up in 24 h', { pct: (f.uptime24h * 100).toFixed(f.uptime24h >= 0.999 ? 1 : 0) })
                 : t('mobile.status.noSamples', 'No checks yet');
-            if (f?.downSince > 0) {
+            if (f?.downSince > 0 && !f.errorIgnored) {
                 state = 'bad';
                 detail = f.lastError || t('mobile.status.down', 'Not responding');
             } else if (f?.certExpiresAt && f.certExpiresAt - now < CERT_WARN_DAYS * 864e5) {

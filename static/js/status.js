@@ -34,6 +34,41 @@ function bookmarkIsChecked(bookmark) {
     return Boolean(bookmark?.checkStatus || bookmark?.monitor);
 }
 
+/**
+ * Whether this bookmark has been told to stop reporting the failure it has.
+ *
+ * Reads the same ignores the health report applies on the server, so a tile
+ * cannot stay red while the tab badge, the bell and the counts have gone quiet.
+ * "Broken" and "content" are separate ignores, as they are there: a bookmark
+ * that ignored a failing keyword rule is still red when the host goes down. The
+ * kind is read off the failure text with the same prefixes isContentFailure
+ * uses; with no text to go by it is a plain failure.
+ */
+function bookmarkErrorFlag(detail) {
+    const text = String(detail || '').trim();
+    const content = text.startsWith('Page is missing ')
+        || text.startsWith('Page contains ')
+        || (text.startsWith('HTTP ') && text.includes(', expected '));
+    return content ? 'content' : 'broken';
+}
+
+function bookmarkErrorIgnored(bookmark, detail) {
+    const entries = Array.isArray(bookmark?.healthIgnored) ? bookmark.healthIgnored : [];
+    if (!entries.length) return false;
+    const flag = bookmarkErrorFlag(detail ?? bookmark?.lastError);
+    const now = Date.now();
+    return entries.some((entry) => entry?.flag === flag && (!entry.until || entry.until > now));
+}
+
+/** The "broken"/"content" ignores that are active on this bookmark right now. */
+function bookmarkActiveErrorIgnores(bookmark) {
+    const entries = Array.isArray(bookmark?.healthIgnored) ? bookmark.healthIgnored : [];
+    const now = Date.now();
+    return entries
+        .filter((entry) => (entry?.flag === 'broken' || entry?.flag === 'content') && (!entry.until || entry.until > now))
+        .map((entry) => entry.flag);
+}
+
 function statusCacheKey(url) {
     const raw = String(url || '').trim();
     if (!raw) return '';
@@ -614,11 +649,28 @@ class StatusMonitor {
             return;
         }
         bookmarkElement = target;
+        // A failure the bookmark has been told to stop reporting is drawn like a
+        // bookmark that is not checked: no class at all, so every theme that styles
+        // .status-offline leaves it alone.
+        if (status === 'offline') {
+            const rowUrl = String(bookmarkUrl || target.getAttribute?.('data-bookmark-url') || '').trim();
+            // The row's own bookmark first: two bookmarks can share a URL on one
+            // page, and an ignore on one is not an ignore on the other.
+            const rowIndex = Number(target.getAttribute?.('data-bookmark-index'));
+            const atIndex = Number.isInteger(rowIndex) && rowIndex >= 0
+                ? window.dashboardInstance?.bookmarks?.[rowIndex] : null;
+            const copy = atIndex && atIndex.url === rowUrl ? atIndex : (rowUrl ? this.findBookmarkCopy(rowUrl) : null);
+            if (copy && bookmarkErrorIgnored(copy, this.getCachedStatus(rowUrl)?.errorDetail || copy.lastError)) {
+                bookmarkElement.classList.remove('status-online', 'status-offline', 'status-checking');
+                text = '';
+                status = '';
+            }
+        }
         // Remove existing status classes
         bookmarkElement.classList.remove('status-online', 'status-offline', 'status-checking');
 
         // Add new status class
-        bookmarkElement.classList.add(`status-${status}`);
+        if (status) bookmarkElement.classList.add(`status-${status}`);
 
         // Update status text badge (row-level grid cell when showPing is on)
         let statusElement = bookmarkElement.querySelector(':scope > .status-text');
@@ -652,7 +704,7 @@ class StatusMonitor {
 
     getPersistedStatus(bookmark) {
         const error = String(bookmark?.lastError || '').trim();
-        if (error) {
+        if (error && !bookmarkErrorIgnored(bookmark, error)) {
             return 'offline';
         }
         return null;
@@ -780,19 +832,39 @@ class StatusMonitor {
     /**
      * Reachability for search filters: online | offline | null (not monitored or not checked yet).
      */
+    /**
+     * The dashboard's freshest copy of the bookmark at this URL, or null.
+     *
+     * Kept bookmarks are held apart from allBookmarks; without them the freshest
+     * copy of one is whatever the caller happened to pass in.
+     */
+    findBookmarkCopy(url) {
+        const dash = window.dashboardInstance;
+        return dash?.bookmarks?.find((candidate) => candidate?.url === url)
+            || dash?.allBookmarks?.find((candidate) => candidate?.url === url)
+            || dash?.unsortedBookmarks?.find((candidate) => candidate?.url === url)
+            || null;
+    }
+
     getBookmarkReachability(bookmark) {
+        const reach = this.reachabilityOf(bookmark);
+        // Offline is a failure like any other: one the bookmark ignores is not
+        // reported, so `status:offline` and the counts built on it agree with the
+        // report instead of listing a bookmark the report has stopped calling down.
+        // The bookmark the caller holds, not the first one at that URL.
+        if (reach === 'offline' && bookmarkErrorIgnored(bookmark?.healthIgnored !== undefined ? bookmark : (this.findBookmarkCopy(String(bookmark?.url || '').trim()) || bookmark))) {
+            return null;
+        }
+        return reach;
+    }
+
+    reachabilityOf(bookmark) {
         const url = String(bookmark?.url || '').trim();
         if (!url) {
             return null;
         }
 
-        const dash = window.dashboardInstance;
-        const fresh = dash?.bookmarks?.find((candidate) => candidate?.url === url)
-            || dash?.allBookmarks?.find((candidate) => candidate?.url === url)
-            // Kept bookmarks are held apart from allBookmarks; without this the
-            // freshest copy of one is whatever the caller happened to pass in.
-            || dash?.unsortedBookmarks?.find((candidate) => candidate?.url === url)
-            || bookmark;
+        const fresh = this.findBookmarkCopy(url) || bookmark;
 
         if (!bookmarkIsChecked(fresh)) {
             return null;
@@ -888,6 +960,9 @@ class StatusMonitor {
             const persisted = this.getPersistedStatus(bookmark);
             if (persisted) {
                 this.setBookmarkStatus(bookmarkElement, persisted, '');
+            } else if (bookmarkErrorIgnored(bookmark)) {
+                // Told to stop reporting this failure: a tile that was red goes plain.
+                bookmarkElement.classList.remove('status-offline');
             }
         });
     }
@@ -935,6 +1010,9 @@ window.StatusMonitor = StatusMonitor;
 // the heavier of the two modes, rendered with no status while Periodic showed
 // one. Exported so there is a single answer rather than a second copy.
 window.bookmarkIsChecked = bookmarkIsChecked;
+window.bookmarkErrorIgnored = bookmarkErrorIgnored;
+window.bookmarkErrorFlag = bookmarkErrorFlag;
+window.bookmarkActiveErrorIgnores = bookmarkActiveErrorIgnores;
 window.normalizeStatusOfflineRetries = normalizeStatusOfflineRetries;
 window.normalizeStatusOfflineRetryDelayMs = normalizeStatusOfflineRetryDelayMs;
 window.normalizeStatusRecheckIntervalMinutes = normalizeStatusRecheckIntervalMinutes;

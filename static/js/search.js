@@ -2704,7 +2704,8 @@ class SearchComponent {
             if (!SearchComponent.STATUS_FILTER_VALUES.has(wanted)) return true;
             const hasStatus = bookmark.checkStatus === true;
             const isPinned = bookmark.pinned === true;
-            const isBroken = Boolean(String(bookmark.lastError || '').trim());
+            const isBroken = Boolean(String(bookmark.lastError || '').trim())
+                && !window.bookmarkErrorIgnored?.(bookmark);
             const tagCount = (bookmark.tags || []).filter((tag) => String(tag).trim()).length;
             const hasNote = Boolean(String(bookmark.note || '').trim());
             const isWatched = window.dashboardInstance?.feedWatch?.isWatched?.(bookmark) === true;
