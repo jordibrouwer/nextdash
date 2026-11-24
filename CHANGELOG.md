@@ -192,6 +192,7 @@ Quick launch, a panel with your bookmarks that opens on Shift+Q, a corner button
 - **new — A one-time note and tour slides.** The first time the corner button is on screen a note points at it, with *Customize* going straight to the group in Config and *Got it* putting the note away; it never counts as seen while the button is off or not drawn. The Dashboard tour gets a Quick launch slide and a slide for the header, the bell and the mode strip (`quick-launch-intro.js`, `dashboard-tutorial.js`).
 - **fix — The full-panel message and the corner follow the settings.** The message for a panel that is full no longer points at a setting that is gone (the count setting went away when the panel became 12 with even rows and a plus tile), and the corner button follows the pins and the source choice.
 - **fix — `Shift+Q` puts a hidden bookmark back for real.** A bookmark that was left out because it was unpinned comes back in when you add it again.
+- **fix — The header leaves the corner button its own room.** The bell and the other header buttons now always stand one step to the left of the Quick launch button, whatever the margin beside the grid. Before, the room was worked out from the margin and the buttons could end up under the corner (`quick-launch.css`).
 
 ### Ignoring an error
 
@@ -223,6 +224,7 @@ Quick launch, a panel with your bookmarks that opens on Shift+Q, a corner button
 
 - **docs — `MANUAL.md` and `README.md`.** New §6 *Quick launch*, a right-click menu with Quick launch, the error ignore and the `o` and `b` rows, `Shift + Q`, `o` and `b` in §7.1 and §7.3, *Ignoring an error* in §12.4, the new look of the timeline in §12.8 and the Quick launch group under §17.7. Three pictures: `06-quick-launch.jpg`, `12-ignored-error.jpg` and a retaken `18-timeline.jpg`, from `tests/manual-screenshots-v1-34.spec.js`. The README names Quick launch and the error ignore.
 - **docs — Config → Help, tips and the overview.** `helpKeyboardBody`, `helpAppearanceBody` and `helpBookmarksBody` name the new keys, the Quick launch group and the error ignore; two tips (`tipEverydayQuickLaunch`, `tipMaintIgnoreError`); four entries with `since: "v1.34.0"` in `overview-features.json` (Quick launch, ignoring an error, the timeline, `o` and `b`).
+- **docs — Specs.** The fixed waits of the Quick launch specs say why, and the specs for the menu keys, the cheat sheet, the settings list, the digest and the row marks know `Shift+Q`, the new starter bookmark and the Quick launch settings; nothing changes for users.
 - **docs — Translations.** Every new string in nl, de, fr, es and zh: Quick launch, the error ignore, the tour slides, the timeline's day lines and the three cheat sheet keys that were still English. `nextDash-cheatsheet.html` and `.pdf` are regenerated.
 - **docs — `static/data/whats-new/v1.34.0.json` and its index entry**, with two highlights (Quick launch as a recording, the timeline as a picture; `tests/fixtures/whats-new-media/v1.34.0.js`). Both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE`, `whats-new-v384`) and `tests/whats-new-hidden-release.spec.js` with them. `go generate` refreshed `asset_hashes_gen.go`.
 
