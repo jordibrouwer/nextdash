@@ -39,6 +39,12 @@ const (
 	// themselves and sit permanently inside every normal warning window; this
 	// keeps the expiry check but drops the lead-time warnings.
 	certWarnExpiredOnly = -1
+	// certWarnNever is a per-host CertWarnByHost value: no warning at all, not
+	// even once expired, for a host whose certificate is none of the user's
+	// business (a device's self-signed one, say). Never a global setting.
+	certWarnNever = -2
+	// certNeverMark is the one-mark ladder of that host: no day count reaches it.
+	certNeverMark = math.MinInt32
 )
 
 // certNotifyThresholds are the day marks an alert fires on, largest first so the
@@ -106,6 +112,9 @@ func certHostKey(host string) string {
 // loosening every other host. 0 or absent follows the global.
 func certThresholdsForHost(s Settings, host string) []int {
 	if v, ok := s.CertWarnByHost[certHostKey(host)]; ok && v != 0 {
+		if v == certWarnNever {
+			return []int{certNeverMark}
+		}
 		local := s
 		local.CertWarnDays = v
 		return certThresholdsFor(local)
@@ -116,6 +125,9 @@ func certThresholdsForHost(s Settings, host string) []int {
 // certSeverityWith is certSeverity against a chosen first threshold.
 func certSeverityWith(expiresAt int64, now time.Time, thresholds []int) string {
 	if expiresAt <= 0 {
+		return ""
+	}
+	if len(thresholds) == 1 && thresholds[0] == certNeverMark {
 		return ""
 	}
 	if len(thresholds) < 3 {

@@ -616,6 +616,7 @@ class DashboardHealth {
                         class="health-expect-input" data-cert-warn data-cert-host="${esc(host)}">
                         ${opt(0, this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}
                         ${opt(-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired'))}
+                        ${opt(-2, this.t('config.certWarnNever', 'Never warn'))}
                         ${[7, 14, 30, 60, 90].map((n) => opt(n, ahead(n))).join('')}
                     </select>
                     <span class="health-expect-note">${esc(this.t('dashboard.healthCertWarnNote',

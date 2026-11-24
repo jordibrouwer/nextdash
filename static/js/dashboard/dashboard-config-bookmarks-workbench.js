@@ -344,6 +344,7 @@
         if (!hosts.length) return '';
         const ahead = (n) => this.t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', String(n));
         const choices = [[-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired')],
+            [-2, this.t('config.certWarnNever', 'Never warn')],
             ...[7, 14, 30, 60, 90].map((n) => [n, ahead(n)])];
         return hosts.map((host) => {
             const current = Number(map[host]);
