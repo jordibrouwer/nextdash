@@ -35,7 +35,8 @@ test('the right-click menu of a bookmark shows plain-letter hints, none with Shi
     const menu = page.locator('.bookmark-context-menu').first();
     await expect(menu).toBeVisible({ timeout: 5000 });
     const text = await menu.innerText();
-    expect(text).not.toMatch(/Shift\s*\+\s*[A-Z]\b/);
+    // Quick launch is the one entry whose key is Shift+Q: it opens a panel, and with no row it is the same key.
+    expect(text.replace(/Shift\s*\+\s*Q\b/g, '')).not.toMatch(/Shift\s*\+\s*[A-Z]\b/);
     const chips = await menu.locator('kbd, .context-menu-key, .menu-key').allInnerTexts();
     for (const k of ['E', 'M', 'T', 'P', 'S', 'Q']) expect(chips.map((c) => c.trim())).toContain(k);
 });

@@ -218,7 +218,7 @@ test.describe('the digest window', () => {
         // left by another spec's run, or a release of the week, would add a
         // third and put it ahead of Never opened.
         await page.route('**/api/digest/latest', (route) => route.fulfill({
-            json: { ...snap, news: undefined, health: { ...snap.health, newlyBroken: [], stillBroken: 0, certsExpiring: [], domainsExpiring: [] } },
+            json: { ...snap, news: undefined, checkup: undefined, health: { ...snap.health, newlyBroken: [], stillBroken: 0, certsExpiring: [], domainsExpiring: [] } },
         }));
         const win = await openFresh(page);
         await choose(win, 'inbox');

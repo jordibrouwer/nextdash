@@ -167,6 +167,9 @@ test.describe('config info + reset affordances', () => {
             // Behavior → General → Notes widget. One select under a group note
             // that says where a note is worked out, and what each choice costs.
             'notesProcessing',
+            // Appearance → Header → Quick launch: a group note says what the panel is and how it opens;
+            // each control under it is a switch or a choice named for what it does.
+            'quickLaunchButton', 'quickLaunchGesture', 'quickLaunchTurns', 'quickLaunchSource', 'quickLaunchAutoClose',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

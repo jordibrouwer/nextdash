@@ -33,10 +33,10 @@ test('the cheat sheet lists the keys of today and none of the retired ones', asy
     const keys = await registryKeys(page);
     const has = (needle) => keys.some((k) => k.includes(needle));
     for (const now of ['Shift + B', 'Shift + C', 'Shift + E', 'Shift + N',
-        'Shift + W', 'Shift + P', 'Shift + H', 'Shift + X (no row selected)']) {
+        'Shift + W', 'Shift + P', 'Shift + H', 'Shift + Q', 'Shift + X (no row selected)']) {
         expect(has(now), `missing ${now}`).toBe(true);
     }
-    for (const gone of ['Shift + Y', 'Shift + J', 'Shift + L', 'Shift + Z', 'Shift + Q']) {
+    for (const gone of ['Shift + Y', 'Shift + J', 'Shift + L', 'Shift + Z']) {
         expect(keys.some((k) => k === gone || k.startsWith(`${gone} `)), `still lists ${gone}`).toBe(false);
     }
     // The row's actions are plain letters now.
