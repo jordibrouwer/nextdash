@@ -279,6 +279,7 @@ class DashboardContextMenu {
         // is the busiest surface in the app for finding out that a key exists.
         // Untranslated, like every other key hint.
         const mod = window.ShortcutFormat?.modifierLabel?.() || 'Ctrl';
+        const canIgnoreError = Number.isInteger(bookmarkRef.index) && bookmarkRef.index >= 0;
         const singleActions = (bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
@@ -367,13 +368,16 @@ class DashboardContextMenu {
             // Ignore while the current failure is still reported; report again while any
             // error ignore is active, whatever kind the failure is now (an ignore set
             // on a content failure stays after the failure turns into a timeout).
-            ...(String(bookmarkRef.bookmark?.lastError || '').trim() && !window.bookmarkErrorIgnored?.(bookmarkRef.bookmark)
+            // The write names the bookmark by its place on its page; a row from another
+            // page (a collection, the tag filter) has none, so it gets no entry that
+            // would do nothing.
+            ...(canIgnoreError && String(bookmarkRef.bookmark?.lastError || '').trim() && !window.bookmarkErrorIgnored?.(bookmarkRef.bookmark)
                 ? [
                     { id: 'ignore-error', label: this.t('dashboard.contextMenuErrorIgnore', 'Ignore this error'), icon: '🔕' },
                     { id: 'snooze-error', label: this.t('dashboard.contextMenuErrorSnooze', 'Ignore this error for 30 days'), icon: '⏰' },
                 ]
                 : []),
-            ...(window.bookmarkActiveErrorIgnores?.(bookmarkRef.bookmark)?.length
+            ...(canIgnoreError && window.bookmarkActiveErrorIgnores?.(bookmarkRef.bookmark)?.length
                 ? [{ id: 'unignore-error', label: this.t('dashboard.contextMenuErrorReport', 'Report this error again'), icon: '🔔' }]
                 : []),
             ...(d.netBadges?.hasChecks?.(bookmarkRef.bookmark)

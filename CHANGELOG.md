@@ -160,6 +160,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — Quick launch search with an input method.** Typing Chinese or Japanese in the panel's search no longer throws away the character being composed.
 - **fix — Quick launch corner element follows changes.** The four small tiles update when you pin a bookmark or change what the panel shows in Config, not only when you open the panel.
 
+### Bookmark errors
+
+- **fix — Ignore this error only where it works.** The right-click menu no longer offers to ignore or report again an error on a row from another page, such as in a collection, where the choice did nothing.
+
 ## v1.33.1 — 24 November 2026
 
 The per-host certificate warning shows for every bookmark whose certificate was checked, and a host can be set to never warn — held back from the What's new window (`hideFromModal`), so v1.33.0 keeps leading it.

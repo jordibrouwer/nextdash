@@ -227,3 +227,29 @@ test('the Bookmarks view rail has an Ignored filter that narrows the list to ign
     await expect(page).toHaveURL(/health=ignored/);
     await expect(page.locator('#config-bm-list .config-bm-row')).toHaveCount(1);
 });
+
+test('a row from another page gets no ignore entry, since the write needs its place on its page', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    // A collection row: no page-local index, its bookmark only on another page.
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        const otherPage = d.pages.find((p) => Number(p.id) !== Number(d.currentPageId)) || { id: 999 };
+        const url = 'https://ignore-remote.test/';
+        d.allBookmarks.push({ name: 'Remote failing', url, pageId: Number(otherPage.id), lastError: 'Timeout', checkStatus: true });
+        const row = document.createElement('a');
+        row.className = 'bookmark-link';
+        row.id = 'remote-row';
+        row.setAttribute('data-bookmark-url', url);
+        row.innerHTML = '<span class="bookmark-text">Remote failing</span>';
+        document.querySelector('.bookmarks-list').appendChild(row);
+        d.contextMenu.bindRow(row);
+    });
+    await page.locator('#remote-row').click({ button: 'right' });
+    await expect(page.locator('#bookmark-context-menu')).toBeVisible();
+    await expect(page.locator('#bookmark-context-menu [data-action="ignore-error"]')).toHaveCount(0);
+    await expect(page.locator('#bookmark-context-menu [data-action="snooze-error"]')).toHaveCount(0);
+});
