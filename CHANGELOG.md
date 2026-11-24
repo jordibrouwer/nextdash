@@ -156,6 +156,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Quick launch
 
 - **new — Quick launch.** A panel in the middle of the screen with the bookmarks you add, the ones you pinned and the ones you open most. `Shift + Q` opens and closes it, so does a corner element at the top right and drawing circles with the mouse (1.5 by default, 1 to 3 under Config → Appearance → Header → Quick launch). The panel takes the material of the active theme and unfolds from the corner element. Add a bookmark with **+** in the panel, with `Shift + Q` on a bookmark or in its right-click menu (*Add to Quick launch*); take one out with the **×** on its tile, which also hides an automatic one. The corner element shows only in a window of 992 px or more with a mouse; on a tablet or phone the key and the panel still work where there is a keyboard.
+- **fix — Quick launch keeps bookmarks added from other pages.** Adding one with `Shift + Q` or the right-click menu before the other pages had loaded saved the list without the ones from those pages.
 
 ## v1.33.1 — 24 November 2026
 

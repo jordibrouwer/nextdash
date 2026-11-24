@@ -56,9 +56,17 @@
         return 12;
     }
 
-    /** The addresses put in by hand that still belong to a bookmark: a deleted or edited one is dead weight. */
+    /**
+     * The addresses put in by hand that still belong to a bookmark: a deleted or edited one is dead weight.
+     *
+     * Only once every page is loaded: before that, one added from another page looks
+     * deleted, and the next add would save the list without it.
+     */
     function liveAdded() {
-        const urls = new Set(pool().map(urlOf));
+        const d = dash();
+        if (!d?._unsortedLoaded) return listOf('quickLaunchAdded');
+        const unsorted = Array.isArray(d.unsortedBookmarks) ? d.unsortedBookmarks : [];
+        const urls = new Set(pool().concat(unsorted).map(urlOf));
         return listOf('quickLaunchAdded').filter((url) => urls.has(url));
     }
 

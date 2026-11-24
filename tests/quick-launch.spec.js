@@ -273,6 +273,35 @@ test.describe('Quick launch', () => {
         expect(back).toBe(row.held);
     });
 
+    test('Shift+Q before the other pages are loaded keeps the ones added from those pages', async ({ page }) => {
+        await loadDashboard(page);
+        const other = 'https://ql-other-page.test/';
+        // Startup without a setting that needs other pages: allBookmarks not loaded yet.
+        await page.evaluate((url) => {
+            const d = window.dashboardInstance;
+            d.settings.quickLaunchAdded = [url];
+            d.allBookmarks = [];
+            d._unsortedLoaded = false;
+        }, other);
+        await page.keyboard.press('ArrowDown');
+        // Not the seeded pin: one that is not on the panel, so Shift+Q adds it.
+        const selected = () => page.evaluate(() => {
+            const b = window.dashboardInstance.keyboardNavigation.getSelectedBookmark();
+            return { url: b?.url, held: window.QuickLaunch.holds(b) };
+        });
+        let pick = await selected();
+        for (let i = 0; i < 30 && pick.held; i += 1) {
+            await page.keyboard.press('ArrowDown');
+            pick = await selected();
+        }
+        expect(pick.held).toBe(false);
+        const row = pick.url;
+        await page.keyboard.press('Shift+Q');
+        const added = await page.evaluate(() => window.dashboardInstance.settings.quickLaunchAdded);
+        expect(added).toContain(row);
+        expect(added).toContain(other);
+    });
+
     test("a bookmark's menu offers to add it to Quick launch", async ({ page }) => {
         await loadDashboard(page);
         const row = page.locator('#dashboard-layout .bookmark-open').first();
