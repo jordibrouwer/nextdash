@@ -862,7 +862,7 @@ type Settings struct {
 	DomainExpiryManual map[string]string `json:"domainExpiryManual,omitempty"`
 	CertWarnDays       int               `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save; -1 means warn only once expired (for short-lived, auto-renewed certificates). The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// CertWarnByHost overrides CertWarnDays for one host (lower-cased), same
-	// values: -1 only once expired, 3–120 days ahead. Absent or 0 follows the
+	// values: -1 only once expired, -2 never (not even expired), 3–120 days ahead. Absent or 0 follows the
 	// global. Set from a bookmark's Expectations panel; a certificate belongs to
 	// a host, so every bookmark on it shares the entry.
 	CertWarnByHost map[string]int `json:"certWarnByHost,omitempty"`
@@ -5944,6 +5944,8 @@ func (fs *FileStore) getSettingsShared() Settings {
 		case key == "" || v == 0:
 			delete(settings.CertWarnByHost, host)
 			continue
+		case v == certWarnNever:
+			// Kept as it is: no days to clamp.
 		case v != certWarnExpiredOnly && v < certWarnDaysMin:
 			v = certWarnDaysMin
 		case v > certWarnDaysMax:

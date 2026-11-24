@@ -1,0 +1,21 @@
+{
+  "tag": "v1.33.1",
+  "date": "24 November 2026",
+  "releasedAt": "2026-11-24",
+  "modalLead": "A host's certificate warning can be set to never warn, and the field shows for http bookmarks too.",
+  "sections": [
+    {
+      "title": "Certificates",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Never warn for a host.</strong> The per-host certificate choice gets Never warn next to Only when expired: no listing and no alert, even once the certificate has expired."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The certificate warning field shows for an http bookmark</strong> whose check found a certificate."
+        }
+      ]
+    }
+  ]
+}

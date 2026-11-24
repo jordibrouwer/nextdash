@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.33.1 — 24 November 2026](#v1331--24-november-2026)
 - [v1.33.0 — 23 November 2026](#v1330--23-november-2026)
 - [v1.32.0 — 19 November 2026](#v1320--19-november-2026)
 - [v1.31.0 — 17 November 2026](#v1310--17-november-2026)
@@ -149,6 +150,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+## v1.33.1 — 24 November 2026
+
+The per-host certificate warning shows for every bookmark whose certificate was checked, and a host can be set to never warn — held back from the What's new window (`hideFromModal`), so v1.33.0 keeps leading it.
+
+### Certificates
+
+- **fix — The certificate warning field shows for a bookmark that is http.** The per-host *Certificate warning* choice in the Expectations panel only appeared when the bookmark's own address started with `https:`. A bookmark saved as `http://192.168.0.3` whose check address is https, and so has a certificate on the Certificates list, got no field and could not be set to *Only when expired*. The field now also shows when the check found a certificate host (`certHost`) (`dashboard-health.js`).
+- **new — *Never warn* for a host.** The per-host certificate choice (Expectations panel and the *Certificate rules* list in the Bookmarks rail) gets *Never warn* next to *Only when expired*: no listing and no alert for that host, not even once the certificate has expired. It is stored as `-2` in `certWarnByHost`; the global `certWarnDays` has no such value (`health_cert.go`, `dashboard-health.js`).
+
+### Docs
+
+- **docs — Specs.** The specs that failed in CI (a quiet live stream, waits, the rail and text changes) and the Help planner case that needs the pre-split commit are fixed; nothing changes for users.
+- **docs — Manual, Help and translations.** Manual §Certificates and the Help text on certificates name *Never warn*, and the manual has a picture of the field (`12-cert-never.jpg`); the note under the per-host choice and `config.certWarnNever` are in Dutch, German, French, Spanish and Chinese.
+- **docs — `static/data/whats-new/v1.33.1.json` and its index entry**, held back from the window; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v383`. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
 
 ## v1.33.0 — 23 November 2026
 

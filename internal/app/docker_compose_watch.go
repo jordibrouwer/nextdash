@@ -159,6 +159,11 @@ func composeWatchSet(project string, gen int, fn func(w *composeWatchState)) boo
 	return true
 }
 
+// composeWatchGoroutines counts the watch and restore goroutines still running,
+// so a test can wait for them: one that outlives its test writes into a data
+// directory the test is already removing ("directory not empty").
+var composeWatchGoroutines sync.WaitGroup
+
 func composeWatchResetForTest() {
 	composeWatches.mu.Lock()
 	for _, w := range composeWatches.m {
@@ -168,6 +173,8 @@ func composeWatchResetForTest() {
 	}
 	composeWatches.m = map[string]*composeWatchState{}
 	composeWatches.mu.Unlock()
+	// Outside the lock: the goroutines take it on their way out.
+	composeWatchGoroutines.Wait()
 	composeSaves.mu.Lock()
 	composeSaves.m = map[string]map[string]composeSaveRec{}
 	composeSaves.mu.Unlock()
@@ -273,7 +280,11 @@ func (h *Handlers) composeWatchBegin(api *dockerAPI, p composeProject, service s
 	}
 	composeWatches.m[p.Name] = w
 	composeWatches.mu.Unlock()
-	go h.composeWatchRun(ctx, api, p.Name, service, w.gen, afterRestore, composeWatchWindow, composeWatchInterval)
+	composeWatchGoroutines.Add(1)
+	go func() {
+		defer composeWatchGoroutines.Done()
+		h.composeWatchRun(ctx, api, p.Name, service, w.gen, afterRestore, composeWatchWindow, composeWatchInterval)
+	}()
 }
 
 type composeWatchBase struct {
@@ -632,7 +643,9 @@ func (h *Handlers) DockerComposeWatchRestoreHandler(w http.ResponseWriter, r *ht
 		fields = mergeActivityFields(activityFieldsFromRequest(r), fields)
 	}
 	logActivity(activityCategoryMutate, "compose.watch-restore", fields, "compose restore previous copy "+p.Name)
+	composeWatchGoroutines.Add(1)
 	go func() {
+		defer composeWatchGoroutines.Done()
 		defer release()
 		h.composeWatchRestore(context.WithoutCancel(r.Context()), api, p, st, gen, hostID)
 	}()

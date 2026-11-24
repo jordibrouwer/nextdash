@@ -602,7 +602,9 @@ class DashboardHealth {
     renderCertWarnField(issue) {
         const esc = (v) => this.escape(v);
         const host = this.certHostOf(issue);
-        if (!host || !/^https:/i.test(String(issue?.url || ''))) return '';
+        // A bookmark can be http while its check address (or the certificate the
+        // report found) is https: certHost says so, the bookmark URL need not.
+        if (!host || !(issue?.certHost || /^https:/i.test(String(issue?.url || '')))) return '';
         const current = Number(this.dash.settings?.certWarnByHost?.[host]) || 0;
         const opt = (value, label) => `<option value="${value}"${current === value ? ' selected' : ''}>${esc(label)}</option>`;
         const ahead = (n) => this.t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', String(n));
@@ -614,6 +616,7 @@ class DashboardHealth {
                         class="health-expect-input" data-cert-warn data-cert-host="${esc(host)}">
                         ${opt(0, this.t('dashboard.healthCertWarnGlobal', 'Follow the global setting'))}
                         ${opt(-1, this.t('config.certWarnDaysExpiredOnly', 'Only when expired'))}
+                        ${opt(-2, this.t('config.certWarnNever', 'Never warn'))}
                         ${[7, 14, 30, 60, 90].map((n) => opt(n, ahead(n))).join('')}
                     </select>
                     <span class="health-expect-note">${esc(this.t('dashboard.healthCertWarnNote',
