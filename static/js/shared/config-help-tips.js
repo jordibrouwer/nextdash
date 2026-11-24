@@ -42,6 +42,7 @@
                 'tipPhoneTabs',
                 'tipPhoneLongPress',
                 'tipEverydayBell',
+                'tipEverydayQuickLaunch',
             ],
         },
         {
@@ -115,6 +116,7 @@
             titleFallback: 'Keeping it healthy',
             tips: [
                 'tipMaintHealth',
+                'tipMaintIgnoreError',
                 'tipMaintBulkCheck',
                 'tipMaintMonitorsPlace',
                 'tipMaintReview',

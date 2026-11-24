@@ -182,6 +182,21 @@ func checksOfMovedRow(store Store, movedFrom string, fromPage, toPage int) []Net
 	return nil
 }
 
+// storedMovedRow is the stored row a move takes from: the address on the page
+// the client names. Without that page there is no telling which copy it was.
+func storedMovedRow(store Store, movedFrom string, fromPage, toPage int) (Bookmark, bool) {
+	key := canonicalBookmarkURLKey(movedFrom)
+	if key == "" || fromPage <= 0 || fromPage == toPage {
+		return Bookmark{}, false
+	}
+	for _, bm := range store.GetBookmarksByPage(fromPage) {
+		if canonicalBookmarkURLKey(bm.URL) == key {
+			return bm, true
+		}
+	}
+	return Bookmark{}, false
+}
+
 // netCheckLedger counts what the rest of the install holds: every check ID, and
 // how many of the checks are enabled, leaving out the row at (skipPage, skipIdx)
 // (skipIdx < 0 leaves out none). It reads the store, so it is never called from

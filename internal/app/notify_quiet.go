@@ -677,6 +677,9 @@ func (h *Handlers) pushNoticeDirect(ctx context.Context, source string, n monito
 func (h *Handlers) openAlertWanted() func(openAlert) bool {
 	monitored := map[string]bool{}
 	muted := map[string]bool{}
+	silence := map[string]alertSilence{}
+	failure := map[string]string{}
+	now := time.Now()
 	netOn := h.store.GetSettings().NetToolsEnabled
 	for _, bm := range h.store.GetAllBookmarks() {
 		for _, chk := range bm.Checks {
@@ -701,6 +704,11 @@ func (h *Handlers) openAlertWanted() func(openAlert) bool {
 		if bm.NotifyMuted {
 			muted[noticeSourceMonitor+":"+key] = true
 		}
+		id := noticeSourceMonitor + ":" + key
+		silence[id] = silence[id].merge(alertSilenceFor(bm, now))
+		if failure[id] == "" {
+			failure[id] = bm.LastError
+		}
 	}
 	var history map[string][]HealthSample
 	return func(alert openAlert) bool {
@@ -713,7 +721,13 @@ func (h *Handlers) openAlertWanted() func(openAlert) bool {
 				history = h.readAllHealthHistory()
 			}
 			samples := history[strings.TrimPrefix(alert.Key, noticeSourceMonitor+":")]
-			return len(samples) == 0 || !samples[len(samples)-1].Up
+			if len(samples) == 0 {
+				return true
+			}
+			last := samples[len(samples)-1]
+			// A reminder for an outage of a kind the bookmark ignores is not sent. The
+			// kind is read off the bookmark's own failure text, as the report reads it.
+			return !last.Up && !silence[alert.Key].holds(false, failure[alert.Key])
 		case noticeSourceContainer:
 			return h.dockerNotifyAllowed(alert.Name, "")
 		}

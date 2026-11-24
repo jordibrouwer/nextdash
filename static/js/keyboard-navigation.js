@@ -607,7 +607,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z', 'l', 'o', 'b']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -626,7 +626,6 @@ class KeyboardNavigation {
         P: 'Shift+P opens the Pages panel',
         C: 'Shift+C opens Containers',
         R: 'Shift+R does nothing now',
-        Q: 'Shift+Q does nothing now',
         D: 'Shift+D does nothing now',
     };
 
@@ -875,6 +874,11 @@ class KeyboardNavigation {
             case 'q': this.qrCurrent(); break;
             // Remind me of this link: the Inbox's Z (snooze), for a bookmark.
             case 'z': this.openReminderMenuForCurrent(); break;
+            // Related links of this bookmark: the context menu's entry, as a key.
+            // Not k: j and k move the cursor down and up.
+            case 'o': this.openRelatedMenuForCurrent(); break;
+            // A label row above this bookmark, where its category is in manual order.
+            case 'b': this.addLabelAboveForCurrent(); break;
             // Watch the feed of this bookmark .
             case 'w': void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() }); break;
             default: break;
@@ -892,10 +896,19 @@ class KeyboardNavigation {
             return;
         }
         const L = e.code.slice(3);
-        if (L !== 'L' && L !== 'J' && L !== 'M' && !KeyboardNavigation.SHIFT_ON_ROW_NOTES[L]) {
+        if (L !== 'L' && L !== 'J' && L !== 'M' && L !== 'Q' && !KeyboardNavigation.SHIFT_ON_ROW_NOTES[L]) {
             return;
         }
         if (!inHand()) {
+            return;
+        }
+        if (L === 'Q') {
+            // Put this bookmark in Quick launch, or take it out. With no bookmark in
+            // hand Shift+Q opens the panel itself (quick-launch.js).
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            if (!e.repeat) window.QuickLaunch?.toggleBookmark?.(this.getSelectedBookmark());
             return;
         }
         if (L === 'M') {
@@ -3027,6 +3040,23 @@ class KeyboardNavigation {
         const d = this.dashboard;
         if (!row || !bookmark || !d?.reminders) return;
         d.reminders.openMenu({ bookmark, pageId: Number(bookmark.pageId) || Number(d.currentPageId) }, row);
+    }
+
+    /** O — the links related to the selected bookmark (k is up, with j). */
+    openRelatedMenuForCurrent() {
+        const row = this._resolveActionPopoverRow();
+        const bookmark = this.getSelectedBookmark();
+        if (!row || !bookmark) return;
+        void this.dashboard?.related?.openMenu(bookmark, row);
+    }
+
+    /** B — put a label above the selected bookmark. Only where its category is in manual order: elsewhere the menu has no such entry either. */
+    addLabelAboveForCurrent() {
+        const d = this.dashboard;
+        const row = this._resolveActionPopoverRow();
+        if (!d || !row) return;
+        const slot = window.DashboardCategoryDividers?.slotAbove?.(d, row);
+        if (slot) window.DashboardCategoryDividers.add(d, slot.categoryId, slot.index);
     }
 
     /** Shift+J — show the selected bookmark as a QR code. */

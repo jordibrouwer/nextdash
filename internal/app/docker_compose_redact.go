@@ -21,7 +21,9 @@ line, so a half-edited file never shows a password.
 
 const composeMask = "••••••"
 
-var composeSecretKey = regexp.MustCompile(`(?i)pass|secret|token|key|cred|private|auth|dsn|pwd|salt|jwt|cookie|session|webhook`)
+// The short ones (PW, PSK, PIN) only as a word of their own: DB_PW and WIFI_PSK
+// are passwords, SPWEIGHT and SPINDOWN are not.
+var composeSecretKey = regexp.MustCompile(`(?i)pass|secret|token|key|cred|private|auth|dsn|pwd|salt|jwt|cookie|session|webhook|(?:^|[_.-])(?:pw|psk|pin)(?:$|[_.-])`)
 
 // composeURLCreds finds credentials inside a URL (scheme://user:pw@host), whatever
 // the key is called: DATABASE_URL, SENTRY_DSN and friends hold passwords too.

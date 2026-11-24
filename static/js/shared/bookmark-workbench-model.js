@@ -12,6 +12,8 @@
 
     function healthState(bookmark, facts) {
         if (bookmark?.checkStatus !== true) return 'unchecked';
+        // A failure the bookmark was told to stop reporting is not a state to show.
+        if (facts?.errorIgnored) return 'healthy';
         if (facts?.monitor && Number(facts.downSince) > 0) return 'down';
         if (Number(facts?.brokenSince) > 0) return 'broken';
         return 'healthy';

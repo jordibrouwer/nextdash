@@ -1045,6 +1045,7 @@
 .config-bm-health-dot.is-certificates { background: var(--accent-warning); }
 .config-bm-health-dot.is-monitored { background: var(--accent-vivid, var(--accent-primary)); }
 .config-bm-health-dot.is-duplicate,
+.config-bm-health-dot.is-ignored,
 .config-bm-health-dot.is-unused { background: var(--text-tertiary); }
 
 /* The Health section's check mode as a row of three buttons, as in the
@@ -2291,6 +2292,10 @@ html body .config-bm-more-menu .config-btn {
     font-weight: 700;
 }
 
+.config-bm-health-ignored {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+    font-size: 12px; color: var(--text-muted);
+}
 .config-bm-health-state.is-bad { color: var(--accent-error); }
 .config-bm-health-state.is-warn { color: var(--accent-warning); }
 .config-bm-health-state.is-good { color: var(--accent-success); }

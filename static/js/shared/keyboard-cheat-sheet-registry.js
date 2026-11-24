@@ -90,6 +90,13 @@
                     printFallback: 'Open the theme browser',
                 },
                 {
+                    keys: 'Shift + Q',
+                    cheatKey: 'navQuickLaunch',
+                    fallback: 'Quick launch — your bookmarks in a panel in the middle. With a bookmark under the cursor it adds or removes that bookmark',
+                    print: true,
+                    printFallback: 'Quick launch',
+                },
+                {
                     keys: 'Shift + K',
                     cheatKey: 'navDashboardTour',
                     fallback: 'Take the dashboard tour again',
@@ -176,6 +183,8 @@
                 { keys: 'S', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
                 { keys: 'Q', cheatKey: 'bmQrCode', fallback: 'Show the focused bookmark as a QR code, to open it on a phone', print: true, printFallback: 'QR code of the focused bookmark' },
                 { keys: 'Z', cheatKey: 'bmRemind', fallback: 'Remind me of the focused bookmark: pick a time' },
+                { keys: 'O', cheatKey: 'bmRelated', fallback: 'Related links of the focused bookmark: the links that belong with it' },
+                { keys: 'B', cheatKey: 'bmLabelAbove', fallback: 'Put a label above the focused bookmark, where its category is in manual order' },
                 { keys: '↓ · arrows · Alt + ← / →', cheatKey: 'bmIconPicker', fallback: 'In the app icon picker: from the search into the grid, move over the icons, then the variant of the one you are on; Enter chooses', printFallback: 'Icon picker: grid, icons, variant' },
                 { keys: 'L', cheatKey: 'bmService', fallback: 'Open the Service overview of the focused bookmark: health, container, timeline and logs in one popover' },
                 { keys: 'W', cheatKey: 'bmWatchFeed', fallback: 'Watch the focused bookmark’s feed, or change or stop watching it', print: true, printFallback: 'Watch the bookmark’s feed' },

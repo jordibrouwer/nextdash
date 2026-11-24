@@ -695,8 +695,8 @@ class DashboardPreview {
             uptime30d: facts.uptime30d,
             uptimeSamples: facts.uptimeSamples,
             certExpiresAt: facts.certExpiresAt,
-            brokenSince: facts.brokenSince,
-            reason: facts.lastError,
+            brokenSince: facts.errorIgnored ? 0 : facts.brokenSince,
+            reason: facts.errorIgnored ? '' : facts.lastError,
         };
     }
 
@@ -710,12 +710,14 @@ class DashboardPreview {
         if (!issue) return null;
         const stats = issue.monitorStats || null;
         const cert = issue.certHost ? report.certificates?.[issue.certHost] : null;
+        const ignored = (Array.isArray(issue.ignoredFlags) ? issue.ignoredFlags : [])
+            .some((e) => e && (e.flag === 'broken' || e.flag === 'content'));
         return {
             uptime30d: stats?.uptime30d?.samples ? Number(stats.uptime30d.ratio) : null,
             uptimeSamples: Number(stats?.uptime30d?.samples || 0) || 0,
             certExpiresAt: Number(cert?.expiresAt || 0) || 0,
-            brokenSince: Number(issue.brokenSince || 0) || 0,
-            reason: String(issue.lastError || '').trim(),
+            brokenSince: ignored ? 0 : (Number(issue.brokenSince || 0) || 0),
+            reason: ignored ? '' : String(issue.lastError || '').trim(),
         };
     }
 

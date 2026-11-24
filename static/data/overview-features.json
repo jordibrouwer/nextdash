@@ -3305,6 +3305,72 @@
         "view": "dashboard"
       },
       "since": "v1.33.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureQuickLaunchTitle",
+      "titleFallback": "Your bookmarks in one panel",
+      "whatKey": "config.overviewNewFeatureQuickLaunchWhat",
+      "whatFallback": "The bookmarks you open most were always a few clicks away.",
+      "howKey": "config.overviewNewFeatureQuickLaunchHow",
+      "howFallback": "Quick launch shows up to twelve bookmarks in the middle of the screen: the ones you added, the ones you pinned and the ones you open most. Open it with Shift+Q, the corner button or circles drawn with the mouse.",
+      "enableKey": "config.overviewNewFeatureQuickLaunchEnable",
+      "enableFallback": "Press Shift+Q. The settings are in Config → Appearance → Header.",
+      "ctaKey": "config.overviewNewFeatureQuickLaunchCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "appearanceTab": "header",
+        "section": "appearance"
+      },
+      "since": "v1.34.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureIgnoreErrorTitle",
+      "titleFallback": "Ignore an error for good",
+      "whatKey": "config.overviewNewFeatureIgnoreErrorWhat",
+      "whatFallback": "A page that always answers 503 kept the bell and the counts red.",
+      "howKey": "config.overviewNewFeatureIgnoreErrorHow",
+      "howFallback": "Right-click a bookmark that shows a failure and choose Ignore this error, for good or for 30 days. The tile, the bell, the counts and the alerts all go quiet. Report this error again undoes it.",
+      "enableKey": "config.overviewNewFeatureIgnoreErrorEnable",
+      "enableFallback": "Right-click a bookmark that shows an error.",
+      "ctaKey": "config.overviewNewFeatureIgnoreErrorCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "filter": "ignored",
+        "view": "health"
+      },
+      "since": "v1.34.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTimelineGlanceTitle",
+      "titleFallback": "A timeline you can read at a glance",
+      "whatKey": "config.overviewNewFeatureTimelineGlanceWhat",
+      "whatFallback": "Every row of the timeline looked the same, so an outage was easy to miss.",
+      "howKey": "config.overviewNewFeatureTimelineGlanceHow",
+      "howFallback": "Each source has its own colour and icon, each day has a strip of 24 hours with a tick for every event, and an outage is joined to its cause by a small chain.",
+      "enableKey": "config.overviewNewFeatureTimelineGlanceEnable",
+      "enableFallback": "Open Config → Timeline.",
+      "ctaKey": "config.overviewNewFeatureTimelineGlanceCta",
+      "ctaFallback": "Open Timeline →",
+      "go": {
+        "section": "timeline"
+      },
+      "since": "v1.34.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRowKeysOBTitle",
+      "titleFallback": "O and B on a bookmark",
+      "whatKey": "config.overviewNewFeatureRowKeysOBWhat",
+      "whatFallback": "Related links and labels were only in the right-click menu.",
+      "howKey": "config.overviewNewFeatureRowKeysOBHow",
+      "howFallback": "With the cursor on a bookmark, o opens its related links and b puts a label above it. k still moves up, with j.",
+      "enableKey": "config.overviewNewFeatureRowKeysOBEnable",
+      "enableFallback": "Select a bookmark and press o or b.",
+      "ctaKey": "config.overviewNewFeatureRowKeysOBCta",
+      "ctaFallback": "Open the dashboard →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.34.0"
     }
   ]
 }

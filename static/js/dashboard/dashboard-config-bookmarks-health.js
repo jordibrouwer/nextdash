@@ -208,11 +208,15 @@
             const tone = score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad';
             const entries = health.reasonEntries(issue) || [];
             const problems = entries.filter((e) => Number(e.penalty) > 0);
-            const down = Number(issue.monitorStats?.downSince) > 0;
+            // A failure told to stop being reported reads as Ignored, not as down: the
+            // monitor's own numbers still say it is, so those are not what to go by.
+            const errorIgnored = health.ignoredFlagsOf(issue).some((e) => e.flag === 'broken' || e.flag === 'content');
+            const down = Number(issue.monitorStats?.downSince) > 0 && !errorIgnored;
             const broken = issue.status === 'broken';
             const since = Number(issue.brokenSince) > 0 ? ` · ${health.formatDuration(now - Number(issue.brokenSince))}` : '';
             const state = broken ? { cls: 'bad', label: `${t('bmHealthStateBroken', 'Broken')}${since}` }
                 : down ? { cls: 'bad', label: t('bmHealthStateDown', 'Monitor down') }
+                    : errorIgnored ? { cls: 'off', label: t('bmHealthStateIgnored', 'Ignored') }
                     : mode === 'off' ? { cls: 'off', label: t('cleanupFilterNoCheck', 'Not checked') }
                         : problems.length ? { cls: 'warn', label: t('bmHealthStateLook', 'Needs a look') }
                             : { cls: 'good', label: t('bmHealthStateHealthy', 'Healthy') };
@@ -248,12 +252,40 @@
             const monitored = issue.monitor;
             const uptime = issue.monitorStats?.uptime24h?.ratio;
             const expectSet = String(issue.checkUrl || issue.expectText || '').trim();
+            /*
+             * What this bookmark has been told not to report, with the way back.
+             *
+             * Next to the state, because an ignored bookmark reads Healthy there
+             * and that is only half the truth: nothing is wrong *or* nothing is
+             * being said. Each ignore gets its own line and its own button, so one
+             * can be taken back without the other.
+             */
+            // What the report hides, plus every other ignore the bookmark carries: one
+            // set on a failure that has since changed kind is still in force, and
+            // would otherwise be invisible here with no way to take it back.
+            const shownIgnores = new Map(health.ignoredFlagsOf(issue).map((entry) => [entry.flag, entry]));
+            (Array.isArray(b?.healthIgnored) ? b.healthIgnored : []).forEach((entry) => {
+                if (entry?.flag && !shownIgnores.has(entry.flag) && (!entry.until || entry.until > now)) {
+                    shownIgnores.set(entry.flag, entry);
+                }
+            });
+            const ignoredLines = [...shownIgnores.values()].map((entry) => {
+                const label = health.flagLabel(entry.flag);
+                const until = Number(entry.until) > 0
+                    ? t('bmHealthIgnoredUntil', 'until {d}').replace('{d}', new Date(Number(entry.until)).toLocaleDateString())
+                    : t('bmHealthIgnoredForGood', 'for good');
+                return `<span class="config-bm-health-ignored">
+                        <span>🔕 ${esc(t('bmHealthIgnoring', 'Ignoring “{flag}”').replace('{flag}', label))} · ${esc(until)}</span>
+                        <button type="button" class="config-bm-rail-more" data-bm-unignore="${esc(entry.flag)}">${esc(t('bmHealthReportAgain', 'Report again'))}</button>
+                    </span>`;
+            }).join('');
             return `
                 <div class="config-bm-health-viz">
                     ${ring}
                     <div class="config-bm-health-facts">
                         <span class="config-bm-health-state is-${state.cls}">${esc(state.label)}</span>
                         ${chips ? `<span class="config-bm-health-chips">${chips}</span>` : ''}
+                        ${ignoredLines}
                         <span class="config-bm-health-line">${line}</span>
                         <button type="button" class="config-btn config-btn--small bm-health-large-open" data-bm-panel-action="health-large"
                             title="${esc(t('bmLargeOpenTitle', 'Every chart of this bookmark, in large (Shift+H)'))}">${esc(t('bmLargeOpen', 'Open charts'))} ⤢</button>
@@ -414,8 +446,13 @@
                 title: () => button('title', t('healthMenuTitle', 'Refresh title')),
                 archive: () => button('archive', t('healthMenuArchive', 'Open archived copy')),
                 'local-copy': () => button('local-copy', t('healthMenuLocalCopy', 'Save a local copy')),
-                ignore: () => button('ignore', t('healthMenuIgnore', 'Ignore this condition')),
-                snooze: () => button('snooze', t('healthMenuSnooze', 'Snooze 30 days')),
+                // Worded for what it silences: a failure is an error, anything else a condition.
+                ignore: () => button('ignore', ['broken', 'content'].includes(health.ignoreTargetFlag(issue))
+                    ? t('healthMenuIgnoreError', 'Ignore this error for good')
+                    : t('healthMenuIgnore', 'Ignore this condition')),
+                snooze: () => button('snooze', ['broken', 'content'].includes(health.ignoreTargetFlag(issue))
+                    ? t('healthMenuSnoozeError', 'Ignore this error for 30 days')
+                    : t('healthMenuSnooze', 'Snooze 30 days')),
                 share: () => button('share', t('healthMenuShare', 'Share link')),
                 merge: () => (this.bmHealthDuplicateGroup(b) ? button('merge', t('mergeDuplicateGroup', 'Merge duplicate group')) : ''),
             };
@@ -555,6 +592,17 @@
                 share: () => health.shareIssue(issue),
                 merge: () => this.mergeBmDuplicateGroup(b),
             };
+            panel.querySelectorAll('[data-bm-unignore]').forEach((el) => {
+                el.addEventListener('click', async () => {
+                    const flag = el.getAttribute('data-bm-unignore');
+                    const body = await health.writeIgnores(issue, { remove: [flag] });
+                    if (!body) return;
+                    health.dash.showNotification(
+                        health.t('dashboard.healthIgnoreRemoved', 'Reporting “{flag}” again.', { flag: health.flagLabel(flag) }), 'success');
+                    this.rebuildBmHealthJoin(health);
+                    this.repaintBmHealthDependents();
+                });
+            });
             panel.querySelectorAll('[data-bm-health-action]').forEach((el) => {
                 el.addEventListener('click', () => void run[el.getAttribute('data-bm-health-action')]?.());
             });

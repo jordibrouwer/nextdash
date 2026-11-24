@@ -99,6 +99,9 @@ type monitorTarget struct {
 	// the bookmark's settings so the notification pass never has to reach back
 	// into the store for a bookmark that may since have moved.
 	muted bool
+	// silence is the bookmark's ignored "broken" and "content" conditions,
+	// resolved here for the same reason muted is.
+	silence alertSilence
 	// rule is monitorRuleKey of the bookmark this target checks for.
 	rule string
 	// secondary marks a second check of an URL that is already checked this
@@ -228,6 +231,9 @@ func (h *Handlers) dueMonitorTargetsWithHistory(now time.Time, history map[strin
 				if bm.NotifyMuted && dueKeys[key] {
 					targets[dueIndex[key]].muted = true
 				}
+				if dueKeys[key] {
+					targets[dueIndex[key]].silence = targets[dueIndex[key]].silence.merge(alertSilenceFor(bm, now))
+				}
 				ruleKey := key + "\x00" + rule
 				if rule != primaryRule[key] && dueKeys[key] && !seenRule[ruleKey] {
 					seenRule[ruleKey] = true
@@ -265,6 +271,7 @@ func (h *Handlers) dueMonitorTargetsWithHistory(now time.Time, history map[strin
 				interval: interval,
 				expect:   expectationFor(bm).withSoftNotFound(softNotFound),
 				muted:    bm.NotifyMuted,
+				silence:  alertSilenceFor(bm, now),
 				rule:     rule,
 			})
 			dueKeys[key] = true
@@ -576,7 +583,7 @@ func (h *Handlers) runDueMonitors() {
 			up:     up,
 			reason: errMsg,
 			at:     out.at,
-			muted:  out.target.muted,
+			muted:  out.target.muted || out.target.silence.holds(up, errMsg),
 		})
 	}
 

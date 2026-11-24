@@ -279,6 +279,7 @@ class DashboardContextMenu {
         // is the busiest surface in the app for finding out that a key exists.
         // Untranslated, like every other key hint.
         const mod = window.ShortcutFormat?.modifierLabel?.() || 'Ctrl';
+        const canIgnoreError = Number.isInteger(bookmarkRef.index) && bookmarkRef.index >= 0;
         const singleActions = (bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
@@ -295,6 +296,15 @@ class DashboardContextMenu {
                 icon: 'pin',
                 key: 'P',
             },
+            // Quick launch: in by hand or out, the same key as on the row.
+            ...(window.QuickLaunch ? [{
+                id: 'quick-launch',
+                label: window.QuickLaunch.holds(bookmarkRef.bookmark)
+                    ? this.t('dashboard.contextMenuQuickLaunchRemove', 'Remove from Quick launch')
+                    : this.t('dashboard.contextMenuQuickLaunchAdd', 'Add to Quick launch'),
+                icon: '\u2197',
+                key: 'Shift+Q',
+            }] : []),
             {
                 id: 'tags',
                 label: this.t('dashboard.contextMenuTags', 'Tags…'),
@@ -312,12 +322,14 @@ class DashboardContextMenu {
                 id: 'add-label-above',
                 label: this.t('dashboard.contextMenuAddLabelAbove', 'Add label above'),
                 icon: '—',
+                key: 'B',
             }] : []),
             {
                 id: 'related',
                 label: this.t('dashboard.contextMenuRelated', 'Related links…'),
                 icon: '\u21C4',
                 submenu: false,
+                key: 'O',
             },
             {
                 id: 'remind',
@@ -352,6 +364,22 @@ class DashboardContextMenu {
             // the entry made the destination unreachable from the one place
             // someone would look for it.
             { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'R' },
+            // Only while the bookmark has a failure to report, or has been told not to.
+            // Ignore while the current failure is still reported; report again while any
+            // error ignore is active, whatever kind the failure is now (an ignore set
+            // on a content failure stays after the failure turns into a timeout).
+            // The write names the bookmark by its place on its page; a row from another
+            // page (a collection, the tag filter) has none, so it gets no entry that
+            // would do nothing.
+            ...(canIgnoreError && String(bookmarkRef.bookmark?.lastError || '').trim() && !window.bookmarkErrorIgnored?.(bookmarkRef.bookmark)
+                ? [
+                    { id: 'ignore-error', label: this.t('dashboard.contextMenuErrorIgnore', 'Ignore this error'), icon: '🔕' },
+                    { id: 'snooze-error', label: this.t('dashboard.contextMenuErrorSnooze', 'Ignore this error for 30 days'), icon: '⏰' },
+                ]
+                : []),
+            ...(canIgnoreError && window.bookmarkActiveErrorIgnores?.(bookmarkRef.bookmark)?.length
+                ? [{ id: 'unignore-error', label: this.t('dashboard.contextMenuErrorReport', 'Report this error again'), icon: '🔔' }]
+                : []),
             ...(d.netBadges?.hasChecks?.(bookmarkRef.bookmark)
                 ? [{ id: 'net-checks', label: this.t('nettools.menuChecks', 'Network checks'), icon: '◉', key: 'N' }]
                 : []),
@@ -957,6 +985,41 @@ class DashboardContextMenu {
         await this.dash.config?.openLibraryOnBookmark?.(pageId, url);
     }
 
+    /**
+     * Ignore, snooze or un-ignore the failure a bookmark is showing, from its tile.
+     *
+     * One writer: the health view's own, so this and the `n`/`z` keys cannot
+     * differ in what they store. The tile is redrawn from the refreshed copy.
+     */
+    async setErrorIgnore(bookmarkRef, action) {
+        const d = this.dash;
+        const bookmark = bookmarkRef?.bookmark;
+        const pageId = Number(bookmarkRef?.pageId) || Number(d.currentPageId);
+        const index = Number(bookmarkRef?.index);
+        if (!bookmark?.url || !pageId || !(index >= 0)) return;
+        const health = await d.health?.load?.();
+        if (!health) return;
+        const flag = window.bookmarkErrorFlag?.(bookmark.lastError) || 'broken';
+        const target = { pageId, index, url: bookmark.url };
+        if (action === 'unignore-error') {
+            const active = window.bookmarkActiveErrorIgnores?.(bookmark) || [flag];
+            await health.writeIgnores(target, { remove: active });
+        } else {
+            const untilMs = action === 'snooze-error'
+                ? Date.now() + health.constructor.SNOOZE_DAYS * 24 * 60 * 60 * 1000
+                : 0;
+            const body = await health.writeIgnores(target, { add: [flag], untilMs });
+            if (body) {
+                d.showNotification(this.t('dashboard.healthIgnoreAdded', '“{flag}” hidden for this bookmark.',
+                    { flag: health.flagLabel(flag) }), 'success', {
+                    duration: 8000,
+                    undoCallback: async () => { await health.writeIgnores(target, { remove: [flag] }); this.dash.statusMonitor?.applyCachedStatuses?.(this.dash.bookmarks || []); },
+                });
+            }
+        }
+        d.statusMonitor?.applyCachedStatuses?.(d.bookmarks || []);
+    }
+
     runAction(action, row, bookmarkRef, options = {}) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
@@ -1045,6 +1108,9 @@ class DashboardContextMenu {
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
                 break;
+            case 'quick-launch':
+                window.QuickLaunch?.toggleBookmark?.(bookmarkRef.bookmark);
+                break;
             case 'pin': {
                 // Through the palette's persistence path, so pin has one writer
                 // whether it comes from :pin, Shift+P or this menu.
@@ -1059,6 +1125,11 @@ class DashboardContextMenu {
             }
             case 'health':
                 void this.revealInHealth(bookmarkRef);
+                break;
+            case 'ignore-error':
+            case 'snooze-error':
+            case 'unignore-error':
+                void this.setErrorIgnore(bookmarkRef, action);
                 break;
             case 'service':
                 void d.service?.openServiceView?.({ url: bookmark.url, page: Number(bookmarkRef.pageId) || Number(d.currentPageId) });

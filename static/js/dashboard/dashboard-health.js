@@ -1049,6 +1049,9 @@ class DashboardHealth {
             const body = await res.json().catch(() => ({}));
             await this.loadAndRender({ refresh: true });
             await this.refreshBookmarkCopies(list);
+            // The tab title, its icon and the red counts read the same report: ignoring
+            // a failure has to take it out of them now, not at the next poll.
+            void this.dash.updateHealthBadge?.();
             return body;
         } catch {
             this.dash.showNotification(
@@ -2161,6 +2164,7 @@ class DashboardHealth {
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
             certificates: this.t('dashboard.healthFilterCertificates', 'Certificates'),
             domains: this.t('dashboard.healthFilterDomains', 'Domains'),
+            ignored: this.t('dashboard.healthFilterIgnored', 'Ignored'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
             // Monitor-group headings, distinct from the link-hygiene labels

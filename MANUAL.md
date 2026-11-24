@@ -115,6 +115,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Editing in place](#editing-in-place)
 - [Usage](#usage)
 - [Recent bookmarks (`*`)](#recent-bookmarks)
+- [Quick launch (`Shift + Q`)](#quick-launch)
 - [Hypr mode](#hypr-mode)
 
 </details>
@@ -1270,7 +1271,10 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Tags… | `t` | The quick tag picker |
 | Move to… | `m` | Another category or page |
 | Remind me… | `z` | Picks a time to be reminded of the link ([Reminders](#bookmark-reminders)). With one set, the item reads *Reminder: tomorrow 09:00…* |
-| Related links… | | The bookmarks that go with this one ([Related links](#related-links)) |
+| Related links… | `o` | The bookmarks that go with this one ([Related links](#related-links)) |
+| Add label above | `b` | A label row above this bookmark, where its category is in manual order ([§9.2](#92-categories)) |
+| Add to / Remove from Quick launch | `Shift + Q` | Puts the bookmark in the Quick launch panel by hand, or takes it out ([Quick launch](#quick-launch)) |
+| Ignore this error · … for 30 days · Report this error again | | Only while the bookmark shows a failure, or has been told not to report one ([§12.4](#124-alerts)) |
 | Checking | `c` | Off / Periodic / Monitor |
 | Show in list | `r` | Opens the bookmark in the Bookmarks view, with its Health section open |
 | Select / Select all in category | `x` / `X` | Starts a selection |
@@ -1324,7 +1328,7 @@ Hover a bookmark and its preview card ([§4](#the-link-preview-card)) shows a **
 <p align="center"><sub>The related row on a preview card.</sub></p>
 
 - **Open one** with a click; it counts as an open. **Shift + click** goes to its place on the dashboard instead.
-- **From the right-click menu**, **Related links…** opens the same list as a small menu under the row.
+- **From the right-click menu**, **Related links…** opens the same list as a small menu under the row. With the cursor on the row, `o` does the same.
 - **From the palette**, `:related` lists the links that belong with the bookmark under the cursor, and `:related <name>` with one found by name. `Enter` opens a link, `Alt + Enter` goes to it.
 
 How it ranks: a tag counts for less the more of your library carries it, so *homelab* on a third of your bookmarks relates nothing by itself and two middling tags together do. The same goes for a site: forty bookmarks on one big site are not each other's relations by address alone, while two on a small one are. The port is part of the site, because on a home network every service answers on the same address. Two opens close together count as a habit only after several such pairs. The same page under `http` and `https`, or with and without `www.`, is the bookmark itself and never shown as its own relation. The hidden Unsorted page is left out.
@@ -1364,6 +1368,30 @@ Ten tiles fit on a page; a pager in the foot says where you are ("11–20 of 34"
 
 <p align="center"><img src="screenshots/manual.md/06-recent.jpg" alt="The Recent bookmarks sheet: tiles two across, each with a calendar block for the day it was opened, the name and shortcut, weekday and time, its category or page and how often, a pager in the foot and buttons to open what is shown" width="860"></p>
 <p align="center"><sub>Recent bookmarks (<kbd>*</kbd>): what you opened last, and how often.</sub></p>
+
+<a id="quick-launch"></a>
+
+### ⚡ Quick launch (`Shift + Q`)
+
+A panel in the middle of the window with the bookmarks you reach for most. It opens three ways, and all three do the same:
+
+- **`Shift + Q`**, with no bookmark under the cursor;
+- **the corner button**, an element in the top right corner of the window. It shows only in a window of 992 px or wider with a mouse;
+- **circles drawn with the mouse**: move the pointer round in a circle one and a half times (one to three, set in Config).
+
+The panel holds up to twelve bookmarks in rows of equal length, under the headings *Yours*, *Pinned* and *Most opened*. While there is room it ends with a **+** tile; once it is full, an *Add a bookmark* button in the foot does the same. The ones you put in by hand come first, then the ones you pinned, then the ones you open most; **Config → Appearance → Header** says which of the last two fill the rest. It works in every view of the app. `Esc` closes it, and so does a click beside it. With the pointer left outside the panel for five seconds it closes by itself (three, five or ten seconds, or never).
+
+**Putting a bookmark in or taking it out** works three ways: the **+** tile opens a picker with a search field; **`Shift + Q`** with the cursor on a bookmark adds it, or takes it out again; and the right-click menu says **Add to Quick launch** or **Remove from Quick launch**. A bookmark you remove from a filled position stays out until you add it again. A bookmark added from another page stays in the panel.
+
+The panel has a search field (*Find a bookmark*). The first time the corner button is on screen, a note points at it. **Customize** opens its settings, **Got it** puts the note away. Where the button is switched off or not drawn, the note never shows; the key and the circles are in the dashboard tour.
+
+<details>
+<summary>📷 Screenshot — Quick launch</summary>
+
+<p align="center"><img src="screenshots/manual.md/06-quick-launch.jpg" alt="The Quick launch panel: three bookmarks put in by hand under Yours, six under Pinned and three under Most opened with their number of opens, an Add a bookmark button and the line 1 to 9 opens, Esc closes" width="560"></p>
+<p align="center"><sub>Quick launch (<kbd>Shift + Q</kbd>): the bookmarks you added, pinned and open most.</sub></p>
+
+</details>
 
 <a id="hypr-mode"></a>
 
@@ -1410,6 +1438,7 @@ With the cursor on a bookmark, its actions are **plain letters**, as in the Inbo
 | `?` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
 | `Shift + N` | The notification center (the bell), and closes it again |
+| `Shift + Q` | Quick launch, the panel with your bookmarks ([§6](#quick-launch)). With a bookmark under the cursor it adds that bookmark to the panel, or takes it out |
 | `Shift + W` | With no category or widget under the cursor, the news of the feeds you watch (when at least one feed is watched) |
 | `'` or `Shift + O` | Slide a docked action bar away or back |
 | `Shift + F` | Filter this page in place |
@@ -1466,6 +1495,9 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `f` | Filter the grid by the bookmark's tag |
 | `r` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `l` | Open its Service overview: health, container, timeline and logs in one window ([§15.13](#1513-the-service-overview)) |
+| `o` | The bookmarks related to this one, in a small menu under the row ([§6](#related-links)). `k` stays up, with `j` |
+| `b` | Put a label above this bookmark, where its category is in manual order ([§9.2](#92-categories)) |
+| `Shift + Q` | Add the bookmark to Quick launch, or take it out ([§6](#quick-launch)) |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
 | `t` | Filter the grid by this bookmark's tag |
@@ -2653,6 +2685,22 @@ On the day the digest comes out it goes first, and the daily review card ([§4](
 
 </details>
 
+**Ignoring an error.** A bookmark that shows a failure you do not want to hear about (a status page that always answers 503, a page that keeps missing a keyword) can be told to stop reporting it. In its right-click menu, **Ignore this error** keeps it quiet for good and **Ignore this error for 30 days** for a month; **Report this error again** takes it back. The Health report in the Bookmarks view has the same two actions (`n` and `z`).
+
+- An ignored error is gone from the tile, the search, the tab badge, the bell, the preview card and every count. The tile looks like a bookmark that is not checked.
+- It sends no webhook, no push and no reminder either.
+- There are two kinds: *broken* (the host does not answer, or answers with an error) and *content* (a missing keyword, an unexpected status code). They are separate on purpose. Ignoring a failing keyword does not hide a real outage, and ignoring an outage does not hide a failing keyword.
+- A recovery is never held back, but an outage that was never announced is not announced as over either.
+- In the Bookmarks view the **Health** filter **Ignored** lists these bookmarks. Their panel shows a line for each ignore (*Ignoring "broken" · for good*) with **Report again**, and their state reads **Ignored**, not Healthy.
+
+<details>
+<summary>📷 Screenshot — an ignored error</summary>
+
+<p align="center"><img src="screenshots/manual.md/12-ignored-error.jpg" alt="The Health tab of the GitLab bookmark panel, with the line Ignoring Broken, for good, and a Report again button beside it" width="340"></p>
+<p align="center"><sub>A bookmark told to stop reporting an error says so, and <b>Report again</b> takes it back.</sub></p>
+
+</details>
+
 <a id="125-maintenance-windows"></a>
 
 ### 12.5 Maintenance windows
@@ -2736,6 +2784,7 @@ An outage is the headline of its row, and the row shows what came shortly before
 
 The last two read *Possible cause*, and only when that machine is the Docker host. A row with none says *No cause found*. A restart loop and a flapping monitor are one row each, and the stop and start that an update causes never count as an outage.
 
+- Each source has its own colour and icon. A day has a heading with its number of events and outages, and a strip of 24 hours with a tick for each event. An outage and its cause are joined by a small chain: the cause, the minutes between, the outage. An outage that is the cause of another one on screen is ringed. The 30 day view is more compact.
 - **Sources**, **Show** (*All*, *Only outages*, *With a cause*) and **Period** (24 hours, 7 days or 30 days) narrow the list. Your choice is kept.
 - **Open** on a row goes to its Service overview ([§15.13](#1513-the-service-overview)), to Glances or to Unraid.
 - A source that cannot reach as far back as the period says so (*recorded since …*). The raw checks of a network check go back about three days.
@@ -2745,7 +2794,7 @@ The last two read *Possible cause*, and only when that machine is the Docker hos
 <details>
 <summary>📷 Screenshot — Config → Timeline</summary>
 
-<p align="center"><img src="screenshots/manual.md/18-timeline.jpg" alt="Config, Timeline: the filters for sources, what to show and the period, and a stream where Sonarr down for 14 minutes is the headline of a row that says it came one minute after an automatic update to 4.0.10" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/18-timeline.jpg" alt="Config, Timeline: the filters for sources, what to show and the period, and a stream grouped by day, each day with a strip of 24 hours and a tick for every event, where Sonarr down for 14 minutes is joined by a small chain to the automatic update to 4.0.10 that came one minute before it" width="860"></p>
 <p align="center"><sub>An outage with its likely cause: the update that came a minute before it.</sub></p>
 
 </details>
@@ -4668,6 +4717,8 @@ Small drawings beside the shape settings show what a value looks like.
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
 - **Header** tab, panels **Header** and **Browser tab & branding** — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and chips for the dashboard, inbox, config and Bookmarks-view buttons. The browser tab sits in the second panel: the page name in the browser title, a custom title and the favicon upload, also used when nextDash is installed as an app. Where the clock and weather stand is set on Date & weather ([§17.8](#178-date-and-weather)).
+
+The **Header** tab also has a **Quick launch** panel ([§6](#quick-launch)): show the corner button, open the panel by drawing circles with the mouse, how many circles it takes (1 to 3 in halves), what fills the panel beyond the bookmarks you added (pinned, then most opened; pinned only; most opened only) and when it closes on its own (never, 3, 5 or 10 seconds).
 - **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away after loading (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each chip group has **Show all / Hide all**.

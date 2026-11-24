@@ -218,6 +218,10 @@
                 certExpiresAt: Number(cert?.expiresAt || 0) || 0,
                 brokenSince: Number(entry?.brokenSince || 0) || 0,
                 lastError: String(entry?.lastError || '').trim(),
+                // The report hides a failure it was told to ignore and says so here,
+                // so a monitored bookmark that is down but ignored is not drawn as down.
+                errorIgnored: (Array.isArray(entry?.ignoredFlags) ? entry.ignoredFlags : [])
+                    .some((flag) => flag && (flag.flag === 'broken' || flag.flag === 'content')),
             };
             // A monitored bookmark is kept whatever it has to say: it is the
             // subject of the uptime tile, and one switched on this morning has
@@ -225,7 +229,7 @@
             if (!facts.monitor && facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
             healthFacts.set(key, facts);
             // Down now: the bookmarks behind the red "down" count.
-            if (facts.monitor && facts.downSince > 0) healthDownKeys.push(key);
+            if (facts.monitor && facts.downSince > 0 && !facts.errorIgnored) healthDownKeys.push(key);
         });
         healthFactsAt = Date.now();
         healthFactsGeneratedAt = Number(report?.generatedAt) || 0;

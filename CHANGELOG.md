@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.34.0 — 24 November 2026](#v1340--24-november-2026)
 - [v1.33.1 — 24 November 2026](#v1331--24-november-2026)
 - [v1.33.0 — 23 November 2026](#v1330--23-november-2026)
 - [v1.32.0 — 19 November 2026](#v1320--19-november-2026)
@@ -150,6 +151,84 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+## Unreleased
+
+### Quick launch
+
+- **new — Quick launch.** A panel in the middle of the screen with the bookmarks you add, the ones you pinned and the ones you open most. `Shift + Q` opens and closes it, so does a corner element at the top right and drawing circles with the mouse (1.5 by default, 1 to 3 under Config → Appearance → Header → Quick launch). The panel takes the material of the active theme and unfolds from the corner element. Add a bookmark with **+** in the panel, with `Shift + Q` on a bookmark or in its right-click menu (*Add to Quick launch*); take one out with the **×** on its tile, which also hides an automatic one. The corner element shows in every view, but only in a window of 992 px or more with a mouse; on a tablet or phone the key and the panel still work where there is a keyboard.
+- **new — A note and a tour slide for Quick launch.** A one-time balloon points at the corner element: *Got it*, or *Customize*, which opens Config → Appearance → Header with the Quick launch group open. The corner element breathes quietly at rest, and under the pointer its four tiles shuffle one place round while the arrow turns, all inside the button; both stop with reduced motion and with animations off. The panel unfolds out of the corner element and folds back into it. It also shows in every view now, Config included.
+- **new — The dashboard tour has three new slides.** *The header, the bell and the mode strip*, *Quick launch* and *More letters on a bookmark* (z, o, b, s, q, w, l and Shift+Q), so the tour is thirteen steps.
+- **fix — Quick launch keeps bookmarks added from other pages.** Adding one with `Shift + Q` or the right-click menu before the other pages had loaded saved the list without the ones from those pages.
+- **fix — Quick launch search with an input method.** Typing Chinese or Japanese in the panel's search no longer throws away the character being composed.
+- **fix — Quick launch corner element follows changes.** The four small tiles update when you pin a bookmark or change what the panel shows in Config, not only when you open the panel.
+- **fix — Shift + Q puts a hidden bookmark back for real.** One you had taken out of Quick launch and since unpinned said *Added* but did not appear; it now goes in as one of yours.
+
+### Row keys
+
+- **new — `o` and `b` on a bookmark.** With the cursor on a bookmark, `o` opens its related links and `b` puts a label row above it (where its category is in manual order), as the right-click menu does. Related links first had `k`, which is the key that moves the cursor up; `j` and `k` move again on every row.
+
+### Bookmark errors
+
+- **fix — Ignore this error only where it works.** The right-click menu no longer offers to ignore or report again an error on a row from another page, such as in a collection, where the choice did nothing.
+- **fix — Ignored error on the right bookmark.** A tile without its own position on the page no longer reads the ignore of the first bookmark on the page.
+
+### Compose
+
+- **fix — Short secret names are hidden too.** In a compose file, values under names such as `DB_PW`, `WIFI_PSK` or `ADMIN_PIN` were shown in full in the Containers view, also without the write token. They are masked like any password now; names that only contain those letters, such as `SPINDOWN`, stay visible.
+
+### Reminders
+
+- **fix — A moved bookmark does not remind twice.** Moving a bookmark to another page from its edit form or the tag filter, after its reminder had gone out, could send the reminder a second time. The move now keeps the reminder as the server has it.
+
+## v1.34.0 — 24 November 2026
+
+Quick launch, a panel with your bookmarks that opens on Shift+Q, a corner button or circles drawn with the mouse; a failure can be ignored per bookmark and then stays quiet everywhere, alerts included; a Timeline that reads at a glance; `O` and `B` on a bookmark row; and two tour slides.
+
+### Quick launch
+
+- **new — Your bookmarks in a panel in the middle of the screen.** Three things open it: the corner button, `Shift+Q` and a mouse drawn in circles (1 to 3 turns, 1.5 by default). The panel holds up to 12 bookmarks: the ones you put in by hand first, then the ones you pinned and the ones you open most. With a bookmark under the cursor `Shift+Q` adds it or takes it out instead of opening the panel; the same is in the bookmark's right-click menu (*Add to Quick launch* / *Remove from Quick launch*) and in the **+** tile of the panel, which opens a picker. A bookmark added from another page stays in. The panel is a modal, so it takes the material of the theme, traps focus and closes on `Esc`, and it unfolds from the corner button. It also closes by itself when the pointer stays outside for 5 seconds (3, 5, 10 seconds or never). The search in the panel waits for an input method to finish a composition. Quick launch works in every view; the corner button only shows at 992 px and wider with a mouse, while the key and the circles work without it (`quick-launch.js`, `quick-launch-core.js`, `quick_launch.go`).
+- **new — Set it up in Config → Appearance → Header.** A *Quick launch* group: show the corner button, open it by circles, circles needed, what to show beyond the ones you add (*Pinned, then most opened*, *Pinned only*, *Most opened only*) and when the panel closes by itself. The panel's own source setting is `quickLaunchSource`; a bookmark taken out of the panel stays out (`quickLaunchHidden`, at most 100) and the ones added by hand are `quickLaunchAdded` (`models.go`).
+- **new — A one-time note and tour slides.** The first time the corner button is on screen a note points at it, with *Customize* going straight to the group in Config and *Got it* putting the note away; it never counts as seen while the button is off or not drawn. The Dashboard tour gets a Quick launch slide and a slide for the header, the bell and the mode strip (`quick-launch-intro.js`, `dashboard-tutorial.js`).
+- **fix — The full-panel message and the corner follow the settings.** The message for a panel that is full no longer points at a setting that is gone (the count setting went away when the panel became 12 with even rows and a plus tile), and the corner button follows the pins and the source choice.
+- **fix — `Shift+Q` puts a hidden bookmark back for real.** A bookmark that was left out because it was unpinned comes back in when you add it again.
+- **fix — The header leaves the corner button its own room.** The bell and the other header buttons now always stand one step to the left of the Quick launch button, whatever the margin beside the grid. Before, the room was worked out from the margin and the buttons could end up under the corner (`quick-launch.css`).
+
+### Ignoring an error
+
+- **new — A failure you ignore stays quiet everywhere.** *Ignore this error* and *Ignore this error for 30 days* are in a bookmark's right-click menu while it shows a failure, and *Report this error again* while one is ignored. Behind it is the same ignore as in the Health report, so the tile, the search, the tab badge, the bell, the preview and the counts all agree: the tile is drawn like a bookmark that is not checked (`status.js`, `dashboard-context-menu.js`).
+- **new — Alerts and reminders respect it too.** An ignored failure sends no webhook, no push and no reminder. The two kinds are separate on purpose: ignoring a failing keyword rule (*content*) does not hide a real outage, and ignoring *broken* does not hide a failing rule. A recovery is never held back, but an outage that was never announced is not announced as recovered either (`health_alert_silence.go`, `health_monitor.go`, `notify_quiet.go`).
+- **new — Ignored in the Bookmarks view.** The Health filter list gets **Ignored**, a bookmark's panel shows a *Ignoring “…” · until …/for good* line for each ignore with a **Report again** button, and the state reads *Ignored* instead of *Healthy* or *Down* (`dashboard-config-bookmarks-health.js`).
+- **fix — Only on a row with a page index.** The ignore entries are not offered for a row that has no place on its page (a collection, the tag filter): the write names the bookmark by that place, so such a row would get an entry that does nothing. A tile without a row index no longer reads the first bookmark's ignore.
+
+### Timeline
+
+- **improved — A timeline you can read at a glance.** Each source has its own colour and icon (containers, updates, monitors, network checks, Glances, Unraid, alerts), the day gets a heading with its number of events and outages and a 24 hour strip with a tick for each event, rows hang on a rail, and the cause of an outage is drawn as a small chain: the cause, the minutes between, the outage. An outage that is a cause of another one on screen gets a ring. The 30 day view is compact (`dashboard-config-timeline.js`, `config-timeline.css`).
+
+### Keys
+
+- **new — `O` opens the related links of a bookmark.** With the cursor on a row, the entry that was only in the context menu. It is `O` because `K` is up, with `J`.
+- **new — `B` puts a label above a bookmark.** Where the category is in manual order, as *Add label above* in the menu.
+- **fix — `K` moves the cursor up again.** The key that opened related links took the up key from the rows; it moved to `O`. The context menu shows both letters and the keys are in the cheat sheet.
+
+### Fixes
+
+- **fix — A moved bookmark keeps its reminder's sent mark.** Moving a bookmark to another page sent its reminder fields from the tab's copy, which could predate the push, so a reminder that had gone out came back unsent and was pushed twice. The server now takes `RemindAt` and `RemindSentAt` from the stored row it moves from (`handlers.go`, `nettool_schedule.go`).
+- **fix — The Compose view masks short secret names.** `DB_PW`, `WIFI_PSK` and `ADMIN_PIN` are masked now. `PW`, `PSK` and `PIN` count only as a word of their own, so `SPWEIGHT` and `SPINDOWN` stay readable (`docker_compose_redact.go`).
+
+### Starter set
+
+- **new — Brewed bits under Development.** The starter set and the minimal set get a *Brewed bits* bookmark, and the About page's maker card points to it.
+
+### Docs
+
+- **docs — `MANUAL.md` and `README.md`.** New §6 *Quick launch*, a right-click menu with Quick launch, the error ignore and the `o` and `b` rows, `Shift + Q`, `o` and `b` in §7.1 and §7.3, *Ignoring an error* in §12.4, the new look of the timeline in §12.8 and the Quick launch group under §17.7. Three pictures: `06-quick-launch.jpg`, `12-ignored-error.jpg` and a retaken `18-timeline.jpg`, from `tests/manual-screenshots-v1-34.spec.js`. The README names Quick launch and the error ignore.
+- **docs — Config → Help, tips and the overview.** `helpKeyboardBody`, `helpAppearanceBody` and `helpBookmarksBody` name the new keys, the Quick launch group and the error ignore; two tips (`tipEverydayQuickLaunch`, `tipMaintIgnoreError`); four entries with `since: "v1.34.0"` in `overview-features.json` (Quick launch, ignoring an error, the timeline, `o` and `b`).
+- **docs — Specs.** The fixed waits of the Quick launch specs say why, and the specs for the menu keys, the cheat sheet, the settings list, the digest and the row marks know `Shift+Q`, the new starter bookmark and the Quick launch settings; nothing changes for users.
+- **docs — Translations.** Every new string in nl, de, fr, es and zh: Quick launch, the error ignore, the tour slides, the timeline's day lines and the three cheat sheet keys that were still English. `nextDash-cheatsheet.html` and `.pdf` are regenerated.
+- **docs — `static/data/whats-new/v1.34.0.json` and its index entry**, with two highlights (Quick launch as a recording, the timeline as a picture; `tests/fixtures/whats-new-media/v1.34.0.js`). Both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE`, `whats-new-v384`) and `tests/whats-new-hidden-release.spec.js` with them. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
 
 ## v1.33.1 — 24 November 2026
 

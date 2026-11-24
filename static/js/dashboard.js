@@ -107,6 +107,13 @@ class Dashboard {
             showCheatSheetButton: false,
             showEditModeButton: true,
             showThemeStudioButton: true,
+            quickLaunchButton: true,
+            quickLaunchGesture: true,
+            quickLaunchTurns: 1.5,
+            quickLaunchSource: 'mix',
+            quickLaunchAutoClose: 5,
+            quickLaunchHidden: [],
+            quickLaunchAdded: [],
             showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
@@ -2175,6 +2182,9 @@ class Dashboard {
         // A render rebuilds every row, so an active page filter has to be laid
         // over the new ones or the bar would claim to be filtering nothing.
         this.gridFilter?.reapply?.();
+        // The Quick launch corner shows the first of the bookmarks: a pin, a delete or
+        // an edit that redraws the page changes which ones those are.
+        window.QuickLaunch?.refreshCorner?.();
         return out;
     }
 

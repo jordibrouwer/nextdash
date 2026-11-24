@@ -1,0 +1,62 @@
+{
+  "tag": "v1.34.0",
+  "date": "24 November 2026",
+  "releasedAt": "2026-11-24",
+  "modalLead": "<strong>Quick launch</strong> puts your bookmarks in a panel on Shift+Q, a bookmark can be told to stop reporting an error, and the <strong>Timeline</strong> reads at a glance.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "Your bookmarks in one panel",
+          "text": "<strong>Your bookmarks in one panel.</strong> Quick launch shows up to twelve bookmarks in the middle of the screen: the ones you added, the ones you pinned and the ones you open most. Press Shift+Q, click the corner button or draw circles with the mouse. With a bookmark selected, Shift+Q adds it or takes it out.",
+          "media": {
+            "image": "media/v1.34.0-quick-launch.jpg",
+            "video": "media/v1.34.0-quick-launch.webm",
+            "alt": "The Quick launch panel opening in the middle of the dashboard, with bookmarks under Yours, Pinned and Most opened, and the pointer moving over two of them"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>O and B on a bookmark.</strong> With the cursor on a bookmark, o opens its related links and b puts a label above it. k still moves up, with j."
+        }
+      ]
+    },
+    {
+      "title": "Monitoring",
+      "items": [
+        {
+          "badge": "new",
+          "highlight": true,
+          "title": "A timeline you can read at a glance",
+          "text": "<strong>A timeline you can read at a glance.</strong> Each source has its own colour and icon, each day has a strip of 24 hours with a tick for every event, and an outage is joined to its cause by a small chain.",
+          "link": "#config/timeline",
+          "linkLabel": "Open Timeline",
+          "media": {
+            "image": "media/v1.34.0-timeline.jpg",
+            "alt": "Config, Timeline: each day with a strip of 24 hours and a tick for every event, and an outage of Sonarr joined by a small chain to the automatic update that came a minute before it"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ignore an error.</strong> Right-click a bookmark that shows a failure and choose Ignore this error, for good or for 30 days. The tile, the bell, the counts and the alerts all go quiet, and Report this error again undoes it. Ignoring a failing keyword does not hide a real outage."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A moved bookmark keeps its reminder.</strong> Moving a bookmark to another page no longer sends its reminder a second time."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Compose view hides short secret names.</strong> Values such as DB_PW and WIFI_PSK are masked now."
+        }
+      ]
+    }
+  ]
+}

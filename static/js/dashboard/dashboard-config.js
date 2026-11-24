@@ -4597,6 +4597,11 @@ class DashboardConfig {
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
         showFeedWatchIcon: ['feed', 'watch', 'icon', 'rss', 'bookmark', 'row', 'mark'],
         feedWatchOpenOnReturn: ['feed', 'watch', 'news', 'open', 'return', 'tab', 'automatic', 'newspaper'],
+        quickLaunchButton: ['quick', 'launch', 'corner', 'button', 'favourites', 'favorites', 'pinned', 'launcher'],
+        quickLaunchGesture: ['quick', 'launch', 'circle', 'circles', 'mouse', 'gesture', 'rondjes', 'draw'],
+        quickLaunchTurns: ['quick', 'launch', 'circle', 'circles', 'turns', 'gesture', 'sensitivity'],
+        quickLaunchSource: ['quick', 'launch', 'pinned', 'most', 'opened', 'source', 'popular'],
+        quickLaunchAutoClose: ['quick', 'launch', 'close', 'automatically', 'hover', 'outside', 'seconds', 'timeout'],
         feedStatsEnabled: ['feed', 'watch', 'statistics', 'stats', 'numbers', 'count', 'record', 'rss'],
         feedStatsKeepDays: ['feed', 'watch', 'statistics', 'stats', 'days', 'keep', 'history', 'retention'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
@@ -9646,6 +9651,11 @@ class DashboardConfig {
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
         showEditModeButton: { info: ['showEditModeButtonInfoTitle', 'showEditModeButtonInfoMessage'], def: true },
         showThemeStudioButton: { info: ['showThemeStudioButtonInfoTitle', 'showThemeStudioButtonInfoMessage'], def: true },
+        quickLaunchButton: { def: true },
+        quickLaunchGesture: { def: true },
+        quickLaunchTurns: { def: 1.5 },
+        quickLaunchSource: { def: 'mix' },
+        quickLaunchAutoClose: { def: 5 },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
         showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
@@ -10957,6 +10967,34 @@ class DashboardConfig {
                         chip('showInboxButton', 'chrome', 'config.chipInbox', 'Inbox', 'config.showInboxButtonLabel', 'Show the inbox button'),
                         chip('showConfigButton', 'chrome', 'config.chipConfig', 'Config', 'config.showConfigButtonLabel', 'Show the config button'),
                     ] },
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'header',
+                title: t('config.quickLaunchGroup', 'Quick launch'),
+                note: t('config.quickLaunchGroupNote', 'A panel in the middle of the screen with the bookmarks you add, the ones you pinned and the ones you open most. Shift+Q opens it, so does the corner element and drawing circles with the mouse. Add and remove bookmarks in the panel with +, with Shift+Q on a bookmark, or in its menu. The corner element only shows in a window of 992 px or more with a mouse.'),
+                controls: [
+                    chrome('quickLaunchButton', 'config.quickLaunchButtonLabel', 'Show the Quick launch button in the corner'),
+                    bool('quickLaunchGesture', 'config.quickLaunchGestureLabel', 'Open it by drawing circles with the mouse'),
+                    { field: 'quickLaunchTurns', type: 'select',
+                        label: t('config.quickLaunchTurnsLabel', 'Circles needed'),
+                        options: [1, 1.5, 2, 2.5, 3].map((n) => opt(n, String(n))) },
+                    { field: 'quickLaunchSource', type: 'select', special: 'chrome',
+                        label: t('config.quickLaunchSourceLabel', 'Beyond the ones you add, show'),
+                        options: [
+                            opt('mix', t('config.quickLaunchSourceMix', 'Pinned, then most opened')),
+                            opt('pinned', t('config.quickLaunchSourcePinned', 'Pinned only')),
+                            opt('top', t('config.quickLaunchSourceTop', 'Most opened only')),
+                        ] },
+                    { field: 'quickLaunchAutoClose', type: 'select',
+                        label: t('config.quickLaunchAutoCloseLabel', 'Close when the pointer stays outside for'),
+                        options: [
+                            opt(0, t('config.quickLaunchAutoCloseNever', 'Never')),
+                            opt(3, t('config.quickLaunchAutoClose3', '3 seconds')),
+                            opt(5, t('config.quickLaunchAutoClose5', '5 seconds')),
+                            opt(10, t('config.quickLaunchAutoClose10', '10 seconds')),
+                        ] },
                 ],
             },
             {
@@ -20663,17 +20701,17 @@ class DashboardConfig {
     static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
 
     /** The Health filters, with the Health module's meaning (matchesFilter). */
-    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'healthy'];
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'ignored', 'healthy'];
 
     /**
-     * Every health filter the list can be narrowed by: the rail's nine, and the
+     * Every health filter the list can be narrowed by: the rail's ten, and the
      * kinds only Collection health, the overview and :health name (drift, a
      * missing preview, a shortcut conflict...). The rail draws the first set;
      * an address, a tile or a command may carry any of these, and one left
      * out here was dropped on the way in -- the list then opened unfiltered.
      */
     static HEALTH_FILTER_KEYS = [...DashboardConfig.HEALTH_FILTERS,
-        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
+        'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category'];
 
     static isHealthFilterKey(key) {
         return DashboardConfig.HEALTH_FILTER_KEYS.includes(String(key || ''));
@@ -20723,7 +20761,10 @@ class DashboardConfig {
     bookmarkHealthState(b) {
         const issue = this.bmHealthIssue?.(b);
         if (issue) {
-            if (Number(issue.monitorStats?.downSince) > 0) return 'down';
+            // Told to stop reporting its failure: the row is not red, the panel says why.
+            const ignored = (Array.isArray(issue.ignoredFlags) ? issue.ignoredFlags : [])
+                .some((e) => e && (e.flag === 'broken' || e.flag === 'content'));
+            if (!ignored && Number(issue.monitorStats?.downSince) > 0) return 'down';
             if (issue.status === 'broken') return 'broken';
             return issue.lastChecked ? 'healthy' : 'unchecked';
         }
@@ -25693,9 +25734,9 @@ class DashboardConfig {
                 <section class="config-panel config-about-card" data-about-card="maker">
                     <h3 class="config-panel-title">${esc(this.t('config.aboutMakerTitle', 'About the maker'))}</h3>
                     <!-- DRAFT copy for Jordi to review -->
-                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is built by Jordi Brouwer, who writes about it and other projects on his own site.'))}</p>
+                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is made by Jordi Brouwer. Brewed bits is his dev blog, where he writes up how nextDash gets built and what else he is tinkering with.'))}</p>
                     <div class="config-about-linkrow">
-                        ${btn('https://jordibrw.nl', this.t('config.helpSiteAuthor', 'jordibrw.nl'))}
+                        ${btn('https://brewedbits.dev', this.t('config.helpSiteAuthor', 'brewedbits.dev'))}
                     </div>
                 </section>
                 <section class="config-panel config-about-card" data-about-card="roadmap">
